@@ -1,7 +1,5 @@
 import requests
-import json
 import yaml
-import os
 
 from flask import make_response
 
