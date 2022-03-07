@@ -9,3 +9,9 @@ It's only a small demo for now, no database is involved at this point (which sho
 ## What's the purpose?
 
 For now, the reason I built this is to have a stable Twitter RSS subscription service to monitor certain public service account (like local police department).
+
+## Dependency
+
+- Flask
+- PyYaml
+- rfeed
