@@ -15,3 +15,4 @@ For now, the reason I built this is to have a stable Twitter RSS subscription se
 - Flask
 - PyYaml
 - rfeed
+- bs4 (BeautifulSoup)
