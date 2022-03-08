@@ -16,15 +16,21 @@ headers = {
 
 
 def get_news_list():
-    data = requests.get('https://www.zaobao.com.sg/realtime/world?_wrapper_format=html&page=1', headers=headers)
-    soup = BeautifulSoup(data.text, 'html.parser')
-    news_list = soup.find_all("div", {"class": "col col-lg-12"})  # type is bs4.element.ResultSet
     output_news_list = []
-    for news in news_list:
-        news_item = do.NewsItem()
-        news_item.title = news.find('a').contents[0].text
-        news_item.link = c.zaobao_story_prefix + news.find('a')['href']
-        output_news_list.append(news_item)
+    for x in range(2):  # get 2 pages, each page contains 48 items
+        # todo: add cache to avoid duplicate call
+        data = requests.get(
+            'https://www.zaobao.com.sg/realtime/world?_wrapper_format=html&page=' + str(x),
+            headers=headers
+        )
+        soup = BeautifulSoup(data.text, 'html.parser')
+        news_list = soup.find_all("div", {"class": "col col-lg-12"})  # type is bs4.element.ResultSet
+
+        for news in news_list:
+            news_item = do.NewsItem()
+            news_item.title = news.find('a').contents[0].text
+            news_item.link = c.zaobao_story_prefix + news.find('a')['href']
+            output_news_list.append(news_item)
 
     return output_news_list
 
@@ -97,5 +103,5 @@ if __name__ == '__main__':
 
     list = get_news_list()
     get_individual_news_content(list)
+    print(list)
     # generate_news_rss_feed()
-    # print(list)
