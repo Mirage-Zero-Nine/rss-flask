@@ -22,3 +22,10 @@ twitter_prefix = "https://twitter.com/"
 
 zaobao_realtime_frontpage_prefix = "https://www.zaobao.com.sg/realtime/world"
 zaobao_story_prefix = 'https://www.zaobao.com.sg'
+
+zaobao_headers = {
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+    'Referer': 'https://www.zaobao.com.sg/realtime',
+    'Host': 'www.zaobao.com.sg',
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:97.0) Gecko/20100101 Firefox/97.0'
+}
