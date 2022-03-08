@@ -5,7 +5,7 @@ from flask import make_response
 
 import constant.constants as c
 import utils.generate_xml as gxml
-import utils.time_convert as tc
+import utils.time_converter as tc
 
 
 def call_twitter_api(url_type, url_params, request_params):

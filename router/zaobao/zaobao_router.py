@@ -5,7 +5,7 @@ from flask import make_response
 import constant.constants as c
 import router.zaobao.data_object as do
 import utils.generate_xml as gxml
-import utils.time_convert as tc
+import utils.time_converter as tc
 
 headers = {
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
