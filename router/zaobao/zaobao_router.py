@@ -16,9 +16,9 @@ started_time = round(time.time() * 1000)
 minutes_in_millisecond_15 = 900000  # 15 minutes in millisecond
 should_query = None
 feed = Feed(
-    description=None,
-    link=None,
-    title=None
+    description='',
+    link='',
+    title=''
 )
 
 
@@ -82,8 +82,8 @@ def get_rss_xml():
     global feed
     if check_if_should_query() is True:
         feed = generate_news_rss_feed()
-    else:
-        return feed
+
+    return feed
 
 
 def generate_news_rss_feed():
@@ -123,6 +123,7 @@ def check_if_should_query():
     """
     global should_query
     global started_time
+
     # if it's the first query, or the last query happened more than 15 minutes, then query again
     if should_query is None or round(time.time() * 1000) - started_time > minutes_in_millisecond_15:
         should_query = False

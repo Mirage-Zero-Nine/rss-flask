@@ -13,7 +13,8 @@ def twitter(user_name):
 
 @app.route('/zaobao/realtime')
 def zaobao():
-    return zaobao_router.generate_news_rss_feed()
+    feed = zaobao_router.get_rss_xml()
+    return feed
 
 @app.route('/')
 def hello_world():
