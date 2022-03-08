@@ -70,6 +70,10 @@ def get_individual_news_content(news_list):
             for text in post.find_all('p'):
                 news_text += str(text)
             item.description = news_text
+    news_list.sort(
+        key=lambda x: tc.convert_time_zaobao(x.created_time),
+        reverse=True
+    )
 
 
 def get_link_content(link):
@@ -139,4 +143,5 @@ if __name__ == '__main__':
     list = get_news_list()
     get_individual_news_content(list)
     print(list)
+
     # generate_news_rss_feed()
