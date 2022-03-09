@@ -61,8 +61,7 @@ def get_individual_news_content(news_list):
             {'class': 'title-byline date-published'}
         )
         news_text = ''
-        for t in time_list:
-            item.created_time = t.text.split('/')[1].strip()
+        item.created_time = time_list[0].text.split('/')[1].strip()
 
         for e in title_list:
             item.author = e.find_all('a')[0].text.strip()
