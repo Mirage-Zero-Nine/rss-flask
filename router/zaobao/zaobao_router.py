@@ -17,7 +17,7 @@ minutes_in_millisecond_15 = 900000  # 15 minutes in millisecond
 should_query = None
 response = None
 
-logging.basicConfig(filename='./log/zaobao_router.log', encoding='utf-8', level=logging.DEBUG)
+logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.DEBUG)
 
 
 def get_news_list():
@@ -28,11 +28,14 @@ def get_news_list():
             headers=c.zaobao_headers
         )
         soup = BeautifulSoup(data.text, 'html.parser')
-        news_list = soup.find_all("div", {"class": "col col-lg-12"})  # type is bs4.element.ResultSet
+        news_list = soup.find_all(
+            "div",
+            {"class": "col col-lg-12"}
+        )  # type is bs4.element.ResultSet
         logging.info("Current page: " + str(x) + ", items count: " + str(len(news_list)))
         for news in news_list:
             title = news.find('a').contents[0].text
-            news_item = do.NewsItem()
+            news_item = do.FeedItem()
             news_item.title = title
             news_item.link = c.zaobao_story_prefix + news.find('a')['href']
             output_news_list.append(news_item)
