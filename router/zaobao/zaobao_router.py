@@ -9,12 +9,13 @@ import constant.constants as c
 import router.zaobao.data_object as do
 import utils.generate_xml as gxml
 import utils.time_converter as tc
+import utils.check_if_valid as civ
 
 # todo: replace it with Redis, this is a temporary solution
 # for now using a timestamp to check refresh time, and limit to at most 15 minutes per query
-started_time = round(time.time() * 1000)
+started_time_zaobao = round(time.time() * 1000)
 minutes_in_millisecond_15 = 900000  # 15 minutes in millisecond
-should_query = None
+should_query_zaobao = None
 response = None
 
 logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.DEBUG)
@@ -61,8 +62,7 @@ def get_individual_news_content(news_list):
             {'class': 'title-byline date-published'}
         )
         news_text = ''
-        for t in time_list:
-            item.created_time = t.text.split('/')[1].strip()
+        item.created_time = time_list[0].text.split('/')[1].strip()
 
         for e in title_list:
             item.author = e.find_all('a')[0].text.strip()
@@ -84,13 +84,13 @@ def get_link_content(link):
 
 
 def get_rss_xml():
-    global response, started_time
+    global response, started_time_zaobao
     should_query_website = check_if_should_query()
     logging.info(
-        "Should query website for this call: " +
+        "Should query zaobao for this call: " +
         str(should_query_website) +
         ", current start time: " +
-        str(started_time)
+        str(started_time_zaobao)
     )
     if should_query_website is True:
         response = generate_news_rss_feed()
@@ -134,13 +134,13 @@ def check_if_should_query():
     Todo: refactor this implementation by using redis to both dedup and limit query speed.
     :return: if service should query now
     """
-    global should_query
-    global started_time
+    global should_query_zaobao
+    global started_time_zaobao
 
     # if it's the first query, or the last query happened more than 15 minutes, then query again
-    if should_query is None or round(time.time() * 1000) - started_time > minutes_in_millisecond_15:
-        should_query = False
-        started_time = round(time.time() * 1000)
+    if civ.check_should_query(should_query_zaobao, started_time_zaobao, minutes_in_millisecond_15):
+        should_query_zaobao = False
+        started_time_zaobao = round(time.time() * 1000)
         return True
 
     return False
