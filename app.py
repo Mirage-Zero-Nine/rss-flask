@@ -6,7 +6,6 @@ app = Flask(__name__)
 
 @app.route('/twitter/<user_name>')
 def twitter(user_name):
-    # todo: add async
     return twitter_router.generate_rss_xml(user_name)
 
 
