@@ -1,5 +1,6 @@
 import requests
 import time
+import logging
 from bs4 import BeautifulSoup
 from flask import make_response
 
@@ -21,11 +22,12 @@ feed = Feed(
     title=''
 )
 
+logging.basicConfig(filename='./log/zaobao_router.log', encoding='utf-8', level=logging.DEBUG)
+
 
 def get_news_list():
     output_news_list = []
     for x in range(2):  # get 2 pages, each page contains 48 items
-        # todo: add cache to avoid duplicate call
         data = requests.get(
             'https://www.zaobao.com.sg/realtime/world?_wrapper_format=html&page=' + str(x),
             headers=c.zaobao_headers
@@ -83,8 +85,15 @@ def get_link_content(link):
 
 
 def get_rss_xml():
-    global feed
-    if check_if_should_query() is True:
+    global feed, started_time
+    should_query_website = check_if_should_query()
+    logging.info(
+        "Should query website for this call: " +
+        str(should_query_website) +
+        ", current start time: " +
+        str(started_time)
+    )
+    if should_query_website is True:
         feed = generate_news_rss_feed()
 
     return feed

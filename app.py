@@ -4,7 +4,6 @@ from router.zaobao import zaobao_router
 
 app = Flask(__name__)
 
-
 @app.route('/twitter/<user_name>')
 def twitter(user_name):
     # todo: add async
@@ -15,6 +14,7 @@ def twitter(user_name):
 def zaobao():
     feed = zaobao_router.get_rss_xml()
     return feed
+
 
 @app.route('/')
 def hello_world():

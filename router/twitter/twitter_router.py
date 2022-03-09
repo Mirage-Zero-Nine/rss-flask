@@ -1,5 +1,6 @@
 import requests
 import router.twitter.twitter_utils as tu
+import logging
 
 from flask import make_response
 
@@ -7,12 +8,13 @@ import constant.constants as c
 import utils.generate_xml as gxml
 import utils.time_converter as tc
 
+logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.DEBUG)
+
 
 def call_twitter_api(url_type, url_params, request_params):
     url = tu.generate_url(url_type, url_params)
     response = requests.request("GET", url, auth=tu.bearer_oauth, params=request_params)
-    # todo: add logger
-    print("Request status code: " + str(response.status_code))
+    logging.info("Request status code: " + str(response.status_code))
     if response.status_code != 200:
         raise Exception("Request returned an error: {} {}".format(response.status_code, response.text))
     return response.json()
@@ -73,7 +75,7 @@ def generate_rss_xml(user_name):
         items=item_list
     )
     response = make_response(feed)
-    # response.headers.set('Content-Type', 'application/rss+xml')
+    response.headers.set('Content-Type', 'application/rss+xml')
 
     return response
 

@@ -1,0 +1,7 @@
+# This is a placeholder file for the log output
+# Do not remove it.
+
+# Ignore everything in this directory
+*
+# Except this file
+!.gitignore
