@@ -1,10 +1,9 @@
 import requests
 import time
 import logging
+
 from bs4 import BeautifulSoup
 from flask import make_response
-
-from rfeed import *
 
 import constant.constants as c
 import router.zaobao.data_object as do
@@ -16,25 +15,21 @@ import utils.time_converter as tc
 started_time = round(time.time() * 1000)
 minutes_in_millisecond_15 = 900000  # 15 minutes in millisecond
 should_query = None
-feed = Feed(
-    description='',
-    link='',
-    title=''
-)
+response = None
 
 logging.basicConfig(filename='./log/zaobao_router.log', encoding='utf-8', level=logging.DEBUG)
 
 
 def get_news_list():
     output_news_list = []
-    for x in range(2):  # get 2 pages, each page contains 48 items
+    for x in range(2):  # get 2 pages, each page contains 24 items
         data = requests.get(
             'https://www.zaobao.com.sg/realtime/world?_wrapper_format=html&page=' + str(x),
             headers=c.zaobao_headers
         )
         soup = BeautifulSoup(data.text, 'html.parser')
         news_list = soup.find_all("div", {"class": "col col-lg-12"})  # type is bs4.element.ResultSet
-
+        logging.info("Current page: " + str(x) + ", items count: " + str(len(news_list)))
         for news in news_list:
             title = news.find('a').contents[0].text
             news_item = do.NewsItem()
@@ -42,6 +37,7 @@ def get_news_list():
             news_item.link = c.zaobao_story_prefix + news.find('a')['href']
             output_news_list.append(news_item)
 
+    logging.info("Final output length: " + str(len(output_news_list)))
     return output_news_list
 
 
@@ -85,7 +81,7 @@ def get_link_content(link):
 
 
 def get_rss_xml():
-    global feed, started_time
+    global response, started_time
     should_query_website = check_if_should_query()
     logging.info(
         "Should query website for this call: " +
@@ -94,12 +90,13 @@ def get_rss_xml():
         str(started_time)
     )
     if should_query_website is True:
-        feed = generate_news_rss_feed()
+        response = generate_news_rss_feed()
 
-    return feed
+    return response
 
 
 def generate_news_rss_feed():
+    global response
     news_list = get_news_list()
     get_individual_news_content(news_list)
     item_list = []
