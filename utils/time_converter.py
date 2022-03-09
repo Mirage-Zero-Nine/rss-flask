@@ -10,6 +10,11 @@ def convert_time_zaobao(created_time_string):
     return datetime.strptime(created_time_string, '%Y年%m月%d日 %I:%M %p')
 
 
+def convert_time_dayone(created_time_string):
+    # sample: April 07, 2021
+    return datetime.strptime(created_time_string, '%B %d, %Y')
+
+
 def convert_time_string_to_timestamp(created_time_string):
     return round(datetime.strptime(created_time_string, '%Y年%m月%d日 %I:%M %p').timestamp() * 1000)
 

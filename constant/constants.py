@@ -1,3 +1,5 @@
+html_parser = 'html.parser'
+
 get_user_id_by_user_name = 'getUserIdByName'
 get_tweet_by_user_id = 'getTweetByUserId'
 get_tweet_by_tweet_id = 'getTweetByTweetId'
@@ -29,3 +31,5 @@ zaobao_headers = {
     'Host': 'www.zaobao.com.sg',
     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:97.0) Gecko/20100101 Firefox/97.0'
 }
+
+dayone_blog_link = "https://dayoneapp.com/blog/"
