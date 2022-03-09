@@ -1,7 +1,7 @@
-class NewsItem:
+class FeedItem:
     title = ''
     link = ''
-    description = ''
+    description = ''  # body of each feed entry
     author = ''
     created_time = ''
 
