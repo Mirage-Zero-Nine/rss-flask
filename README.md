@@ -26,5 +26,5 @@ token:
   twitter_token: YOUR_TOKEN_HERE
 ```
 - Build docker image: `docker build -t YOUR_IMAGE_NAME .`
-- Start container: `docker run -d --restart=always --name=test1 -p 5000:5000 rss-test:latest`.
+- Start container: `docker run -d --restart=always --name=YOUR_CONTAINER_NAME -p 5000:5000 YOUR_IMAGE_NAME:latest`.
 - Now you can access the RSS file via `localhost:5000/PATH_TO_ROUTER` to access RSS router.
