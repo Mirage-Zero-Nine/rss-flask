@@ -9,7 +9,7 @@ def twitter(user_name):
     return twitter_router.generate_rss_xml(user_name)
 
 
-@app.route('/zaobao/realtime')
+@app.route('/zaobao/realtime/world')
 def zaobao():
     xml = zaobao_router.get_rss_xml()
     return xml
