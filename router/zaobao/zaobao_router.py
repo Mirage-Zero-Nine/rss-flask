@@ -111,7 +111,8 @@ def generate_news_rss_feed():
             description=i.description,
             author=i.author,
             guid=i.link,
-            pubDate=tc.convert_time_zaobao(i.created_time)
+            pubDate=tc.convert_time_zaobao(i.created_time),
+            isPermaLink=False
         )
 
         item_list.append(item)

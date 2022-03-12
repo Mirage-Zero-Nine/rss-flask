@@ -2,13 +2,13 @@ import datetime as dt
 from rfeed import *
 
 
-def create_item(title, link, description, author, guid, pubDate):
+def create_item(title, link, description, author, guid, pubDate, isPermaLink):
     item = Item(
         title=title,
         link=link,
         description=description,
         author=author,
-        guid=Guid(guid),
+        guid=Guid(guid, isPermaLink=isPermaLink),
         pubDate=pubDate
     )
 

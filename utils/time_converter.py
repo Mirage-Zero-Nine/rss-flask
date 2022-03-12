@@ -7,7 +7,7 @@ def convert_time_twitter(created_time_string):
 
 def convert_time_zaobao(created_time_string):
     # sample: 2022年3月12日 1:46 PM
-    return datetime.strptime(created_time_string+" +0800", '%Y年%m月%d日 %I:%M %p %z')
+    return datetime.strptime(created_time_string + " +0800", '%Y年%m月%d日 %I:%M %p %z')
 
 
 def convert_time_dayone(created_time_string):

@@ -69,7 +69,8 @@ def get_feed(entry_list):
             description=entry.description,
             author=entry.author,
             guid=entry.link,
-            pubDate=tc.convert_time_dayone(entry.created_time)
+            pubDate=tc.convert_time_dayone(entry.created_time),
+            isPermaLink=False
         )
         item_list.append(item)
 

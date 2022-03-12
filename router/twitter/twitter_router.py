@@ -54,7 +54,8 @@ def build_item_list(item_list, data, user_name):
             description=entry["text"],
             author=user_name,
             guid=tweet_url,
-            pubDate=tc.convert_time_twitter(entry[c.created_at])
+            pubDate=tc.convert_time_twitter(entry[c.created_at]),
+            isPermaLink=False
         )
         item_list.append(item)
 
