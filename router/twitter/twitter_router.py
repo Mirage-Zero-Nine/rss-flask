@@ -75,7 +75,7 @@ def update_feed(user_name):
     next_page_token = response[c.meta][c.next_token]
     get_requested_user_timeline_list_by_user_id(user_id, next_page_token)
 
-    feed = gxml.generate_feed(
+    feed = gxml.generate_rss_by_feed_object(
         title="Twitter - " + user_name,
         link=c.twitter_prefix + user_name,
         description="Tweet from " + user_name,

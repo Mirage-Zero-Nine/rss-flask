@@ -74,7 +74,7 @@ def get_feed(entry_list):
         )
         item_list.append(item)
 
-    feed = gxml.generate_feed(
+    feed = gxml.generate_rss_by_feed_object(
         title="Day One Blog",
         link=c.dayone_blog_link,
         description="Day One Blog - Your Journal for Life | Day One",

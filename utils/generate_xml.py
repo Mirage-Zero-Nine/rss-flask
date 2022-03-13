@@ -15,7 +15,7 @@ def create_item(title, link, description, author, guid, pubDate, isPermaLink):
     return item
 
 
-def generate_feed(title, link, description, language, items):
+def generate_rss_by_feed_object(title, link, description, language, items):
     feed = Feed(
         title=title,
         link=link,
