@@ -8,20 +8,20 @@ app = Flask(__name__)
 
 @app.route('/twitter/<user_name>')
 def twitter(user_name):
-    xml = twitter_router.generate_rss_xml(user_name)
-    return xml
+    xml_response = twitter_router.generate_rss_xml_response(user_name)
+    return xml_response
 
 
 @app.route('/zaobao/realtime/world')
 def zaobao():
-    xml = zaobao_router.get_rss_xml()
-    return xml
+    xml_response = zaobao_router.get_rss_xml_response()
+    return xml_response
 
 
 @app.route('/dayone')
 def dayone():
-    xml = dayone_router.get_day_one_xml()
-    return xml
+    xml_response = dayone_router.get_rss_xml_response()
+    return xml_response
 
 
 @app.route('/')

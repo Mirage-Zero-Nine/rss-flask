@@ -132,7 +132,7 @@ def check_if_should_query():
     return False
 
 
-def get_rss_xml():
+def get_rss_xml_response():
     """
     Entry point of the router.
     :return: XML feed

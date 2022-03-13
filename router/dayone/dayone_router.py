@@ -103,7 +103,7 @@ def check_if_should_query():
     return False
 
 
-def get_day_one_xml():
+def get_rss_xml_response():
     global response_dayone
 
     bool_should_query = check_if_should_query()
@@ -125,4 +125,4 @@ def get_day_one_xml():
 
 
 if __name__ == '__main__':
-    get_day_one_xml()
+    get_rss_xml_response()

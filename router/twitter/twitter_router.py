@@ -110,7 +110,7 @@ def check_if_should_query(user_name):
     return False
 
 
-def generate_rss_xml(user_name):
+def generate_rss_xml_response(user_name):
     """
     Entry point of the router.
     Check if current call needs to query (1 time in 10 minutes at most), then query Twitter API.
@@ -133,4 +133,4 @@ def generate_rss_xml(user_name):
 
 if __name__ == "__main__":
     print("main")
-    print(generate_rss_xml("MacRumors"))
+    print(generate_rss_xml_response("MacRumors"))
