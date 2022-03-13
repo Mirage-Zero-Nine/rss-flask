@@ -1,8 +1,6 @@
-import requests
 import time
 import logging
 
-from bs4 import BeautifulSoup
 from flask import make_response
 
 import constant.constants as c
@@ -10,6 +8,7 @@ import router.zaobao.data_object as do
 import utils.generate_xml as gxml
 import utils.time_converter as tc
 import utils.check_if_valid as civ
+import utils.get_link_content as glc
 
 # todo: replace it with Redis, this is a temporary solution
 # for now using a timestamp to check refresh time, and limit to at most 15 minutes per query
@@ -24,11 +23,8 @@ logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=lo
 def get_news_list():
     output_news_list = []
     for x in range(2):  # get 2 pages, each page contains 24 items
-        data = requests.get(
-            'https://www.zaobao.com.sg/realtime/world?_wrapper_format=html&page=' + str(x),
-            headers=c.zaobao_headers
-        )
-        soup = BeautifulSoup(data.text, 'html.parser')
+        link = c.zaobao_page_prefix + str(x)
+        soup = glc.get_link_content_with_bs_and_header(link, c.html_parser, c.zaobao_headers)
         news_list = soup.find_all(
             "div",
             {"class": "col col-lg-12"}
@@ -47,8 +43,7 @@ def get_news_list():
 
 def get_individual_news_content(news_list):
     for item in news_list:
-        # add to cache to avoid duplication
-        soup = get_link_content(item.link)
+        soup = glc.get_link_content_with_bs_and_header(item.link, c.html_parser, c.zaobao_headers)
         post_list = soup.find_all(
             'div',
             {'class': 'article-content-rawhtml'}
@@ -77,12 +72,6 @@ def get_individual_news_content(news_list):
     )
 
 
-def get_link_content(link):
-    data = requests.get(link, headers=c.zaobao_headers)
-    soup = BeautifulSoup(data.text, 'html.parser')
-    return soup
-
-
 def generate_news_rss_feed():
     global response_zaobao
     news_list = get_news_list()
@@ -102,7 +91,7 @@ def generate_news_rss_feed():
 
         item_list.append(item)
 
-    feed = gxml.generate_feed(
+    feed = gxml.generate_rss_by_feed_object(
         title="联合早报 - 国际即时新闻",
         link=c.zaobao_realtime_frontpage_prefix,
         description="新加坡、中国、亚洲和国际的即时、评论、商业、体育、生活、科技与多媒体新闻，尽在联合早报。",
