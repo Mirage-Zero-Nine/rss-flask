@@ -98,9 +98,9 @@ def generate_news_rss_feed():
         language="zh-cn",
         items=item_list
     )
-    response_zaobao = make_response(feed)
-    response_zaobao.headers.set('Content-Type', 'application/rss+xml')
-    return response_zaobao
+    response = make_response(feed)
+    response.headers.set('Content-Type', 'application/rss+xml')
+    return response
 
 
 def check_if_should_query():
