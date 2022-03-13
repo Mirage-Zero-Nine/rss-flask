@@ -13,7 +13,7 @@ import utils.check_if_valid as civ
 started_time_dayone = round(time.time() * 1000)
 minutes_in_millisecond_30 = 1800000  # 30 minutes in millisecond
 should_query_dayone = None
-response = None
+response_dayone = None
 
 logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.DEBUG)
 
@@ -104,11 +104,11 @@ def check_if_should_query():
 
 
 def get_day_one_xml():
-    global response
+    global response_dayone
 
     bool_should_query = check_if_should_query()
     logging.info(
-        "Should query dayone blog for this call: " +
+        "Should query day one blog for this call: " +
         str(bool_should_query) +
         ", current start time: " +
         str(started_time_dayone)
@@ -121,7 +121,7 @@ def get_day_one_xml():
         response = make_response(feed)
         response.headers.set('Content-Type', 'application/rss+xml')
 
-    return response
+    return response_dayone
 
 
 if __name__ == '__main__':

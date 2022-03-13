@@ -16,7 +16,7 @@ import utils.check_if_valid as civ
 started_time_zaobao = round(time.time() * 1000)
 minutes_in_millisecond_15 = 900000  # 15 minutes in millisecond
 should_query_zaobao = None
-response = None
+response_zaobao = None
 
 logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.DEBUG)
 
@@ -83,23 +83,8 @@ def get_link_content(link):
     return soup
 
 
-def get_rss_xml():
-    global response, started_time_zaobao
-    should_query_website = check_if_should_query()
-    logging.info(
-        "Should query zaobao for this call: " +
-        str(should_query_website) +
-        ", current start time: " +
-        str(started_time_zaobao)
-    )
-    if should_query_website is True:
-        response = generate_news_rss_feed()
-
-    return response
-
-
 def generate_news_rss_feed():
-    global response
+    global response_zaobao
     news_list = get_news_list()
     get_individual_news_content(news_list)
     item_list = []
@@ -124,9 +109,9 @@ def generate_news_rss_feed():
         language="zh-cn",
         items=item_list
     )
-    response = make_response(feed)
-    response.headers.set('Content-Type', 'application/rss+xml')
-    return response
+    response_zaobao = make_response(feed)
+    response_zaobao.headers.set('Content-Type', 'application/rss+xml')
+    return response_zaobao
 
 
 def check_if_should_query():
@@ -145,6 +130,25 @@ def check_if_should_query():
         return True
 
     return False
+
+
+def get_rss_xml():
+    """
+    Entry point of the router.
+    :return: XML feed
+    """
+    global response_zaobao, started_time_zaobao
+    should_query_website = check_if_should_query()
+    logging.info(
+        "Should query zaobao for this call: " +
+        str(should_query_website) +
+        ", current start time: " +
+        str(started_time_zaobao)
+    )
+    if should_query_website is True:
+        response_zaobao = generate_news_rss_feed()
+
+    return response_zaobao
 
 
 if __name__ == '__main__':
