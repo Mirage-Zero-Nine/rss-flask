@@ -24,6 +24,7 @@ twitter_prefix = "https://twitter.com/"
 
 zaobao_realtime_frontpage_prefix = "https://www.zaobao.com.sg/realtime/world"
 zaobao_story_prefix = 'https://www.zaobao.com.sg'
+zaobao_page_prefix = 'https://www.zaobao.com.sg/realtime/world?_wrapper_format=html&page='
 
 zaobao_headers = {
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
@@ -33,3 +34,5 @@ zaobao_headers = {
 }
 
 dayone_blog_link = "https://dayoneapp.com/blog/"
+
+jandan_page_prefix = "http://jandan.net/"

@@ -19,6 +19,11 @@ def convert_time_string_to_timestamp(created_time_string):
     return round(datetime.strptime(created_time_string, '%Y年%m月%d日 %I:%M %p').timestamp() * 1000)
 
 
+def convert_time_jandan(created_time_string):
+    time_string = created_time_string + " +0800"
+    return datetime.strptime(time_string, '%Y.%m.%d , %H:%M %z')
+
 if __name__ == '__main__':
     print(convert_time_zaobao("2022年3月12日 1:46 PM"))
     print(convert_time_string_to_timestamp("2022年3月6日 10:04 PM"))
+    print(convert_time_jandan("2022.03.13 , 14:32"))
