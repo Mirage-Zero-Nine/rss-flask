@@ -42,7 +42,6 @@ def get_params_with_next_page_token(pagination_token):
 
 def get_config_variable(para):
     # arr = os.listdir()
-
     # file path started from app.py
     with open('authentication.yaml') as f:
         # use safe_load instead load
@@ -61,3 +60,15 @@ def bearer_oauth(r):
     r.headers["Authorization"] = f"Bearer {token}"
     r.headers["User-Agent"] = "v2UserTweetsPython"
     return r
+
+
+def generate_title(title_string):
+    if len(title_string) > 50:
+        return title_string[:50] + "..."
+
+    return title_string
+
+
+if __name__ == '__main__':
+    print(generate_title("test"))
+    print(generate_title("testtesttesttesttesttesttesttesttesttesttest"))

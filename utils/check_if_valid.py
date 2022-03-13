@@ -20,5 +20,12 @@ def check_should_query(bool_state, last_query_time, cooldown_period):
 
     return False
 
+
+def check_should_query_twitter(last_query_time, cooldown_period):
+    if round(time.time() * 1000) - last_query_time > cooldown_period:
+        return True
+
+    return False
+
 # if __name__ == '__main__':
 #     clean_outdated_post(None)
