@@ -13,7 +13,6 @@ import utils.get_link_content as glc
 # todo: replace it with Redis, this is a temporary solution
 # for now using a timestamp to check refresh time, and limit to at most 15 minutes per query
 started_time_zaobao = round(time.time() * 1000)
-minutes_in_millisecond_15 = 900000  # 15 minutes in millisecond
 should_query_zaobao = None
 response_zaobao = None
 
@@ -113,7 +112,7 @@ def check_if_should_query():
     global started_time_zaobao
 
     # if it's the first query, or the last query happened more than 15 minutes, then query again
-    if civ.check_should_query(should_query_zaobao, started_time_zaobao, minutes_in_millisecond_15):
+    if civ.check_should_query(should_query_zaobao, started_time_zaobao, c.zaobao_query_period):
         should_query_zaobao = False
         started_time_zaobao = round(time.time() * 1000)
         return True

@@ -12,7 +12,6 @@ import utils.check_if_valid as civ
 
 logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.DEBUG)
 started_time_twitter = round(time.time() * 1000)
-minutes_in_millisecond_10 = 600  # 10 minutes in millisecond
 should_query_twitter = None
 response_twitter = None
 cache = {}  # cache Twitter username and the last time this user was called
@@ -92,7 +91,7 @@ def update_feed(user_name):
 
 def check_if_should_query(user_name):
     """
-    Limit query to at most 1 time in 15 minutes.
+    Limit query to at most 1 time in 10 minutes.
     Todo: refactor this implementation by using redis to both dedup and limit query speed.
     :return: if service should query now
     """
@@ -103,7 +102,7 @@ def check_if_should_query(user_name):
         cache[user_name] = round(time.time() * 1000)  # put current time
         return True
     else:
-        if civ.check_should_query_twitter(cache[user_name], minutes_in_millisecond_10):
+        if civ.check_should_query_twitter(cache[user_name], c.twitter_query_period):
             cache[user_name] = round(time.time() * 1000)
             return True
 

@@ -11,7 +11,6 @@ import utils.time_converter as tc
 import utils.check_if_valid as civ
 
 started_time_dayone = round(time.time() * 1000)
-minutes_in_millisecond_30 = 1800000  # 30 minutes in millisecond
 should_query_dayone = None
 response_dayone = None
 
@@ -87,15 +86,15 @@ def get_feed(entry_list):
 
 def check_if_should_query():
     """
-    Limit query to at most 1 time in 30 minutes.
+    Limit query to at most 1 time in 6 hours.
     Todo: refactor this implementation by using redis to both dedup and limit query speed.
     :return: if service should query now
     """
     global should_query_dayone
     global started_time_dayone
 
-    # if it's the first query, or the last query happened more than 15 minutes, then query again
-    if civ.check_should_query(should_query_dayone, started_time_dayone, minutes_in_millisecond_30):
+    # if it's the first query, or the last query happened more than 6 hours, then query again
+    if civ.check_should_query(should_query_dayone, started_time_dayone, c.dayone_query_period):
         should_query_dayone = False
         started_time_dayone = round(time.time() * 1000)
         return True

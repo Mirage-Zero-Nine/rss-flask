@@ -11,7 +11,6 @@ import utils.check_if_valid as civ
 import utils.get_link_content as glc
 
 started_time_jandan = round(time.time() * 1000)
-minutes_in_millisecond_60 = 3600000  # 60 minutes in millisecond
 should_query_jandan = None
 response_jandan = None
 logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.DEBUG)
@@ -93,15 +92,15 @@ def create_feed(post_list):
 
 def check_if_should_query():
     """
-    Limit query to at most 1 time in 15 minutes.
+    Limit query to at most 1 time in 2 hours.
     Todo: refactor this implementation by using redis to both dedup and limit query speed.
     :return: if service should query now
     """
     global should_query_jandan
     global started_time_jandan
 
-    # if it's the first query, or the last query happened more than 15 minutes, then query again
-    if civ.check_should_query(should_query_jandan, started_time_jandan, minutes_in_millisecond_60):
+    # if it's the first query, or the last query happened more than 90 minutes, then query again
+    if civ.check_should_query(should_query_jandan, started_time_jandan, c.jandan_query_period):
         should_query_jandan = False
         started_time_jandan = round(time.time() * 1000)
         return True
