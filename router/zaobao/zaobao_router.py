@@ -11,7 +11,6 @@ import utils.check_if_valid as civ
 import utils.get_link_content as glc
 
 # todo: replace it with Redis, this is a temporary solution
-# for now using a timestamp to check refresh time, and limit to at most 15 minutes per query
 started_time_zaobao = round(time.time() * 1000)
 should_query_zaobao = None
 response_zaobao = None
@@ -93,7 +92,7 @@ def generate_news_rss_feed():
     feed = gxml.generate_rss_by_feed_object(
         title="联合早报 - 国际即时新闻",
         link=c.zaobao_realtime_frontpage_prefix,
-        description="新加坡、中国、亚洲和国际的即时、评论、商业、体育、生活、科技与多媒体新闻，尽在联合早报。",
+        description="国际的即时、评论、商业、体育、生活、科技与多媒体新闻，尽在联合早报。",
         language="zh-cn",
         items=item_list
     )
