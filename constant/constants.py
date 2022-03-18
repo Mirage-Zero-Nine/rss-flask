@@ -5,6 +5,8 @@ twitter_query_period = 10 * 60 * 1000  # 10 minutes
 zaobao_query_period = 15 * 60 * 1000  # 15 minutes
 currency_query_period = 10 * 60 * 1000  # 10 minutes
 
+currency_query_page_count = 5  # query 5 pages for currency exchange price list
+
 html_parser = 'html.parser'
 
 get_user_id_by_user_name = 'getUserIdByName'

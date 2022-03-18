@@ -8,6 +8,7 @@ import data.data_object as do
 import utils.generate_xml as gxml
 import utils.time_converter as tc
 import utils.check_if_valid as civ
+import router.currency.currency_util as cu
 
 started_time_currency = round(time.time() * 1000)
 should_query_currency = None
@@ -16,48 +17,54 @@ logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=lo
 
 
 def generate_rss_feed():
-    soup = glc.post_request_with_payload(c.currency_search_link, c.html_parser, c.currency_usd_payload_data)
-    exchange_price_list = soup.find_all(
-        'table'
-    )
-    table = exchange_price_list[1]
-    rows = table.findChildren(['th', 'tr'])
-    index = 0
-
-    array = ["货币名称: ", "现汇买入价: ", "现钞买入价: ", "现汇卖出价: ", "现钞卖出价: ", "中行折算价: "]
     feed_item_list = []
-    for row in rows:
-        title_time = '发布时间: '
-        title_text = ""
-        item = do.FeedItem()
-        cells = row.findChildren('td')
-        for cell in cells:
-            if index == 6:
-                index = 0
-                item.created_time = cell.text
-                continue
-            else:
-                index += 1
-                if index == 1:
+    array = ["货币名称: ", "现汇买入价: ", "现钞买入价: ", "现汇卖出价: ", "现钞卖出价: ", "中行折算价: "]
+    created_time_dedup = ''  # remove duplicated price
+    for i in range(c.currency_query_page_count):
+        page = i + 1
+        payload_data = cu.get_page_header(page)
+        soup = glc.post_request_with_payload(c.currency_search_link, c.html_parser, payload_data)
+        exchange_price_list = soup.find_all(
+            'table'
+        )
+        table = exchange_price_list[1]
+        rows = table.findChildren(['th', 'tr'])
+        index = 0
+
+        for row in rows:
+            title_text = ""
+            item = do.FeedItem()
+            cells = row.findChildren('td')
+            for cell in cells:
+                if index == 6:
+                    index = 0
+                    item.created_time = cell.text
                     continue
                 else:
-                    item.description = "<p>" + item.description + array[index - 1] + cell.text.strip() + "</p>"
-                    title_text += array[index - 1] + cell.text.strip() + " "
-        if item.description != '':
-            # logging.info("created time: " + item.created_time.split(" ")[1])
-            feed_item = gxml.create_item(
-                title=title_time + item.created_time + title_text,
-                link=c.currency_link,
-                description=item.description,
-                author="中国银行",
-                guid=c.currency_link,
-                pubDate=tc.convert_time_currency(item.created_time.strip()),
-                isPermaLink=False
-            )
-            feed_item_list.append(feed_item)
+                    index += 1
+                    if index == 1:
+                        continue
+                    else:
+                        item.description = "<p>" + item.description + array[index - 1] + cell.text.strip() + "</p>"
+                        if index == 4:
+                            title_text += array[index - 1] + cell.text.strip() + " "
+                        # title_text += array[index - 1] + cell.text.strip() + " "
+            if item.description != '' and created_time_dedup != item.created_time:
+                # logging.info("created time: " + item.created_time.split(" ")[1])
+                feed_item = gxml.create_item(
+                    title=item.created_time.strip() + " " + title_text,
+                    link=c.currency_link,
+                    description=item.description,
+                    author="中国银行",
+                    guid=item.created_time,
+                    pubDate=tc.convert_time_currency(item.created_time.strip()),
+                    isPermaLink=False
+                )
+                feed_item_list.append(feed_item)
+                created_time_dedup = item.created_time
 
     feed = gxml.generate_rss_by_feed_object(
-        title="中国银行外汇牌价 - 美元",
+        title="中国银行外汇牌价 - 人民币兑美元",
         link=c.currency_link,
         description="中国银行人民币兑美元牌价",
         language="zh-cn",
