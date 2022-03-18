@@ -1,6 +1,6 @@
 from datetime import datetime
-from zoneinfo import ZoneInfo
 import datetime as dt
+import pytz
 
 
 def convert_time_twitter(created_time_string):
@@ -16,8 +16,15 @@ def convert_time_zaobao(created_time_string):
     # sample: 2022年3月12日 1:46 PM
     converted_time = datetime.strptime(created_time_string, '%Y年%m月%d日 %I:%M %p')
     converted_time = converted_time - dt.timedelta(hours=8)  # shift 8 hours earlier to fit timezone
-    converted_time.replace(tzinfo=ZoneInfo('Etc/UTC'))  # set timezone to utc (somehow it doesn't seem working)
-    return converted_time
+    output = dt.datetime(converted_time.year,
+                         converted_time.month,
+                         converted_time.day,
+                         converted_time.hour,
+                         converted_time.minute,
+                         0,
+                         0,
+                         pytz.UTC)
+    return output
 
 
 def convert_time_dayone(created_time_string):
