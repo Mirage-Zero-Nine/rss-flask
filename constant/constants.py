@@ -3,6 +3,7 @@ jandan_query_period = 2 * 60 * 60 * 1000  # 2 hours
 dayone_query_period = 6 * 60 * 60 * 1000  # 6 hours
 twitter_query_period = 10 * 60 * 1000  # 10 minutes
 zaobao_query_period = 15 * 60 * 1000  # 15 minutes
+currency_query_period = 10 * 60 * 1000  # 10 minutes
 
 html_parser = 'html.parser'
 
@@ -42,3 +43,12 @@ zaobao_headers = {
 dayone_blog_link = "https://dayoneapp.com/blog/"
 
 jandan_page_prefix = "http://jandan.net/"
+
+currency_search_link = "https://srh.bankofchina.com/search/whpj/search_cn.jsp"
+currency_usd_payload_data = {
+    "erectDate": "",
+    "nothing": "",
+    "pjname": "美元",
+    "head": "head_620.js",
+    "bottom": "bottom_591.js"
+}

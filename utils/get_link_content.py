@@ -12,3 +12,8 @@ def get_link_content_with_bs_no_params(link, parser=c.html_parser):
 def get_link_content_with_bs_and_header(link, parser, header):
     soup = BeautifulSoup(requests.get(link, headers=header).text, parser)
     return soup
+
+
+def post_request_with_payload(link, parser, payload):
+    soup = BeautifulSoup(requests.post(link, data=payload).text, parser)
+    return soup
