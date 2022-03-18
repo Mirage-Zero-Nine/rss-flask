@@ -40,7 +40,7 @@ def generate_rss_feed():
                 if index == 1:
                     continue
                 else:
-                    item.description = item.description + array[index - 1] + cell.text
+                    item.description = item.description + array[index - 1] + "<p>" + cell.text.strip() + "</p>"
                     title += array[index - 1] + cell.text.strip() + " "
         if item.description != '':
             # logging.info("created time: " + item.created_time.split(" ")[1])
