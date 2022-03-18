@@ -5,7 +5,7 @@ from flask import make_response
 
 import constant.constants as c
 import utils.get_link_content as glc
-import router.zaobao.data_object as do
+import data.data_object as do
 import utils.generate_xml as gxml
 import utils.time_converter as tc
 import utils.check_if_valid as civ
