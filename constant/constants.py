@@ -45,6 +45,7 @@ dayone_blog_link = "https://dayoneapp.com/blog/"
 jandan_page_prefix = "http://jandan.net/"
 
 currency_search_link = "https://srh.bankofchina.com/search/whpj/search_cn.jsp"
+currency_link = "http://www.boc.cn/sourcedb/whpj/"
 currency_usd_payload_data = {
     "erectDate": "",
     "nothing": "",

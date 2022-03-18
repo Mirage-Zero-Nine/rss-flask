@@ -27,7 +27,8 @@ def generate_rss_feed():
     array = ["货币名称: ", "现汇买入价: ", "现钞买入价: ", "现汇卖出价: ", "现钞卖出价: ", "中行折算价: "]
     feed_item_list = []
     for row in rows:
-        title = ''
+        title_time = '发布时间: '
+        title_text = ""
         item = do.FeedItem()
         cells = row.findChildren('td')
         for cell in cells:
@@ -41,15 +42,15 @@ def generate_rss_feed():
                     continue
                 else:
                     item.description = "<p>" + item.description + array[index - 1] + cell.text.strip() + "</p>"
-                    title += array[index - 1] + cell.text.strip() + " "
+                    title_text += array[index - 1] + cell.text.strip() + " "
         if item.description != '':
             # logging.info("created time: " + item.created_time.split(" ")[1])
             feed_item = gxml.create_item(
-                title=title,
-                link=c.currency_search_link,
+                title=title_time + item.created_time + title_text,
+                link=c.currency_link,
                 description=item.description,
                 author="中国银行",
-                guid=c.currency_search_link,
+                guid=c.currency_link,
                 pubDate=tc.convert_time_currency(item.created_time.strip()),
                 isPermaLink=False
             )
@@ -57,7 +58,7 @@ def generate_rss_feed():
 
     feed = gxml.generate_rss_by_feed_object(
         title="中国银行外汇牌价 - 美元",
-        link=c.currency_search_link,
+        link=c.currency_link,
         description="中国银行人民币兑美元牌价",
         language="zh-cn",
         items=feed_item_list
