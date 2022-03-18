@@ -41,6 +41,7 @@ def get_news_list():
 
 def get_individual_news_content(news_list):
     for item in news_list:
+        # logging.info("Getting content from: " + item.link)
         soup = glc.get_link_content_with_bs_and_header(item.link, c.html_parser, c.zaobao_headers)
         post_list = soup.find_all(
             'div',
@@ -54,7 +55,17 @@ def get_individual_news_content(news_list):
             'h4',
             {'class': 'title-byline date-published'}
         )
-        news_text = ''
+        news_text = ""
+        try:
+            image_url = soup.find('meta',
+                                  {'property': 'og:image:url'}
+                                  )["content"]  # get image url from meta content
+            figcaption = soup.find_all("figcaption")[0].text
+            image_tag = '<img src="%s" alt="%s">' % (image_url, figcaption)
+            news_text = image_tag + figcaption
+        except IndexError:
+            logging.error("Getting error when trying to extract image from: " + item.link)
+
         item.created_time = time_list[0].text.split('/')[1].strip()
 
         for e in title_list:
@@ -64,6 +75,8 @@ def get_individual_news_content(news_list):
             for text in post.find_all('p'):
                 news_text += str(text)
             item.description = news_text
+        # logging.debug("Post content: " + item.description)
+
     news_list.sort(
         key=lambda x: tc.convert_time_zaobao(x.created_time),
         reverse=True
@@ -139,10 +152,4 @@ def get_rss_xml_response():
 
 
 if __name__ == '__main__':
-    # pass
-
-    list = get_news_list()
-    get_individual_news_content(list)
-    print(list)
-
-    # generate_news_rss_feed()
+    pass
