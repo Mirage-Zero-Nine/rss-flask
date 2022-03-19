@@ -7,6 +7,11 @@ currency_query_period = 10 * 60 * 1000  # 10 minutes
 
 currency_query_page_count = 5  # query 5 pages for currency exchange price list
 
+currency_time_convert_pattern = '%Y.%m.%d %H:%M:%S'
+zaobao_time_convert_pattern = "%Y年%m月%d日 %I:%M %p"
+dayone_time_convert_pattern = '%B %d, %Y'
+jandan_time_convert_pattern = "%Y.%m.%d , %H:%M"
+
 html_parser = 'html.parser'
 
 get_user_id_by_user_name = 'getUserIdByName'

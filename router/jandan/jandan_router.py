@@ -51,7 +51,7 @@ def get_individual_post_content(post_list):
             "div",
             {"class": "time_s"}
         )[0].text.split('@')[1].strip()
-        item.created_time = tc.convert_time_jandan(created_time)
+        item.created_time = tc.convert_time_with_pattern(created_time, c.jandan_time_convert_pattern, 8)
         description_string = ''
         for paragraph in description_list:
             for p in paragraph.find_all('p'):

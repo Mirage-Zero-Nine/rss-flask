@@ -67,7 +67,9 @@ def get_individual_news_content(news_list):
         except IndexError:
             logging.error("Getting error when trying to extract image from: " + item.link)
 
-        item.created_time = tc.convert_time_zaobao(time_list[0].text.split('/')[1].strip())
+        item.created_time = tc.convert_time_with_pattern(time_list[0].text.split('/')[1].strip(),
+                                                         c.zaobao_time_convert_pattern,
+                                                         8)
 
         for e in title_list:
             item.author = e.find_all('a')[0].text.strip()

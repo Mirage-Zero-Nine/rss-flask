@@ -48,7 +48,8 @@ def get_individual_article(entry_list):
         )
         # sample metadata: December 31, 2020 by The Day One Team
         split_metadata = metadata_list[0].text.split(" by ")
-        entry.created_time = tc.convert_time_dayone(split_metadata[0].strip())
+        entry.created_time = tc.convert_time_with_pattern(split_metadata[0].strip(),
+                                                          c.dayone_time_convert_pattern)
         entry.author = split_metadata[1]
         for description in description_list:
             for text in description.find_all('p'):

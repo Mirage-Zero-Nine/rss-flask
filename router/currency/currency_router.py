@@ -38,7 +38,9 @@ def generate_feed_rss():
                 if index == 6:
                     index = 0
                     logging.info("created time: " + cell.text)
-                    item.created_time = tc.convert_time_currency(cell.text.strip())
+                    item.created_time = tc.convert_time_with_pattern(cell.text.strip(),
+                                                                     c.currency_time_convert_pattern,
+                                                                     8)
                     continue
                 else:
                     index += 1
