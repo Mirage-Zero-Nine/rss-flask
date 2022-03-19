@@ -118,7 +118,6 @@ def check_if_should_query(region):
     :return: if service should query now
     """
     global should_query_zaobao_realtime_world, started_time_zaobao_realtime_world
-
     global should_query_zaobao_realtime_china, started_time_zaobao_realtime_china
 
     # if it's the first query, or the last query happened more than 15 minutes, then query again
@@ -133,7 +132,7 @@ def check_if_should_query(region):
                                   c.zaobao_query_period):
             should_query_zaobao_realtime_china = False
             started_time_zaobao_realtime_china = round(time.time() * 1000)
-        return True
+            return True
     else:
         raise SyntaxError("Invalid region name for this router: " + region)
 
@@ -146,20 +145,39 @@ def get_rss_xml_response(region):
     :return: XML feed
     """
     global response_zaobao_realtime_world, started_time_zaobao_realtime_world
+    global response_zaobao_realtime_china, started_time_zaobao_realtime_china
 
     should_query_website = check_if_should_query(region)
     logging.info(
         "Should query zaobao for this call: " +
         str(should_query_website) +
-        ", current start time: " +
-        str(started_time_zaobao_realtime_world)
+        ", china start time: " +
+        str(started_time_zaobao_realtime_china) +
+        ", world start time: " +
+        str(started_time_zaobao_realtime_world) +
+        ", region: " +
+        region
     )
+    # Todo: refactor this logic
     if should_query_website is True:
         feed = generate_news_rss_feed(region)
-        response_zaobao_realtime_world = make_response(feed)
-        response_zaobao_realtime_world.headers.set('Content-Type', 'application/rss+xml')
-
-    return response_zaobao_realtime_world
+        if region == c.zaobao_region_china:
+            response_zaobao_realtime_china = make_response(feed)
+            response_zaobao_realtime_china.headers.set('Content-Type', 'application/rss+xml')
+            return response_zaobao_realtime_china
+        elif region == c.zaobao_region_world:
+            response_zaobao_realtime_world = make_response(feed)
+            response_zaobao_realtime_world.headers.set('Content-Type', 'application/rss+xml')
+            return response_zaobao_realtime_world
+        else:
+            raise SyntaxError("Invalid region: " + region)
+    else:
+        if region == c.zaobao_region_china:
+            return response_zaobao_realtime_china
+        elif region == c.zaobao_region_world:
+            return response_zaobao_realtime_world
+        else:
+            raise SyntaxError("Invalid region: " + region)
 
 
 if __name__ == '__main__':
