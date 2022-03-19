@@ -20,7 +20,7 @@ def generate_feed_rss():
     feed_item_object_list = []
     array = ["货币名称: ", "现汇买入价: ", "现钞买入价: ", "现汇卖出价: ", "现钞卖出价: ", "中行折算价: "]
     created_time_dedup = ''  # remove duplicated price
-    for i in range(c.currency_query_page_count):  # query first 10 pages
+    for i in range(c.currency_query_page_count):  # query first 6 pages
         page = i + 1
         payload_data = cu.get_page_header(page)
         soup = glc.post_request_with_payload(c.currency_search_link, c.html_parser, payload_data)
@@ -37,7 +37,6 @@ def generate_feed_rss():
             for cell in cells:
                 if index == 6:
                     index = 0
-                    logging.info("created time: " + cell.text)
                     item.created_time = tc.convert_time_with_pattern(cell.text.strip(),
                                                                      c.currency_time_convert_pattern,
                                                                      8)
@@ -106,8 +105,8 @@ def get_rss_xml_response(currency_name):
     )
     if should_query_website is True:
         feed = generate_feed_rss()
-        response = make_response(feed)
-        response.headers.set('Content-Type', 'application/rss+xml')
+        response_currency = make_response(feed)
+        response_currency.headers.set('Content-Type', 'application/rss+xml')
 
     return response_currency
 
