@@ -1,4 +1,6 @@
 import datetime as dt
+
+import pytz
 from rfeed import *
 
 
@@ -37,8 +39,12 @@ def generate_rss_by_feed_object(title, link, description, language, feed_item_li
         link=link,
         description=description,
         language=language,
-        lastBuildDate=dt.datetime.now(),
+        lastBuildDate=dt.datetime.now(pytz.timezone('GMT')),
         items=create_item_list(feed_item_list)
     )
 
     return feed.rss()
+
+
+if __name__ == '__main__':
+    print(dt.datetime.now(pytz.timezone('GMT')))
