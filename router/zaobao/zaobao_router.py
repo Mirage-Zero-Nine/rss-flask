@@ -4,7 +4,7 @@ import logging
 from flask import make_response
 
 import constant.constants as c
-import data.data_object as do
+import data.feed_item_object as do
 import utils.generate_xml as gxml
 import utils.time_converter as tc
 import utils.check_if_valid as civ
@@ -30,9 +30,10 @@ def get_news_list():
         logging.info("Current page: " + str(x) + ", items count: " + str(len(news_list)))
         for news in news_list:
             title = news.find('a').contents[0].text
-            news_item = do.FeedItem()
-            news_item.title = title
-            news_item.link = c.zaobao_story_prefix + news.find('a')['href']
+            link = c.zaobao_story_prefix + news.find('a')['href']
+            news_item = do.FeedItem(title=title,
+                                    link=link,
+                                    guid=link)
             output_news_list.append(news_item)
 
     logging.info("Final output length: " + str(len(output_news_list)))
@@ -66,7 +67,7 @@ def get_individual_news_content(news_list):
         except IndexError:
             logging.error("Getting error when trying to extract image from: " + item.link)
 
-        item.created_time = time_list[0].text.split('/')[1].strip()
+        item.created_time = tc.convert_time_zaobao(time_list[0].text.split('/')[1].strip())
 
         for e in title_list:
             item.author = e.find_all('a')[0].text.strip()
@@ -77,41 +78,19 @@ def get_individual_news_content(news_list):
             item.description = news_text
         # logging.debug("Post content: " + item.description)
 
-    news_list.sort(
-        key=lambda x: tc.convert_time_zaobao(x.created_time),
-        reverse=True
-    )
-
 
 def generate_news_rss_feed():
-    global response_zaobao
-    news_list = get_news_list()
-    get_individual_news_content(news_list)
-    item_list = []
-
-    for i in news_list:
-        item = gxml.create_item(
-            title=i.title,
-            link=i.link,
-            description=i.description,
-            author=i.author,
-            guid=i.link,
-            pubDate=tc.convert_time_zaobao(i.created_time),
-            isPermaLink=False
-        )
-
-        item_list.append(item)
-
+    feed_item_list = get_news_list()
+    get_individual_news_content(feed_item_list)
     feed = gxml.generate_rss_by_feed_object(
         title="联合早报 - 国际即时新闻",
         link=c.zaobao_realtime_frontpage_prefix,
         description="国际的即时、评论、商业、体育、生活、科技与多媒体新闻，尽在联合早报。",
         language="zh-cn",
-        items=item_list
+        feed_item_list=feed_item_list
     )
-    response = make_response(feed)
-    response.headers.set('Content-Type', 'application/rss+xml')
-    return response
+
+    return feed
 
 
 def check_if_should_query():
@@ -146,7 +125,9 @@ def get_rss_xml_response():
         str(started_time_zaobao)
     )
     if should_query_website is True:
-        response_zaobao = generate_news_rss_feed()
+        feed = generate_news_rss_feed()
+        response_zaobao = make_response(feed)
+        response_zaobao.headers.set('Content-Type', 'application/rss+xml')
 
     return response_zaobao
 
