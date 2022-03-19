@@ -26,10 +26,6 @@ def convert_time_with_pattern(created_time_string, pattern, shift_hours=0):
     return converted_time_with_timezone
 
 
-#
-# def convert_time_string_to_timestamp(created_time_string):
-#     return round(datetime.strptime(created_time_string, '%Y年%m月%d日 %I:%M %p').timestamp() * 1000)
-
 def convert_millisecond_to_datetime(millisecond_string, shift_hours=0):
     converted_time = datetime.fromtimestamp(int(millisecond_string) / 1000)
     converted_time = converted_time + dt.timedelta(hours=shift_hours)

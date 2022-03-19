@@ -40,7 +40,7 @@ def get_articles_list():
             title=field["headline"],
             link=link,
             author="路透新闻部",
-            created_time=tc.convert_millisecond_to_datetime(field["dateMillis"], 7),
+            created_time=tc.convert_millisecond_to_datetime(field["dateMillis"]),
             description=description,
             guid=link
         )
