@@ -4,6 +4,7 @@ dayone_query_period = 6 * 60 * 60 * 1000  # 6 hours
 twitter_query_period = 10 * 60 * 1000  # 10 minutes
 zaobao_query_period = 15 * 60 * 1000  # 15 minutes
 currency_query_period = 10 * 60 * 1000  # 10 minutes
+reuters_query_period = 10 * 60 * 1000  # 10 minutes
 
 currency_query_page_count = 5  # query 6 pages for currency exchange price list
 
@@ -64,4 +65,23 @@ currency_usd_payload_data = {
     "pjname": "美元",
     "head": "head_620.js",
     "bottom": "bottom_591.js"
+}
+
+reuters_page_link = "https://cn.reuters.com/assets/jsonWireNews?limit=20"
+reuters_article_link_prefix = "https://cn.reuters.com"
+reuters_source_link = "https://cn.reuters.com/theWire"  # can not directly get contents from this link
+reuters_static_source_prefix = "https://static.reuters.com/resources/r/"
+reuters_header = {
+    "Host": "cn.reuters.com",
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:98.0) Gecko/20100101 Firefox/98.0",
+    "Accept": 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+    "Accept-Language": "en-US,en;q=0.5",
+    "Accept-Encoding": "gzip, deflate, br",
+    "DNT": "1",
+    "Connection": "keep-alive",
+    "Upgrade-Insecure-Requests": "1",
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "none",
+    "Sec-Fetch-User": "?1"
 }

@@ -26,12 +26,27 @@ def convert_time_with_pattern(created_time_string, pattern, shift_hours=0):
     return converted_time_with_timezone
 
 
-def convert_time_string_to_timestamp(created_time_string):
-    return round(datetime.strptime(created_time_string, '%Y年%m月%d日 %I:%M %p').timestamp() * 1000)
+#
+# def convert_time_string_to_timestamp(created_time_string):
+#     return round(datetime.strptime(created_time_string, '%Y年%m月%d日 %I:%M %p').timestamp() * 1000)
+
+def convert_millisecond_to_datetime(millisecond_string, shift_hours=0):
+    converted_time = datetime.fromtimestamp(int(millisecond_string) / 1000)
+    converted_time = converted_time + dt.timedelta(hours=shift_hours)
+    converted_time_with_timezone = dt.datetime(converted_time.year,
+                                               converted_time.month,
+                                               converted_time.day,
+                                               converted_time.hour,
+                                               converted_time.minute,
+                                               converted_time.second,
+                                               0,
+                                               pytz.UTC)
+    return converted_time_with_timezone
 
 
 if __name__ == '__main__':
     print(convert_time_with_pattern("2022年3月12日 1:46 PM", c.zaobao_time_convert_pattern, 8))
-    print(convert_time_string_to_timestamp("2022年3月6日 10:04 PM"))
+    # print(convert_time_string_to_timestamp("2022年3月6日 10:04 PM"))
     print(convert_time_with_pattern("2022.03.13 , 14:32", c.jandan_time_convert_pattern, 8))
     print(convert_time_with_pattern("2022.03.18 14:35:42", c.currency_time_convert_pattern, 8))
+    print(convert_millisecond_to_datetime("1647657191000", 7))

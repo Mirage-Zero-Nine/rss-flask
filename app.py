@@ -1,9 +1,11 @@
 from flask import Flask
+
 from router.twitter import twitter_router
 from router.zaobao import zaobao_realtime_router
 from router.dayone import dayone_router
 from router.jandan import jandan_router
 from router.currency import currency_router
+from router.reuters import reuters_router
 
 app = Flask(__name__)
 
@@ -23,6 +25,12 @@ def dayone():
 @app.route('/jandan')
 def jandan():
     return jandan_router.get_jandan_rss_xml_response()
+
+
+@app.route('/reuters/realtime')
+def reuters():
+    xml_response = reuters_router.get_rss_xml_response()
+    return xml_response
 
 
 @app.route('/twitter/<user_name>')

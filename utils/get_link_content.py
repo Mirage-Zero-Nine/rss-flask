@@ -17,3 +17,8 @@ def get_link_content_with_bs_and_header(link, parser, header):
 def post_request_with_payload(link, parser, payload):
     soup = BeautifulSoup(requests.post(link, data=payload).text, parser)
     return soup
+
+
+def load_json_response(link, header=None):
+    response = requests.get(link, headers=header)
+    return response.json()
