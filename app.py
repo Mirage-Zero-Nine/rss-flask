@@ -1,6 +1,6 @@
 from flask import Flask
 from router.twitter import twitter_router
-from router.zaobao import zaobao_router
+from router.zaobao import zaobao_realtime_router
 from router.dayone import dayone_router
 from router.jandan import jandan_router
 from router.currency import currency_router
@@ -31,9 +31,14 @@ def twitter(user_name):
     return xml_response
 
 
-@app.route('/zaobao/realtime/world')
-def zaobao():
-    xml_response = zaobao_router.get_rss_xml_response()
+@app.route('/zaobao/realtime/<region>')
+def zaobao(region):
+    """
+    Currently support two regions: `china` and `world`.
+    :param region: region to query
+    :return: realtime news xml based on region
+    """
+    xml_response = zaobao_realtime_router.get_rss_xml_response(region)
     return xml_response
 
 

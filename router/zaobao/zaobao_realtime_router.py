@@ -10,18 +10,34 @@ import utils.time_converter as tc
 import utils.check_if_valid as civ
 import utils.get_link_content as glc
 
-# todo: replace it with Redis, this is a temporary solution
-started_time_zaobao = round(time.time() * 1000)
-should_query_zaobao = None
-response_zaobao = None
+started_time_zaobao_realtime_world = round(time.time() * 1000)
+should_query_zaobao_realtime_world = None
+response_zaobao_realtime_world = None
+
+started_time_zaobao_realtime_china = round(time.time() * 1000)
+should_query_zaobao_realtime_china = None
+response_zaobao_realtime_china = None
 
 logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.DEBUG)
 
+region_link_mapping = {
+    c.zaobao_region_china: c.zaobao_realtime_china_frontpage_prefix,
+    c.zaobao_region_world: c.zaobao_realtime_china_frontpage_prefix
+}
+feed_description_mapping = {
+    c.zaobao_region_china: "中国的即时、评论、商业、体育、生活、科技与多媒体新闻，尽在联合早报。",
+    c.zaobao_region_world: "国际的即时、评论、商业、体育、生活、科技与多媒体新闻，尽在联合早报。"
+}
+feed_title_mapping = {
+    c.zaobao_region_china: "联合早报 - 中港台即时新闻",
+    c.zaobao_region_world: "联合早报 - 国际即时新闻"
+}
 
-def get_news_list():
+
+def get_news_list(region):
     output_news_list = []
     for x in range(2):  # get 2 pages, each page contains 24 items
-        link = c.zaobao_page_prefix + str(x)
+        link = c.zaobao_realtime_page_prefix + region + c.zaobao_realtime_page_suffix + str(x)
         soup = glc.get_link_content_with_bs_and_header(link, c.html_parser, c.zaobao_headers)
         news_list = soup.find_all(
             "div",
@@ -81,13 +97,13 @@ def get_individual_news_content(news_list):
         # logging.debug("Post content: " + item.description)
 
 
-def generate_news_rss_feed():
-    feed_item_list = get_news_list()
+def generate_news_rss_feed(region):
+    feed_item_list = get_news_list(region)
     get_individual_news_content(feed_item_list)
     feed = gxml.generate_rss_by_feed_object(
-        title="联合早报 - 国际即时新闻",
-        link=c.zaobao_realtime_frontpage_prefix,
-        description="国际的即时、评论、商业、体育、生活、科技与多媒体新闻，尽在联合早报。",
+        title=feed_title_mapping[region],
+        link=region_link_mapping[region],
+        description=feed_description_mapping[region],
         language="zh-cn",
         feed_item_list=feed_item_list
     )
@@ -95,43 +111,55 @@ def generate_news_rss_feed():
     return feed
 
 
-def check_if_should_query():
+def check_if_should_query(region):
     """
     Limit query to at most 1 time in 15 minutes.
     Todo: refactor this implementation by using redis to both dedup and limit query speed.
     :return: if service should query now
     """
-    global should_query_zaobao
-    global started_time_zaobao
+    global should_query_zaobao_realtime_world, started_time_zaobao_realtime_world
+
+    global should_query_zaobao_realtime_china, started_time_zaobao_realtime_china
 
     # if it's the first query, or the last query happened more than 15 minutes, then query again
-    if civ.check_should_query(should_query_zaobao, started_time_zaobao, c.zaobao_query_period):
-        should_query_zaobao = False
-        started_time_zaobao = round(time.time() * 1000)
+    if region == c.zaobao_region_world:
+        if civ.check_should_query(should_query_zaobao_realtime_world, started_time_zaobao_realtime_world,
+                                  c.zaobao_query_period):
+            should_query_zaobao_realtime_world = False
+            started_time_zaobao_realtime_world = round(time.time() * 1000)
+            return True
+    elif region == c.zaobao_region_china:
+        if civ.check_should_query(should_query_zaobao_realtime_china, started_time_zaobao_realtime_china,
+                                  c.zaobao_query_period):
+            should_query_zaobao_realtime_china = False
+            started_time_zaobao_realtime_china = round(time.time() * 1000)
         return True
+    else:
+        raise SyntaxError("Invalid region name for this router: " + region)
 
     return False
 
 
-def get_rss_xml_response():
+def get_rss_xml_response(region):
     """
     Entry point of the router.
     :return: XML feed
     """
-    global response_zaobao, started_time_zaobao
-    should_query_website = check_if_should_query()
+    global response_zaobao_realtime_world, started_time_zaobao_realtime_world
+
+    should_query_website = check_if_should_query(region)
     logging.info(
         "Should query zaobao for this call: " +
         str(should_query_website) +
         ", current start time: " +
-        str(started_time_zaobao)
+        str(started_time_zaobao_realtime_world)
     )
     if should_query_website is True:
-        feed = generate_news_rss_feed()
-        response_zaobao = make_response(feed)
-        response_zaobao.headers.set('Content-Type', 'application/rss+xml')
+        feed = generate_news_rss_feed(region)
+        response_zaobao_realtime_world = make_response(feed)
+        response_zaobao_realtime_world.headers.set('Content-Type', 'application/rss+xml')
 
-    return response_zaobao
+    return response_zaobao_realtime_world
 
 
 if __name__ == '__main__':

@@ -36,9 +36,14 @@ next_token = "next_token"
 tweet_link_prefix = "https://twitter.com/SeattlePD/status/"
 twitter_prefix = "https://twitter.com/"
 
-zaobao_realtime_frontpage_prefix = "https://www.zaobao.com.sg/realtime/world"
+zaobao_realtime_world_frontpage_prefix = "https://www.zaobao.com.sg/realtime/world"
+zaobao_realtime_china_frontpage_prefix = "https://www.zaobao.com.sg/realtime/china"
 zaobao_story_prefix = 'https://www.zaobao.com.sg'
-zaobao_page_prefix = 'https://www.zaobao.com.sg/realtime/world?_wrapper_format=html&page='
+zaobao_realtime_world_page_prefix = 'https://www.zaobao.com.sg/realtime/world?_wrapper_format=html&page='
+zaobao_realtime_page_prefix = "https://www.zaobao.com.sg/realtime/"
+zaobao_realtime_page_suffix = "?_wrapper_format=html&page="
+zaobao_region_world = "world"
+zaobao_region_china = "china"
 
 zaobao_headers = {
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
