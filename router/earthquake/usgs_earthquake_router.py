@@ -26,7 +26,7 @@ def generate_feed_rss():
                         str(tc.convert_millisecond_to_datetime_with_format(feature["properties"]['time'])) + \
                         '</p>'
         depth = '<p>Depth: ' + str(feature['geometry']['coordinates'][2]) + ' KM</p>'
-        url = '<p>Details: <a href="%s>Click to see details...</a> ' % feature["properties"]['url']
+        url = '<p>Details: <a href="%s">Click to see details...</a> ' % feature["properties"]['url']
         feed_item_object = do.FeedItem(
             title=feature["properties"]['title'],
             link=feature["properties"]['url'],
