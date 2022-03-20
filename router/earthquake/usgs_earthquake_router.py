@@ -31,7 +31,7 @@ def generate_feed_rss():
             title=feature["properties"]['title'],
             link=feature["properties"]['url'],
             author='USGS',
-            created_time=tc.convert_millisecond_to_datetime(feature["properties"]['time'], 7),
+            created_time=tc.convert_millisecond_to_datetime(feature["properties"]['time']),
             guid=feature["properties"]['ids'],
             description=loc + occurred_time + depth + url
         )
