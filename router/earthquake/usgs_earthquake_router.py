@@ -23,7 +23,7 @@ def generate_feed_rss():
     for feature in json_response["features"]:
         loc = "<p>Location: " + feature["properties"]['place'] + '</p>'
         occurred_time = "<p>Time: " + \
-                        str(tc.convert_millisecond_to_datetime_with_format(feature["properties"]['time'])) + \
+                        str(tc.convert_millisecond_to_datetime_with_format(feature["properties"]['time'], 7)) + \
                         '</p>'
         depth = '<p>Depth: ' + str(feature['geometry']['coordinates'][2]) + ' KM</p>'
         url = '<p>Details: <a href="%s">Click to see details...</a> ' % feature["properties"]['url']
