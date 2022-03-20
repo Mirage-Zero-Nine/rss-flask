@@ -42,7 +42,9 @@ def convert_millisecond_to_datetime(millisecond_string, shift_hours=0):
 
 def convert_millisecond_to_datetime_with_format(millisecond_string, shift_hours=0):
     # converted_time_with_timezone = convert_millisecond_to_datetime(millisecond_string, shift_hours)
-    return datetime.fromtimestamp(round(int(millisecond_string) / 1000))
+    converted_time = datetime.fromtimestamp(round(int(millisecond_string) / 1000))
+    converted_time = converted_time - dt.timedelta(hours=shift_hours)
+    return converted_time
 
 
 if __name__ == '__main__':
