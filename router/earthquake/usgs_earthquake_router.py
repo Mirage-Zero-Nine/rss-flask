@@ -23,18 +23,17 @@ def generate_feed_rss():
     for feature in json_response["features"]:
         loc = "<p>Location: " + feature["properties"]['place'] + '</p>'
         occurred_time = "<p>Time: " + \
-                        tc.convert_millisecond_to_datetime(feature["properties"]['time']).isoformat() + \
+                        tc.convert_millisecond_to_datetime_with_format(feature["properties"]['time']) + \
                         '</p>'
         depth = '<p>Depth: ' + str(feature['geometry']['coordinates'][2]) + ' KM</p>'
-        url = '<p>URL: ' + feature["properties"]['url'] + '</p>'
-
+        url = '<p>Details: <a href="%s>Click to see details...</a> ' % feature["properties"]['url']
         feed_item_object = do.FeedItem(
             title=feature["properties"]['title'],
             link=feature["properties"]['url'],
             author='USGS',
-            created_time=tc.convert_millisecond_to_datetime(feature["properties"]['time']),
+            created_time=tc.convert_millisecond_to_datetime(feature["properties"]['time'], 7),
             guid=feature["properties"]['ids'],
-            description=loc + occurred_time + url + depth
+            description=loc + occurred_time + depth + url
         )
         feed_item_list.append(feed_item_object)
         # print(feature["properties"]['title'])

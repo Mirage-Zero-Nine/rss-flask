@@ -28,7 +28,7 @@ def convert_time_with_pattern(created_time_string, pattern, shift_hours=0):
 
 def convert_millisecond_to_datetime(millisecond_string, shift_hours=0):
     converted_time = datetime.fromtimestamp(int(millisecond_string) / 1000)
-    converted_time = converted_time + dt.timedelta(hours=shift_hours)
+    converted_time = converted_time - dt.timedelta(hours=shift_hours)
     converted_time_with_timezone = dt.datetime(converted_time.year,
                                                converted_time.month,
                                                converted_time.day,
@@ -40,6 +40,11 @@ def convert_millisecond_to_datetime(millisecond_string, shift_hours=0):
     return converted_time_with_timezone
 
 
+def convert_millisecond_to_datetime_with_format(millisecond_string, shift_hours=0):
+    # converted_time_with_timezone = convert_millisecond_to_datetime(millisecond_string, shift_hours)
+    return datetime.fromtimestamp(round(int(millisecond_string) / 1000))
+
+
 if __name__ == '__main__':
     print(convert_time_with_pattern("2022年3月12日 1:46 PM", c.zaobao_time_convert_pattern, 8))
     # print(convert_time_string_to_timestamp("2022年3月6日 10:04 PM"))
@@ -47,3 +52,4 @@ if __name__ == '__main__':
     print(convert_time_with_pattern("2022.03.18 14:35:42", c.currency_time_convert_pattern, 8))
     print(convert_millisecond_to_datetime("1647657191000", 7))
     print(convert_millisecond_to_datetime("1647750993831", 7))
+    print(convert_millisecond_to_datetime_with_format("1647750993831"))
