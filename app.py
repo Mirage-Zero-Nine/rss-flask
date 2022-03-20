@@ -6,6 +6,7 @@ from router.dayone import dayone_router
 from router.jandan import jandan_router
 from router.currency import currency_router
 from router.reuters import reuters_router
+from router.earthquake import usgs_earthquake_router
 
 app = Flask(__name__)
 
@@ -19,6 +20,12 @@ def currency(currency_name):
 @app.route('/dayone')
 def dayone():
     xml_response = dayone_router.get_rss_xml_response()
+    return xml_response
+
+
+@app.route('/earthquake')
+def earthquake():
+    xml_response = usgs_earthquake_router.get_rss_xml_response()
     return xml_response
 
 

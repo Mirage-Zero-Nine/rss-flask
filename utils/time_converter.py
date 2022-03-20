@@ -46,3 +46,4 @@ if __name__ == '__main__':
     print(convert_time_with_pattern("2022.03.13 , 14:32", c.jandan_time_convert_pattern, 8))
     print(convert_time_with_pattern("2022.03.18 14:35:42", c.currency_time_convert_pattern, 8))
     print(convert_millisecond_to_datetime("1647657191000", 7))
+    print(convert_millisecond_to_datetime("1647750993831", 7))

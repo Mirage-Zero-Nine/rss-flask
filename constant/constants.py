@@ -5,6 +5,7 @@ twitter_query_period = 10 * 60 * 1000  # 10 minutes
 zaobao_query_period = 15 * 60 * 1000  # 15 minutes
 currency_query_period = 10 * 60 * 1000  # 10 minutes
 reuters_query_period = 10 * 60 * 1000  # 10 minutes
+usgs_earthquake_query_period = 10 * 60 * 1000  # 10 minutes
 
 currency_query_page_count = 5  # query 6 pages for currency exchange price list
 
@@ -85,3 +86,5 @@ reuters_header = {
     "Sec-Fetch-Site": "none",
     "Sec-Fetch-User": "?1"
 }
+
+usgs_earthquake_link = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson"
