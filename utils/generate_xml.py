@@ -33,7 +33,7 @@ def create_item_list(feed_item_list):
     return output_list
 
 
-def generate_rss_by_feed_object(title, link, description, language, feed_item_list):
+def generate_feed_object(title, link, description, language, feed_item_list):
     feed = Feed(
         title=title,
         link=link,
@@ -42,6 +42,12 @@ def generate_rss_by_feed_object(title, link, description, language, feed_item_li
         lastBuildDate=dt.datetime.now(pytz.timezone('GMT')),
         items=create_item_list(feed_item_list)
     )
+
+    return feed
+
+
+def generate_rss_by_feed_object(title, link, description, language, feed_item_list):
+    feed = generate_feed_object(title, link, description, language, feed_item_list)
 
     return feed.rss()
 

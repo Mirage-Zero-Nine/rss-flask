@@ -85,7 +85,6 @@ def generate_feed_rss():
 def check_if_should_query():
     """
     Limit query to at most 1 time in 6 hours.
-    Todo: refactor this implementation by using redis to both dedup and limit query speed.
     :return: if service should query now
     """
     global should_query_reuters
