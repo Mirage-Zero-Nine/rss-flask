@@ -40,6 +40,7 @@ def generate_feed_rss():
                     item.created_time = tc.convert_time_with_pattern(cell.text.strip(),
                                                                      c.currency_time_convert_pattern,
                                                                      8)
+                    item.description = "发布时间: " + item.created_time.isoformat() + item.description
                     continue
                 else:
                     index += 1
@@ -53,7 +54,7 @@ def generate_feed_rss():
 
             if item.description is not None and item.description != '' and created_time_dedup != str(item.created_time):
                 # logging.info("created time: " + item.created_time.split(" ")[1])
-                item.title = item.created_time.isoformat() + " " + title_text
+                item.title = title_text
                 item.link = c.currency_link
                 item.author = "中国银行"
                 item.guid = item.created_time
