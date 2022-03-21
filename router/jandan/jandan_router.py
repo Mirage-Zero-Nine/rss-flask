@@ -1,7 +1,7 @@
-import time
 import logging
 
 from flask import make_response
+from datetime import datetime
 
 import constant.constants as c
 import data.feed_item_object as do
@@ -9,10 +9,8 @@ import utils.generate_xml as gxml
 import utils.time_converter as tc
 import utils.check_if_valid as civ
 import utils.get_link_content as glc
+import data.feed_cache as fc
 
-started_time_jandan = round(time.time() * 1000)
-should_query_jandan = None
-response_jandan = None
 logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.DEBUG)
 
 
@@ -73,40 +71,41 @@ def generate_feed_rss():
     return feed
 
 
-def check_if_should_query():
+def check_if_should_query(jandan_key):
     """
-    Limit query to at most 1 time in 2 hours.
-    Todo: refactor this implementation by using redis to both dedup and limit query speed.
+    Limit query to at most 1 time in 10 minutes.
     :return: if service should query now
     """
-    global should_query_jandan
-    global started_time_jandan
 
-    # if it's the first query, or the last query happened more than 90 minutes, then query again
-    if civ.check_should_query(should_query_jandan, started_time_jandan, c.jandan_query_period):
-        should_query_jandan = False
-        started_time_jandan = round(time.time() * 1000)
+    # if it's the first query, or the last query happened more than 10 minutes, then query again
+    if len(fc.feed_cache) == 0 or jandan_key not in fc.feed_cache.keys() or civ.check_should_query_no_state(
+            datetime.timestamp(fc.feed_cache[jandan_key].lastBuildDate),
+            c.currency_query_period
+    ):
         return True
 
     return False
 
 
-def get_jandan_rss_xml_response():
-    global response_jandan, started_time_jandan
-    should_query_website = check_if_should_query()
-    logging.info(
-        "Should query jandan for this call: " +
-        str(should_query_website) +
-        ", current start time: " +
-        str(started_time_jandan)
-    )
-
+def get_rss_xml_response():
+    """
+    Entry point of the router.
+    Currently currency_name is not used.
+    :return: XML feed
+    """
+    jandan_key = 'jandan/latest'
+    should_query_website = check_if_should_query(jandan_key)
+    logging.info("Query jandan for this call: " + str(should_query_website))
     if should_query_website is True:
         feed = generate_feed_rss()
-        response_jandan = make_response(feed)
-        response_jandan.headers.set('Content-Type', 'application/rss+xml')
+        fc.feed_cache[jandan_key] = feed
+    else:
+        feed = fc.feed_cache[jandan_key]
 
-    return response_jandan
+    response_currency = make_response(feed)
+    response_currency.headers.set('Content-Type', 'application/rss+xml')
+
+    return response_currency
 
 
 if __name__ == '__main__':

@@ -1,7 +1,7 @@
-import time
 import logging
 
 from flask import make_response
+from datetime import datetime
 
 import constant.constants as c
 import utils.get_link_content as glc
@@ -9,10 +9,7 @@ import data.feed_item_object as do
 import utils.generate_xml as gxml
 import utils.time_converter as tc
 import utils.check_if_valid as civ
-
-started_time_dayone = round(time.time() * 1000)
-should_query_dayone = None
-response_dayone = None
+import data.feed_cache as fc
 
 logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.DEBUG)
 
@@ -71,39 +68,41 @@ def generate_feed_rss():
     return feed
 
 
-def check_if_should_query():
+def check_if_should_query(dayone_key):
     """
-    Limit query to at most 1 time in 6 hours.
+    Limit query to at most 1 time in 10 minutes.
     :return: if service should query now
     """
-    global should_query_dayone
-    global started_time_dayone
 
-    # if it's the first query, or the last query happened more than 6 hours, then query again
-    if civ.check_should_query(should_query_dayone, started_time_dayone, c.dayone_query_period):
-        should_query_dayone = False
-        started_time_dayone = round(time.time() * 1000)
+    # if it's the first query, or the last query happened more than 10 minutes, then query again
+    if len(fc.feed_cache) == 0 or dayone_key not in fc.feed_cache.keys() or civ.check_should_query_no_state(
+            datetime.timestamp(fc.feed_cache[dayone_key].lastBuildDate),
+            c.currency_query_period
+    ):
         return True
 
     return False
 
 
 def get_rss_xml_response():
-    global response_dayone
-
-    bool_should_query = check_if_should_query()
-    logging.info(
-        "Query day one blog for this call: " +
-        str(bool_should_query) +
-        ", current start time: " +
-        str(started_time_dayone)
-    )
-    if bool_should_query is True:
+    """
+    Entry point of the router.
+    Currently currency_name is not used.
+    :return: XML feed
+    """
+    dayone_key = 'dayone/blog'
+    should_query_website = check_if_should_query(dayone_key)
+    logging.info("Query Day One Blog for this call: " + str(should_query_website))
+    if should_query_website is True:
         feed = generate_feed_rss()
-        response_dayone = make_response(feed)
-        response_dayone.headers.set('Content-Type', 'application/rss+xml')
+        fc.feed_cache[dayone_key] = feed
+    else:
+        feed = fc.feed_cache[dayone_key]
 
-    return response_dayone
+    response_currency = make_response(feed)
+    response_currency.headers.set('Content-Type', 'application/rss+xml')
+
+    return response_currency
 
 
 if __name__ == '__main__':

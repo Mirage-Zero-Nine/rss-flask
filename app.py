@@ -31,7 +31,7 @@ def earthquake():
 
 @app.route('/jandan')
 def jandan():
-    return jandan_router.get_jandan_rss_xml_response()
+    return jandan_router.get_rss_xml_response()
 
 
 @app.route('/reuters/realtime')

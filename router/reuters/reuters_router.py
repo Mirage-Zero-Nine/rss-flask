@@ -1,8 +1,8 @@
-import time
 import logging
 import html
 
 from flask import make_response
+from datetime import datetime
 
 import constant.constants as c
 import utils.get_link_content as glc
@@ -10,10 +10,7 @@ import data.feed_item_object as do
 import utils.generate_xml as gxml
 import utils.time_converter as tc
 import utils.check_if_valid as civ
-
-started_time_reuters = round(time.time() * 1000)
-should_query_reuters = None
-response_reuters = None
+import data.feed_cache as fc
 
 logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.DEBUG)
 
@@ -82,39 +79,41 @@ def generate_feed_rss():
     return feed
 
 
-def check_if_should_query():
+def check_if_should_query(reuters_key):
     """
-    Limit query to at most 1 time in 6 hours.
+    Limit query to at most 1 time in 10 minutes.
     :return: if service should query now
     """
-    global should_query_reuters
-    global started_time_reuters
 
-    # if it's the first query, or the last query happened more than 6 hours, then query again
-    if civ.check_should_query(should_query_reuters, started_time_reuters, c.reuters_query_period):
-        should_query_reuters = False
-        started_time_reuters = round(time.time() * 1000)
+    # if it's the first query, or the last query happened more than 10 minutes, then query again
+    if len(fc.feed_cache) == 0 or reuters_key not in fc.feed_cache.keys() or civ.check_should_query_no_state(
+            datetime.timestamp(fc.feed_cache[reuters_key].lastBuildDate),
+            c.currency_query_period
+    ):
         return True
 
     return False
 
 
 def get_rss_xml_response():
-    global response_reuters
-
-    bool_should_query = check_if_should_query()
-    logging.info(
-        "Query router cn website: " +
-        str(bool_should_query) +
-        ", current start time: " +
-        str(started_time_reuters)
-    )
-    if bool_should_query is True:
+    """
+    Entry point of the router.
+    Currently currency_name is not used.
+    :return: XML feed
+    """
+    reuters_key = 'reuters/realtime/cn'
+    should_query_website = check_if_should_query(reuters_key)
+    logging.info("Query reuters for this call: " + str(should_query_website))
+    if should_query_website is True:
         feed = generate_feed_rss()
-        response_reuters = make_response(feed)
-        response_reuters.headers.set('Content-Type', 'application/rss+xml')
+        fc.feed_cache[reuters_key] = feed
+    else:
+        feed = fc.feed_cache[reuters_key]
 
-    return response_reuters
+    response_currency = make_response(feed)
+    response_currency.headers.set('Content-Type', 'application/rss+xml')
+
+    return response_currency
 
 
 if __name__ == '__main__':

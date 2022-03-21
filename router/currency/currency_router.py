@@ -1,6 +1,7 @@
-import time
 import logging
+
 from flask import make_response
+from datetime import datetime
 
 import constant.constants as c
 import utils.get_link_content as glc
@@ -9,10 +10,8 @@ import utils.generate_xml as gxml
 import utils.time_converter as tc
 import utils.check_if_valid as civ
 import router.currency.currency_util as cu
+import data.feed_cache as fc
 
-started_time_currency = round(time.time() * 1000)
-should_query_currency = None
-response_currency = None
 logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.DEBUG)
 
 
@@ -73,18 +72,17 @@ def generate_feed_rss():
     return feed
 
 
-def check_if_should_query():
+def check_if_should_query(currency_key):
     """
     Limit query to at most 1 time in 10 minutes.
     :return: if service should query now
     """
-    global should_query_currency
-    global started_time_currency
 
     # if it's the first query, or the last query happened more than 10 minutes, then query again
-    if civ.check_should_query(should_query_currency, started_time_currency, c.currency_query_period):
-        should_query_currency = False
-        started_time_currency = round(time.time() * 1000)
+    if len(fc.feed_cache) == 0 or currency_key not in fc.feed_cache.keys() or civ.check_should_query_no_state(
+            datetime.timestamp(fc.feed_cache[currency_key].lastBuildDate),
+            c.currency_query_period
+    ):
         return True
 
     return False
@@ -96,18 +94,17 @@ def get_rss_xml_response(currency_name):
     Currently currency_name is not used.
     :return: XML feed
     """
-    global response_currency, started_time_currency
-    should_query_website = check_if_should_query()
-    logging.info(
-        "Query currency price list for this call: " +
-        str(should_query_website) +
-        ", current start time: " +
-        str(started_time_currency)
-    )
+    currency_key = 'currency/' + currency_name
+    should_query_website = check_if_should_query(currency_key)
+    logging.info("Query currency price list for this call: " + str(should_query_website))
     if should_query_website is True:
         feed = generate_feed_rss()
-        response_currency = make_response(feed)
-        response_currency.headers.set('Content-Type', 'application/rss+xml')
+        fc.feed_cache[currency_key] = feed
+    else:
+        feed = fc.feed_cache[currency_key]
+
+    response_currency = make_response(feed)
+    response_currency.headers.set('Content-Type', 'application/rss+xml')
 
     return response_currency
 
