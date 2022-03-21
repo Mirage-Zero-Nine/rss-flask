@@ -63,7 +63,7 @@ def build_item_list(feed_item_list, data, user_name):
         feed_item_list.append(feed_item)
 
 
-def generate_news_rss_feed(user_name):
+def generate_rss_feed(user_name):
     """
     :param user_name:
     :return: used in cache value, so return feed object instead of rss string.
@@ -125,7 +125,7 @@ def generate_rss_xml_response(user_name):
     logging.debug("cache: " + str(fc.feed_cache))
 
     if should_call_api is True:
-        feed = generate_news_rss_feed(user_name)  # update Twitter feed by Twitter username
+        feed = generate_rss_feed(user_name)  # update Twitter feed by Twitter username
         fc.feed_cache[cache_key] = feed  # update cache by cache key
     else:
         feed = fc.feed_cache[cache_key]
