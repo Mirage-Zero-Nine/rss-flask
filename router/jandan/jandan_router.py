@@ -60,7 +60,7 @@ def get_individual_post_content(post_list):
 def generate_feed_rss():
     item_list = get_feed_item_list()
     get_individual_post_content(item_list)
-    feed = gxml.generate_rss_by_feed_object(
+    feed = gxml.generate_feed_object(
         title="煎蛋",
         link=c.jandan_page_prefix,
         description="煎蛋 - 地球上没有新鲜事",
@@ -102,7 +102,7 @@ def get_rss_xml_response():
     else:
         feed = fc.feed_cache[jandan_key]
 
-    response_currency = make_response(feed)
+    response_currency = make_response(feed.rss())
     response_currency.headers.set('Content-Type', 'application/rss+xml')
 
     return response_currency

@@ -34,7 +34,7 @@ def generate_feed_rss():
         )
         feed_item_list.append(feed_item_object)
 
-    feed = gxml.generate_rss_by_feed_object(
+    feed = gxml.generate_feed_object(
         title="USGS - Earthquake Report",
         link="https://earthquake.usgs.gov/earthquakes/map",
         description="USGS Magnitude 2.5+ Earthquakes, Past Day",
@@ -72,7 +72,7 @@ def get_rss_xml_response():
     else:
         feed = fc.feed_cache[usgs_key]
 
-    response_earthquake = make_response(feed)
+    response_earthquake = make_response(feed.rss())
     response_earthquake.headers.set('Content-Type', 'application/rss+xml')
 
     return response_earthquake

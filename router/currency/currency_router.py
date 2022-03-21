@@ -61,7 +61,7 @@ def generate_feed_rss():
                 feed_item_object_list.append(item)
                 created_time_dedup = str(item.created_time)
 
-    feed = gxml.generate_rss_by_feed_object(
+    feed = gxml.generate_feed_object(
         title="中国银行外汇牌价 - 人民币兑美元",
         link=c.currency_link,
         description="中国银行人民币兑美元牌价",
@@ -103,7 +103,7 @@ def get_rss_xml_response(currency_name):
     else:
         feed = fc.feed_cache[currency_key]
 
-    response_currency = make_response(feed)
+    response_currency = make_response(feed.rss())
     response_currency.headers.set('Content-Type', 'application/rss+xml')
 
     return response_currency

@@ -57,7 +57,7 @@ def get_individual_article(entry_list):
 def generate_feed_rss():
     entry_list = get_articles_list()
     get_individual_article(entry_list)
-    feed = gxml.generate_rss_by_feed_object(
+    feed = gxml.generate_feed_object(
         title="Day One Blog",
         link=c.dayone_blog_link,
         description="Day One Blog - Your Journal for Life | Day One",
@@ -99,7 +99,7 @@ def get_rss_xml_response():
     else:
         feed = fc.feed_cache[dayone_key]
 
-    response_currency = make_response(feed)
+    response_currency = make_response(feed.rss())
     response_currency.headers.set('Content-Type', 'application/rss+xml')
 
     return response_currency

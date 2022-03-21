@@ -69,7 +69,7 @@ def get_individual_article(feed_item_list):
 def generate_feed_rss():
     feed_item_list = get_articles_list()
     get_individual_article(feed_item_list)
-    feed = gxml.generate_rss_by_feed_object(
+    feed = gxml.generate_feed_object(
         title="路透中文网 - 实时资讯",
         link=c.reuters_source_link,
         description="路透中文网 - 实时资讯",
@@ -110,7 +110,7 @@ def get_rss_xml_response():
     else:
         feed = fc.feed_cache[reuters_key]
 
-    response_currency = make_response(feed)
+    response_currency = make_response(feed.rss())
     response_currency.headers.set('Content-Type', 'application/rss+xml')
 
     return response_currency
