@@ -1,8 +1,8 @@
 import requests
 import logging
-import time
 
 from flask import make_response
+from datetime import datetime
 
 import constant.constants as c
 import utils.generate_xml as gxml
@@ -10,12 +10,9 @@ import utils.time_converter as tc
 import router.twitter.twitter_utils as tu
 import utils.check_if_valid as civ
 import data.feed_item_object as do
+import data.feed_cache as fc
 
 logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.DEBUG)
-started_time_twitter = round(time.time() * 1000)
-should_query_twitter = None
-response_twitter = None
-cache = {}  # cache Twitter username and the last time this user was called
 
 
 def call_twitter_api(url_type, url_params, request_params):
@@ -66,7 +63,11 @@ def build_item_list(feed_item_list, data, user_name):
         feed_item_list.append(feed_item)
 
 
-def update_feed(user_name):
+def generate_news_rss_feed(user_name):
+    """
+    :param user_name:
+    :return: used in cache value, so return feed object instead of rss string.
+    """
     user_id = get_twitter_user_id_by_name(user_name)
     response = get_requested_user_timeline_list_by_user_id(user_id, None)
     item_list = []
@@ -76,7 +77,7 @@ def update_feed(user_name):
     response = get_requested_user_timeline_list_by_user_id(user_id, next_page_token)
     build_item_list(item_list, response, user_name)
 
-    feed = gxml.generate_rss_by_feed_object(
+    feed = gxml.generate_feed_object(
         title="Twitter - " + user_name,
         link=c.twitter_prefix + user_name,
         description="Tweet from " + user_name,
@@ -84,27 +85,25 @@ def update_feed(user_name):
         feed_item_list=item_list
     )
     logging.debug("user name: " + user_name)
-    logging.debug("actual feed: " + feed)
 
     return feed
 
 
-def check_if_should_query(user_name):
+def check_if_should_query(cache_key):
     """
     Limit query to at most 1 time in 10 minutes.
-    Todo: refactor this implementation by using redis to both dedup and limit query speed.
+    1. Check if the username exist in cache (initially, cache does not contain anything)
+    2. key in cache: username, value: feed under this user
+    3. Check if current call is longer than 10 minutes based on build time of feed
+    4. If so, query Twitter api and update feed object in cache, otherwise, return the feed directly.
     :return: if service should query now
     """
-    global should_query_twitter
-    global started_time_twitter
 
-    if len(cache) == 0 or user_name not in cache.keys():
-        cache[user_name] = round(time.time() * 1000)  # put current time
+    # no item in cache or the query username does not exist
+    if len(fc.feed_cache) == 0 or cache_key not in fc.feed_cache.keys() or civ.check_should_query_twitter(
+            datetime.timestamp(fc.feed_cache[cache_key].lastBuildDate),
+            c.twitter_query_period):
         return True
-    else:
-        if civ.check_should_query_twitter(cache[user_name], c.twitter_query_period):
-            cache[user_name] = round(time.time() * 1000)
-            return True
 
     return False
 
@@ -116,19 +115,23 @@ def generate_rss_xml_response(user_name):
     :param user_name:
     :return:
     """
-    global response_twitter, started_time_twitter, user_name_check
-    should_call_api = check_if_should_query(user_name)
-    logging.info(
-        "Should query Twitter user " + user_name + " for this call: " +
-        str(should_call_api) +
-        ", current start time: " +
-        str(started_time_twitter)
-    )
-    if should_call_api is True:
-        feed = update_feed(user_name)
-        response_twitter = make_response(feed)
-        response_twitter.headers.set('Content-Type', 'application/rss+xml')
 
+    cache_key = 'twitter/' + user_name
+
+    should_call_api = check_if_should_query(cache_key)
+    logging.debug(
+        "Query Twitter user " + user_name + " for this call: " + str(should_call_api)
+    )
+    logging.debug("cache: " + str(fc.feed_cache))
+
+    if should_call_api is True:
+        feed = generate_news_rss_feed(user_name)  # update Twitter feed by Twitter username
+        fc.feed_cache[cache_key] = feed  # update cache by cache key
+    else:
+        feed = fc.feed_cache[cache_key]
+
+    response_twitter = make_response(feed.rss())
+    response_twitter.headers.set('Content-Type', 'application/rss+xml')
     return response_twitter
 
 
