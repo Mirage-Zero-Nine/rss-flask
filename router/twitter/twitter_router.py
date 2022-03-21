@@ -122,7 +122,7 @@ def generate_rss_xml_response(user_name):
     logging.debug(
         "Query Twitter user " + user_name + " for this call: " + str(should_call_api)
     )
-    logging.debug("cache: " + str(fc.feed_cache))
+    # logging.debug("cache: " + str(fc.feed_cache))
 
     if should_call_api is True:
         feed = generate_rss_feed(user_name)  # update Twitter feed by Twitter username
