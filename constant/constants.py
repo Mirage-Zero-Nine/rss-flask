@@ -7,7 +7,7 @@ currency_query_period = 10 * 60 * 1000  # 10 minutes
 reuters_query_period = 10 * 60 * 1000  # 10 minutes
 usgs_earthquake_query_period = 10 * 60 * 1000  # 10 minutes
 
-currency_query_page_count = 5  # query 6 pages for currency exchange price list
+currency_query_page_count = 2  # query 2 pages for currency exchange price list
 
 currency_time_convert_pattern = '%Y.%m.%d %H:%M:%S'
 zaobao_time_convert_pattern = "%Y年%m月%d日 %I:%M %p"

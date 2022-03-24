@@ -10,7 +10,7 @@ import utils.generate_xml as gxml
 import utils.time_converter as tc
 import utils.check_if_valid as civ
 import router.currency.currency_util as cu
-import data.feed_cache as fc
+import data.rss_cache as fc
 
 logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.DEBUG)
 
@@ -19,7 +19,7 @@ def generate_feed_rss():
     feed_item_object_list = []
     array = ["货币名称: ", "现汇买入价: ", "现钞买入价: ", "现汇卖出价: ", "现钞卖出价: ", "中行折算价: "]
     created_time_dedup = ''  # remove duplicated price
-    for i in range(c.currency_query_page_count):  # query first 6 pages
+    for i in range(c.currency_query_page_count):  # query first 2 pages
         page = i + 1
         payload_data = cu.get_page_header(page)
         soup = glc.post_request_with_payload(c.currency_search_link, c.html_parser, payload_data)
