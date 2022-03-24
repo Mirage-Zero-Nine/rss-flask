@@ -9,7 +9,7 @@ import data.feed_item_object as do
 import utils.generate_xml as gxml
 import utils.time_converter as tc
 import utils.check_if_valid as civ
-import data.feed_cache as fc
+import data.rss_cache as rc
 
 logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.DEBUG)
 
@@ -33,25 +33,31 @@ def get_articles_list():
 
 def get_individual_article(entry_list):
     for entry in entry_list:
-        soup = glc.get_link_content_with_bs_no_params(entry.link, c.html_parser)
-        description_list = soup.find_all(
-            "div",
-            {"class": "entry-content"}
-        )
-        description_text = ''
-        metadata_list = soup.find_all(
-            "div",
-            {'class': "entry-meta"}
-        )
-        # sample metadata: December 31, 2020 by The Day One Team
-        split_metadata = metadata_list[0].text.split(" by ")
-        entry.created_time = tc.convert_time_with_pattern(split_metadata[0].strip(),
-                                                          c.dayone_time_convert_pattern)
-        entry.author = split_metadata[1]
-        for description in description_list:
-            for text in description.find_all('p'):
-                description_text += str(text)
-        entry.description = description_text
+        if entry.guid in rc.feed_item_cache.keys():
+            entry = rc.feed_item_cache[entry.guid]
+        else:
+
+            soup = glc.get_link_content_with_bs_no_params(entry.link, c.html_parser)
+            description_list = soup.find_all(
+                "div",
+                {"class": "entry-content"}
+            )
+            description_text = ''
+            metadata_list = soup.find_all(
+                "div",
+                {'class': "entry-meta"}
+            )
+            # sample metadata: December 31, 2020 by The Day One Team
+            split_metadata = metadata_list[0].text.split(" by ")
+            entry.created_time = tc.convert_time_with_pattern(split_metadata[0].strip(),
+                                                              c.dayone_time_convert_pattern)
+            entry.author = split_metadata[1]
+            for description in description_list:
+                for text in description.find_all('p'):
+                    description_text += str(text)
+            entry.description = description_text
+
+            rc.feed_item_cache[entry.guid] = entry
 
 
 def generate_feed_rss():
@@ -75,8 +81,8 @@ def check_if_should_query(dayone_key):
     """
 
     # if it's the first query, or the last query happened more than 10 minutes, then query again
-    if len(fc.feed_cache) == 0 or dayone_key not in fc.feed_cache.keys() or civ.check_should_query_no_state(
-            datetime.timestamp(fc.feed_cache[dayone_key].lastBuildDate),
+    if len(rc.feed_cache) == 0 or dayone_key not in rc.feed_cache.keys() or civ.check_should_query_no_state(
+            datetime.timestamp(rc.feed_cache[dayone_key].lastBuildDate),
             c.currency_query_period
     ):
         return True
@@ -95,9 +101,9 @@ def get_rss_xml_response():
     logging.info("Query Day One Blog for this call: " + str(should_query_website))
     if should_query_website is True:
         feed = generate_feed_rss()
-        fc.feed_cache[dayone_key] = feed
+        rc.feed_cache[dayone_key] = feed
     else:
-        feed = fc.feed_cache[dayone_key]
+        feed = rc.feed_cache[dayone_key]
 
     response_currency = make_response(feed.rss())
     response_currency.headers.set('Content-Type', 'application/rss+xml')

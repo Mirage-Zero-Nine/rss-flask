@@ -9,3 +9,10 @@ Usage:
 """
 
 feed_cache = {}
+
+"""
+In memory cache to cache the feed item. This could reduce the website query, also reduce the waiting time.
+- key: guid of feed item
+- value: feed item
+"""
+feed_item_cache = {}

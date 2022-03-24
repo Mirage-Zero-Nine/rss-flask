@@ -9,7 +9,7 @@ import utils.generate_xml as gxml
 import utils.time_converter as tc
 import utils.check_if_valid as civ
 import utils.get_link_content as glc
-import data.feed_cache as fc
+import data.rss_cache as fc
 
 logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.DEBUG)
 

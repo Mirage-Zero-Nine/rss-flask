@@ -10,7 +10,7 @@ import utils.time_converter as tc
 import router.twitter.twitter_utils as tu
 import utils.check_if_valid as civ
 import data.feed_item_object as do
-import data.feed_cache as fc
+import data.rss_cache as fc
 
 logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.DEBUG)
 
