@@ -8,6 +8,7 @@ reuters_query_period = 10 * 60 * 1000  # 10 minutes
 usgs_earthquake_query_period = 10 * 60 * 1000  # 10 minutes
 
 currency_query_page_count = 2  # query 2 pages for currency exchange price list
+twitter_query_page_count = 3
 
 currency_time_convert_pattern = '%Y.%m.%d %H:%M:%S'
 zaobao_time_convert_pattern = "%Y年%m月%d日 %I:%M %p"
@@ -24,10 +25,16 @@ tweet_field = "tweet.fields"
 expansions = "expansions"
 media_fields = "media.fields"
 place_fields = "place.fields"
+referenced_tweet = "referenced_tweets"
+retweet = "retweeted"
+replied_to = "replied_to"
+exclude_retweet = "excludeRetweet"
+exclude_reply = "excludeReply"
 
 data = "data"
 created_at = "created_at"
 tweet_id = "id"
+reference_tweet_type = "type"
 
 twitter_token = "twitter_token"
 token = "token"

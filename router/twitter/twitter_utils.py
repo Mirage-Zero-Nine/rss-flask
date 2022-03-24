@@ -28,7 +28,7 @@ def get_params():
     # source, text, and withheld
     return {
         c.tweet_field: "referenced_tweets,created_at",
-        c.expansions: "referenced_tweets.id"
+        c.expansions: "referenced_tweets.id,attachments.media_keys"
     }
 
 

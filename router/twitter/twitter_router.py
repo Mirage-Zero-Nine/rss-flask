@@ -36,7 +36,6 @@ def get_requested_user_timeline_list_by_user_id(user_id, next_page_token):
         params = tu.get_params_with_next_page_token(next_page_token)
     json_response = call_twitter_api(c.get_tweet_by_user_id, user_id, params)
     # print(json.dumps(json_response, indent=4, sort_keys=True))
-
     return json_response
 
 
@@ -49,33 +48,68 @@ def get_tweet_by_tweet_id(tweet_id_list):
     return tweet_list
 
 
-def build_item_list(feed_item_list, data, user_name):
-    for entry in data[c.data]:
-        tweet_url = c.tweet_link_prefix + entry["id"]
-        feed_item = do.FeedItem(
-            title=tu.generate_title(entry["text"]),
-            link=tweet_url,
-            description=entry["text"],
-            author=user_name,
-            guid=tweet_url,
-            created_time=tc.convert_time_twitter(entry[c.created_at]),
-        )
-        feed_item_list.append(feed_item)
+def build_item_list(feed_item_list, data, user_name, request_arg):
+    exclude_retweet = False
+    exclude_reply = False
+    try:
+        exclude_retweet = request_arg[c.exclude_retweet]
+    except KeyError:
+        logging.info("Not getting excludeRetweet parameter. Treated as false.")
+
+    try:
+        exclude_reply = request_arg[c.exclude_reply]
+    except KeyError:
+        logging.info("Not getting excludeReply parameter. Treated as false.")
+
+    for tweet_item in data[c.data]:
+        tweet_url = c.tweet_link_prefix + tweet_item["id"]
+        is_retweet = False
+        is_reply = False
+        try:
+            tweet_type = tweet_item[c.referenced_tweet][0][c.reference_tweet_type]
+            if tweet_type == c.retweet:
+                is_retweet = True
+            if tweet_type == c.replied_to:
+                is_reply = True
+        except KeyError:
+            logging.info("no reference_tweet found.")
+
+        if exclude_retweet and is_retweet:
+            continue
+        elif exclude_reply and is_reply:
+            continue
+        else:
+            feed_item = do.FeedItem(
+                title=tu.generate_title(tweet_item["text"]),
+                link=tweet_url,
+                description=tweet_item["text"],
+                author=user_name,
+                guid=tweet_url,
+                created_time=tc.convert_time_twitter(tweet_item[c.created_at]),
+            )
+            feed_item_list.append(feed_item)
 
 
-def generate_rss_feed(user_name):
+def generate_rss_feed(user_name, request_arg):
     """
     :param user_name:
     :return: used in cache value, so return feed object instead of rss string.
     """
     user_id = get_twitter_user_id_by_name(user_name)
-    response = get_requested_user_timeline_list_by_user_id(user_id, None)
     item_list = []
-    build_item_list(item_list, response, user_name)
-    # todo: replace below logic to a loop to control how many pages need to query
-    next_page_token = response[c.meta][c.next_token]
-    response = get_requested_user_timeline_list_by_user_id(user_id, next_page_token)
-    build_item_list(item_list, response, user_name)
+    response = None
+    for i in range(0, c.twitter_query_page_count):
+        if i == 0:
+            response = get_requested_user_timeline_list_by_user_id(user_id, None)
+        else:
+            next_page_token = response[c.meta][c.next_token]
+            response = get_requested_user_timeline_list_by_user_id(user_id, next_page_token)
+        build_item_list(item_list, response, user_name, request_arg)
+
+    # build_item_list(item_list, response, user_name)
+    # next_page_token = response[c.meta][c.next_token]
+    # response = get_requested_user_timeline_list_by_user_id(user_id, next_page_token)
+    # build_item_list(item_list, response, user_name)
 
     feed = gxml.generate_feed_object(
         title="Twitter - " + user_name,
@@ -108,12 +142,13 @@ def check_if_should_query(cache_key):
     return False
 
 
-def generate_rss_xml_response(user_name):
+def generate_rss_xml_response(user_name, request_arg):
     """
     Entry point of the router.
     Check if current call needs to query (1 time in 10 minutes at most), then query Twitter API.
     :param user_name:
-    :return:
+    :param request_arg: request parameters, including exclude retweet/reply
+    :return: xml response
     """
 
     cache_key = 'twitter/' + user_name
@@ -125,7 +160,7 @@ def generate_rss_xml_response(user_name):
     # logging.debug("cache: " + str(fc.feed_cache))
 
     if should_call_api is True:
-        feed = generate_rss_feed(user_name)  # update Twitter feed by Twitter username
+        feed = generate_rss_feed(user_name, request_arg)  # update Twitter feed by Twitter username
         fc.feed_cache[cache_key] = feed  # update cache by cache key
     else:
         feed = fc.feed_cache[cache_key]

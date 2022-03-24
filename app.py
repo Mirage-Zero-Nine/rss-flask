@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request
 
 from router.twitter import twitter_router
 from router.zaobao import zaobao_realtime_router
@@ -40,9 +40,9 @@ def reuters():
     return xml_response
 
 
-@app.route('/twitter/<user_name>')
+@app.route('/twitter/<user_name>', methods=['GET'])
 def twitter(user_name):
-    xml_response = twitter_router.generate_rss_xml_response(user_name)
+    xml_response = twitter_router.generate_rss_xml_response(user_name, request.args)
     return xml_response
 
 
