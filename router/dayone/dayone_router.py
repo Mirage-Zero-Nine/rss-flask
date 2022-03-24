@@ -25,18 +25,21 @@ def get_articles_list():
     for entry in entry_list:
         title = entry.find("a").text
         link = entry.find('a')['href']
-        feed_item = do.FeedItem(title=title, link=link, guid=link)
-        feed_item_list.append(feed_item)
+
+        if link in rc.feed_item_cache.keys():
+            logging.info("getting cache item with key: " + link)
+            feed_item_list.append(rc.feed_item_cache[link])
+        else:
+            logging.info("key: " + link + " not found in the cache.")
+            feed_item = do.FeedItem(title=title, link=link, guid=link)
+            feed_item_list.append(feed_item)
 
     return feed_item_list
 
 
 def get_individual_article(entry_list):
     for entry in entry_list:
-        if entry.guid in rc.feed_item_cache.keys():
-            entry = rc.feed_item_cache[entry.guid]
-        else:
-
+        if entry.description is None:
             soup = glc.get_link_content_with_bs_no_params(entry.link, c.html_parser)
             description_list = soup.find_all(
                 "div",
