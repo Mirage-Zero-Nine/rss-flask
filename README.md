@@ -2,13 +2,7 @@
 
 ## What is this?
 
-This is a web service that can generate RSS XML for user to subscribe.
-
-It's only a small demo for now, no database is involved at this point (which should be). Only one router (Twitter) completed. More routers may be added later.
-
-## What's the purpose?
-
-For now, the reason I built this is to have a stable Twitter RSS subscription service to monitor certain public service account (like local police department).
+This is a simple web service written in Python to generate RSS feed for websites. Currently only few websites are supported (see `app.py` for details). I'm trying to add more routers to the service.
 
 ## Deployment
 
@@ -23,7 +17,6 @@ For now, the reason I built this is to have a stable Twitter RSS subscription se
 - Build docker image: `docker build -t YOUR_IMAGE_NAME .`
 - Start container: `docker run -d --restart=always --name=YOUR_CONTAINER_NAME -p 5000:5000 YOUR_IMAGE_NAME:latest`.
 - Now you can access the RSS file via `localhost:5000/PATH_TO_ROUTER` to access RSS router.
-
 
 ## Dependency
 
