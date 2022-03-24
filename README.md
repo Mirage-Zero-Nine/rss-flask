@@ -34,3 +34,7 @@ See `app.py` for router path.
 ## Known Issue
 - No demo provided for this service. You will need to deploy the service on your own computer, or a cloud host (e.g.: Amazon EC2).
 - RSS feed time may not be incorrect since I'm still trying to figure out how to correctly set timezone info in `datetime` object. The cloud host I used to deploy this service use UTC and you may need to align with that to avoid timezone issue.  
+
+## One more thing
+
+Actually most of the news websites are providing their own RSS feed for users to subscribe. However, not for the media in China.. That's the original reason why I want to create this tiny RSS service and you can see most of the routers are linked to the website in China.
