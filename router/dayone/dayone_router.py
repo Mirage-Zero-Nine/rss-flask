@@ -27,20 +27,23 @@ def get_articles_list():
         link = entry.find('a')['href']
 
         if link in rc.feed_item_cache.keys():
-            logging.info("getting cache item with key: " + link)
+            # logging.info("getting cache item with key: " + link)
             feed_item_list.append(rc.feed_item_cache[link])
         else:
-            logging.info("key: " + link + " not found in the cache.")
-            feed_item = do.FeedItem(title=title, link=link, guid=link)
+            # logging.info("key: " + link + " not found in the cache.")
+            feed_item = do.FeedItem(title=title,
+                                    link=link,
+                                    guid=link,
+                                    withContent=False)
             feed_item_list.append(feed_item)
 
     return feed_item_list
 
 
 def get_individual_article(entry_list):
-    for entry in entry_list:
-        if entry.description is None:
-            soup = glc.get_link_content_with_bs_no_params(entry.link, c.html_parser)
+    for post in entry_list:
+        if post.withContent is False:
+            soup = glc.get_link_content_with_bs_no_params(post.link, c.html_parser)
             description_list = soup.find_all(
                 "div",
                 {"class": "entry-content"}
@@ -52,15 +55,16 @@ def get_individual_article(entry_list):
             )
             # sample metadata: December 31, 2020 by The Day One Team
             split_metadata = metadata_list[0].text.split(" by ")
-            entry.created_time = tc.convert_time_with_pattern(split_metadata[0].strip(),
+            post.created_time = tc.convert_time_with_pattern(split_metadata[0].strip(),
                                                               c.dayone_time_convert_pattern)
-            entry.author = split_metadata[1]
+            post.author = split_metadata[1]
             for description in description_list:
                 for text in description.find_all('p'):
                     description_text += str(text)
-            entry.description = description_text
+            post.description = description_text
+            post.withContent = True
 
-            rc.feed_item_cache[entry.guid] = entry
+            rc.feed_item_cache[post.guid] = post
 
 
 def generate_feed_rss():
@@ -86,7 +90,7 @@ def check_if_should_query(dayone_key):
     # if it's the first query, or the last query happened more than 10 minutes, then query again
     if len(rc.feed_cache) == 0 or dayone_key not in rc.feed_cache.keys() or civ.check_should_query_no_state(
             datetime.timestamp(rc.feed_cache[dayone_key].lastBuildDate),
-            c.currency_query_period
+            c.dayone_query_period
     ):
         return True
 

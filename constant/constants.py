@@ -1,6 +1,6 @@
 # router query period
 jandan_query_period = 2 * 60 * 60 * 1000  # 2 hours
-dayone_query_period = 6 * 60 * 60 * 1000  # 6 hours
+dayone_query_period = 2 * 60 * 60 * 1000  # 2 hours
 twitter_query_period = 10 * 60 * 1000  # 10 minutes
 zaobao_query_period = 15 * 60 * 1000  # 15 minutes
 currency_query_period = 10 * 60 * 1000  # 10 minutes

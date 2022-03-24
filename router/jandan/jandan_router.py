@@ -9,7 +9,7 @@ import utils.generate_xml as gxml
 import utils.time_converter as tc
 import utils.check_if_valid as civ
 import utils.get_link_content as glc
-import data.rss_cache as fc
+import data.rss_cache as rc
 
 logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.DEBUG)
 
@@ -29,32 +29,47 @@ def get_feed_item_list():
             "div",
             {"class": "time_s"}
         )[0].find('a').text
-        if "每日好价" not in title:
-            item = do.FeedItem(title=title, link=link, author=author, guid=link)
-            feed_item_list.append(item)
+
+        if "日好价" not in title:
+            if link in rc.feed_item_cache.keys():
+                # logging.info("getting cache item with key: " + link)
+                feed_item = rc.feed_item_cache[link]
+            else:
+                # logging.info("key: " + link + " not found in the cache.")
+                feed_item = do.FeedItem(title=title,
+                                        link=link,
+                                        author=author,
+                                        guid=link,
+                                        withContent=False)
+
+            feed_item_list.append(feed_item)
 
     return feed_item_list
 
 
 def get_individual_post_content(post_list):
-    for item in post_list:
-        soup = glc.get_link_content_with_bs_no_params(item.link, c.html_parser)
-        description_list = soup.find_all(
-            "div",
-            {"class": "post f"}
-        )  # type is bs4.element.ResultSet
-        # created time sample:
-        # 2022.03.13 , 14:32
-        created_time = description_list[0].find_all(
-            "div",
-            {"class": "time_s"}
-        )[0].text.split('@')[1].strip()
-        item.created_time = tc.convert_time_with_pattern(created_time, c.jandan_time_convert_pattern, 8)
-        description_string = ''
-        for paragraph in description_list:
-            for p in paragraph.find_all('p'):
-                description_string += str(p)
-        item.description = description_string
+    for post in post_list:
+        if post.withContent is False:
+            soup = glc.get_link_content_with_bs_no_params(post.link, c.html_parser)
+            description_list = soup.find_all(
+                "div",
+                {"class": "post f"}
+            )  # type is bs4.element.ResultSet
+            # created time sample:
+            # 2022.03.13 , 14:32
+            created_time = description_list[0].find_all(
+                "div",
+                {"class": "time_s"}
+            )[0].text.split('@')[1].strip()
+            post.created_time = tc.convert_time_with_pattern(created_time, c.jandan_time_convert_pattern, 8)
+            description_string = ''
+            for paragraph in description_list:
+                for p in paragraph.find_all('p'):
+                    description_string += str(p)
+            post.description = description_string
+            post.withContent = True
+
+            rc.feed_item_cache[post.guid] = post
 
 
 def generate_feed_rss():
@@ -78,9 +93,9 @@ def check_if_should_query(jandan_key):
     """
 
     # if it's the first query, or the last query happened more than 10 minutes, then query again
-    if len(fc.feed_cache) == 0 or jandan_key not in fc.feed_cache.keys() or civ.check_should_query_no_state(
-            datetime.timestamp(fc.feed_cache[jandan_key].lastBuildDate),
-            c.currency_query_period
+    if len(rc.feed_cache) == 0 or jandan_key not in rc.feed_cache.keys() or civ.check_should_query_no_state(
+            datetime.timestamp(rc.feed_cache[jandan_key].lastBuildDate),
+            c.jandan_query_period
     ):
         return True
 
@@ -98,9 +113,9 @@ def get_rss_xml_response():
     logging.info("Query jandan for this call: " + str(should_query_website))
     if should_query_website is True:
         feed = generate_feed_rss()
-        fc.feed_cache[jandan_key] = feed
+        rc.feed_cache[jandan_key] = feed
     else:
-        feed = fc.feed_cache[jandan_key]
+        feed = rc.feed_cache[jandan_key]
 
     response_currency = make_response(feed.rss())
     response_currency.headers.set('Content-Type', 'application/rss+xml')
