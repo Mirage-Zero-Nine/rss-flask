@@ -6,6 +6,7 @@ zaobao_query_period = 15 * 60 * 1000  # 15 minutes
 currency_query_period = 10 * 60 * 1000  # 10 minutes
 reuters_query_period = 10 * 60 * 1000  # 10 minutes
 usgs_earthquake_query_period = 10 * 60 * 1000  # 10 minutes
+zhihu_query_period = 4 * 60 * 60 * 1000  # 4 hours
 
 currency_query_page_count = 2  # query 2 pages for currency exchange price list
 twitter_query_page_count = 3
@@ -95,3 +96,15 @@ reuters_header = {
 }
 
 usgs_earthquake_link = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson"
+
+zhihu_header = {
+    "Host": "daily.zhihu.com",
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:98.0) Gecko/20100101 Firefox/98.0",
+    "Accept": 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+    "Accept-Language": "en-US,en;q=0.5",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Connection": "keep-alive"
+}
+
+zhihu_story_prefix = "https://daily.zhihu.com"
+zhihu_filter = "瞎扯 · "
