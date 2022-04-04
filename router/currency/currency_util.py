@@ -1,4 +1,4 @@
-import constant.constants as c
+import utils.router_constants as c
 
 
 def get_page_header(page):

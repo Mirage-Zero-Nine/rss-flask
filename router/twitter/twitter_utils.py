@@ -1,6 +1,6 @@
 import yaml
 
-from constant import constants as c
+from utils import router_constants as c
 
 """
 static methods for twitter router

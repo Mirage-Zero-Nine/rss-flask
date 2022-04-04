@@ -3,7 +3,7 @@ import urllib.request
 
 from bs4 import BeautifulSoup
 
-import constant.constants as c
+import utils.router_constants as c
 
 
 def get_link_content_with_bs_no_params(link, parser=c.html_parser):

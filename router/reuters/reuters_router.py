@@ -4,7 +4,7 @@ import html
 from flask import make_response
 from datetime import datetime
 
-import constant.constants as c
+import utils.router_constants as c
 import utils.get_link_content as glc
 import data.feed_item_object as do
 import utils.generate_xml as gxml

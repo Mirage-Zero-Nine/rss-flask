@@ -2,7 +2,7 @@ from datetime import datetime
 import datetime as dt
 import pytz
 
-import constant.constants as c
+import utils.router_constants as c
 
 
 def convert_time_twitter(created_time_string):

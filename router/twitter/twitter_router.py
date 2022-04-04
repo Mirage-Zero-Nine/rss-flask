@@ -4,7 +4,7 @@ import logging
 from flask import make_response
 from datetime import datetime
 
-import constant.constants as c
+import utils.router_constants as c
 import utils.generate_xml as gxml
 import utils.time_converter as tc
 import router.twitter.twitter_utils as tu
