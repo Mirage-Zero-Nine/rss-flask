@@ -100,10 +100,10 @@ def get_rss_xml_response():
         fc.feed_cache[zhihu_key] = feed
     else:
         feed = fc.feed_cache[zhihu_key]
-    #
+
     zhihu_response = make_response(feed.rss())
     zhihu_response.headers.set('Content-Type', 'application/rss+xml')
-    #
+
     return zhihu_response
 
 
