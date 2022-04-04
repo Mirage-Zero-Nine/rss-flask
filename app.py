@@ -60,7 +60,7 @@ def zaobao(region):
 
 @app.route('/zhihu/daily')
 def zhihu():
-    xml_response = zhihu_router.get_rss_xml_response()
+    xml_response = zhihu_daily_router.get_rss_xml_response()
     return xml_response
 
 
