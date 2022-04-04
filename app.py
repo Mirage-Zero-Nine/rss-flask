@@ -7,6 +7,7 @@ from router.jandan import jandan_router
 from router.currency import currency_router
 from router.reuters import reuters_router
 from router.earthquake import usgs_earthquake_router
+from router.zhihu import zhihu_daily_router
 
 app = Flask(__name__)
 
@@ -54,6 +55,12 @@ def zaobao(region):
     :return: realtime news xml based on region
     """
     xml_response = zaobao_realtime_router.get_rss_xml_response(region)
+    return xml_response
+
+
+@app.route('/zhihu/daily')
+def zhihu():
+    xml_response = zhihu_router.get_rss_xml_response()
     return xml_response
 
 
