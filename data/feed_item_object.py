@@ -6,14 +6,14 @@ class FeedItem:
                  author=None,
                  guid=None,
                  created_time=None,
-                 withContent=False):
+                 with_content=False):
         self.title = title
         self.link = link
         self.description = description  # main content in each feed
         self.author = author
         self.created_time = created_time  # required to be a datatime object
         self.guid = guid
-        self.withContent = withContent  # if current item has query the source url and fill with content
+        self.with_content = with_content  # if current item has query the source url and fill with content
 
     def __repr__(self):
         string = "title: " + self.title + '\n' + \

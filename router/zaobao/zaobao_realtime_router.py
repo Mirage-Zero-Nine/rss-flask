@@ -49,7 +49,7 @@ def get_news_list(region):
                 news_item = do.FeedItem(title=title,
                                         link=link,
                                         guid=link,
-                                        withContent=False)
+                                        with_content=False)
             output_news_list.append(news_item)
 
     logging.info("Final output length: " + str(len(output_news_list)))
@@ -59,7 +59,7 @@ def get_news_list(region):
 def get_individual_news_content(news_list):
     for item in news_list:
         # logging.info("Getting content from: " + item.link)
-        if item.withContent is False:
+        if item.with_content is False:
 
             soup = glc.get_link_content_with_bs_and_header(item.link, c.html_parser, c.zaobao_headers)
             post_list = soup.find_all(
@@ -95,7 +95,7 @@ def get_individual_news_content(news_list):
                 for text in post.find_all('p'):
                     news_text += str(text)
                 item.description = news_text
-            item.withContent = True
+            item.with_content = True
             rc.feed_item_cache[item.guid] = item
         # logging.debug("Post content: " + item.description)
 

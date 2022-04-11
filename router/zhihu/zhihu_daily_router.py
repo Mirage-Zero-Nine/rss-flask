@@ -31,7 +31,7 @@ def get_articles_list():
                 feed_item = do.FeedItem(
                     title=title,
                     link=c.zhihu_story_prefix + link,
-                    withContent=False,
+                    with_content=False,
                     guid=link
                 )
             article_list.append(feed_item)
@@ -41,14 +41,14 @@ def get_articles_list():
 
 def get_individual_article(entry_list):
     for entry in entry_list:
-        if entry.withContent is False:
+        if entry.with_content is False:
             soup = glc.get_link_content_with_urllib_request(entry.link)
             item_list = soup.find_all(
                 "div",
                 {"class": "content-inner"}
             )
             entry.description = item_list[0]
-            entry.withContent = True
+            entry.with_content = True
             entry.created_time = datetime.today()
 
             fc.feed_item_cache[entry.guid] = entry

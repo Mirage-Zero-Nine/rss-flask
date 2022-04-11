@@ -33,7 +33,7 @@ def get_articles_list():
                         title=title,
                         link=generate_link(link),
                         guid=link,
-                        withContent=False,
+                        with_content=False,
                         description='',
                         author='中华人民共和国驻洛杉矶总领事馆'
                     )
@@ -81,14 +81,14 @@ def extract_content(entry, link):
         paragraph = soup.find('div', {'id': 'News_Body_Txt_A'})
         for p in paragraph:
             entry.description = entry.description + "<p>" + p.text + "</p>"
-        entry.withContent = True
+        entry.with_content = True
         fc.feed_item_cache[entry.guid] = entry
 
 
 def get_individual_article(entry_list):
     for entry in entry_list:
         extract_content(entry, entry.link)
-        entry.withContent = True
+        entry.with_content = True
 
 
 def generate_feed_rss():

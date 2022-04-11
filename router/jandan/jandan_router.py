@@ -40,7 +40,7 @@ def get_feed_item_list():
                                         link=link,
                                         author=author,
                                         guid=link,
-                                        withContent=False)
+                                        with_content=False)
 
             feed_item_list.append(feed_item)
 
@@ -49,7 +49,7 @@ def get_feed_item_list():
 
 def get_individual_post_content(post_list):
     for post in post_list:
-        if post.withContent is False:
+        if post.with_content is False:
             soup = glc.get_link_content_with_bs_no_params(post.link, c.html_parser)
             description_list = soup.find_all(
                 "div",
@@ -67,7 +67,7 @@ def get_individual_post_content(post_list):
                 for p in paragraph.find_all('p'):
                     description_string += str(p)
             post.description = description_string
-            post.withContent = True
+            post.with_content = True
 
             rc.feed_item_cache[post.guid] = post
 
