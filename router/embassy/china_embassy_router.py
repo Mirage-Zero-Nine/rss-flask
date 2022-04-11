@@ -63,7 +63,7 @@ def extract_content(entry, link):
         soup = glc.get_link_content_with_urllib_request(link)
 
         created_time = soup.find('div', {'class': 'date text-center'}).text
-        entry.created_time = tc.convert_time_with_pattern(created_time, '%Y/%m/%d %H:%M', -8)
+        entry.created_time = tc.convert_time_with_pattern(created_time, '%Y/%m/%d %H:%M', 8)
 
         paragraph = soup.find_all('p', {'class': 'western'})
         entry.description = paragraph[0].text
@@ -73,11 +73,11 @@ def extract_content(entry, link):
         if len(created_time) == 0:
             try:
                 text = soup.find('div', {'id': 'News_Body_subitle'}).text.split('：')[1]
-                entry.created_time = tc.convert_time_with_pattern(text, '%Y/%m/%d', -8)
+                entry.created_time = tc.convert_time_with_pattern(text, '%Y/%m/%d', 8)
             except AttributeError:
                 pass
         else:
-            entry.created_time = tc.convert_time_with_pattern(created_time, '%Y-%m-%d %H:%M', -8)
+            entry.created_time = tc.convert_time_with_pattern(created_time, '%Y-%m-%d %H:%M', 8)
         paragraph = soup.find('div', {'id': 'News_Body_Txt_A'})
         for p in paragraph:
             entry.description = entry.description + "<p>" + p.text + "</p>"
