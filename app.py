@@ -8,6 +8,7 @@ from router.currency import currency_router
 from router.reuters import reuters_router
 from router.earthquake import usgs_earthquake_router
 from router.zhihu import zhihu_daily_router
+from router.embassy import china_embassy_router
 
 app = Flask(__name__)
 
@@ -27,6 +28,12 @@ def dayone():
 @app.route('/earthquake')
 def earthquake():
     xml_response = usgs_earthquake_router.get_rss_xml_response()
+    return xml_response
+
+
+@app.route('/embassy')
+def embassy():
+    xml_response = china_embassy_router.get_rss_xml_response()
     return xml_response
 
 

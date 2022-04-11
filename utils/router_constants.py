@@ -7,6 +7,7 @@ currency_query_period = 10 * 60 * 1000  # 10 minutes
 reuters_query_period = 10 * 60 * 1000  # 10 minutes
 usgs_earthquake_query_period = 10 * 60 * 1000  # 10 minutes
 zhihu_query_period = 4 * 60 * 60 * 1000  # 4 hours
+china_embassy_period = 4 * 60 * 60 * 1000  # 4 hours
 
 currency_query_page_count = 2  # query 2 pages for currency exchange price list
 twitter_query_page_count = 3
@@ -108,3 +109,6 @@ zhihu_header = {
 
 zhihu_story_prefix = "https://daily.zhihu.com"
 zhihu_filter = "瞎扯 · "
+
+china_embassy_filter = "雇员招聘启事"
+china_embassy_prefix = 'http://losangeles.china-consulate.org/tzgg'
