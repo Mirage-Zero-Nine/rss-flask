@@ -14,7 +14,7 @@ def convert_time_with_pattern(created_time_string, pattern, shift_hours=0):
     if shift_hours >= 0:  # convert it to UTC, for instance, UTC +1 -> shift_hour=1
         converted_time = converted_time - dt.timedelta(hours=shift_hours)
     else:
-        converted_time = converted_time + dt.timedelta(hours=shift_hours)
+        converted_time = converted_time + dt.timedelta(hours=abs(shift_hours))
     converted_time_with_timezone = dt.datetime(converted_time.year,
                                                converted_time.month,
                                                converted_time.day,
