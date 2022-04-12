@@ -1,6 +1,7 @@
 class FeedItem:
 
-    def __init__(self, title=None,
+    def __init__(self,
+                 title=None,
                  link=None,
                  description=None,
                  author=None,
@@ -20,6 +21,6 @@ class FeedItem:
                  "link: " + self.link + '\n' + \
                  "author: " + self.author + '\n' + \
                  "description: " + self.description + '\n' + \
-                 "created_time: " + self.created_time
+                 "created_time: " + str(self.created_time) + '\n'
 
         return string
