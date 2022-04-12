@@ -105,14 +105,14 @@ def generate_feed_rss():
     return feed
 
 
-def check_if_should_query(zaobao_key):
+def check_if_should_query(chinese_embassy_key):
     """
     Limit query to at most 1 time in 15 minutes.
     :return: if service should query now
     """
 
-    if len(fc.feed_cache) == 0 or zaobao_key not in fc.feed_cache.keys() or civ.check_should_query_no_state(
-            datetime.timestamp(fc.feed_cache[zaobao_key].lastBuildDate),
+    if len(fc.feed_cache) == 0 or chinese_embassy_key not in fc.feed_cache.keys() or civ.check_should_query_no_state(
+            datetime.timestamp(fc.feed_cache[chinese_embassy_key].lastBuildDate),
             c.china_embassy_period
     ):
         return True
