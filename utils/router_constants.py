@@ -8,7 +8,7 @@ reuters_query_period = 10 * 60 * 1000  # 10 minutes
 usgs_earthquake_query_period = 10 * 60 * 1000  # 10 minutes
 zhihu_query_period = 4 * 60 * 60 * 1000  # 4 hours
 china_embassy_period = 4 * 60 * 60 * 1000  # 4 hours
-telegram_wechat_channel_period = 15 * 60 * 1000  # 10 minutes
+telegram_wechat_channel_period = 60 * 60 * 1000  # 60 minutes
 
 currency_query_page_count = 2  # query 2 pages for currency exchange price list
 twitter_query_page_count = 3
