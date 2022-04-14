@@ -43,12 +43,6 @@ def jandan():
     return jandan_router.get_rss_xml_response()
 
 
-@app.route('/reuters/realtime')
-def reuters():
-    xml_response = reuters_router.get_rss_xml_response()
-    return xml_response
-
-
 @app.route('/telegram/wechat')
 def telegram_wechat():
     xml_response = wechat_channel_router.get_rss_xml_response()
