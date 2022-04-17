@@ -39,6 +39,7 @@ def get_articles_list():
             feed_item = fc.feed_item_cache.get(link)
 
         logging.info("post title: " + feed_item.title)
+        logging.info("post link: " + feed_item.link)
         article_list.append(feed_item)
 
     return article_list
