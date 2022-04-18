@@ -40,6 +40,7 @@ def get_articles_list():
 
         logging.info("post title: " + feed_item.title)
         logging.info("post link: " + feed_item.link)
+        logging.info("post time: " + feed_item.created_time)
         article_list.append(feed_item)
 
     return article_list
@@ -47,14 +48,15 @@ def get_articles_list():
 
 def get_individual_article(entry_list):
     for entry in entry_list:
-        soup = glc.get_link_content_with_bs_no_params(entry.link)
-        content = soup.find_all('div', {'class': 'rich_media_content'})[0].find_all('p')
+        if entry.with_content is False:
+            soup = glc.get_link_content_with_bs_no_params(entry.link)
+            content = soup.find_all('div', {'class': 'rich_media_content'})[0].find_all('p')
 
-        for p in content:
-            entry.description += ('<p>' + p.text + '</p>')
+            for p in content:
+                entry.description += ('<p>' + p.text + '</p>')
 
-        entry.with_content = True
-        fc.feed_item_cache[entry.guid] = entry
+            entry.with_content = True
+            fc.feed_item_cache[entry.guid] = entry
 
 
 def generate_feed_rss():

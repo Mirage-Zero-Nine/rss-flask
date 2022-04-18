@@ -87,8 +87,9 @@ def extract_content(entry, link):
 
 def get_individual_article(entry_list):
     for entry in entry_list:
-        extract_content(entry, entry.link)
-        entry.with_content = True
+        if entry.with_content is False:
+            extract_content(entry, entry.link)
+            entry.with_content = True
 
 
 def generate_feed_rss():
