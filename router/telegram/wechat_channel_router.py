@@ -26,6 +26,7 @@ def get_articles_list():
         created_time_string = created_time[index].get('datetime')
         if link not in fc.feed_item_cache.keys():
             logging.info(link + " not found in cache.")
+            logging.info("Build created time: " + created_time)
             feed_item = do.FeedItem(
                 title=title,
                 link=link,
@@ -37,8 +38,9 @@ def get_articles_list():
             )
             index += 1
         else:
-            logging.info(link + " found in cache.")
+            logging.info(link + " was found in cache.")
             feed_item = fc.feed_item_cache.get(link)
+            logging.info("item was created at: " + str(feed_item.created_time))
 
         logging.info("post title: " + feed_item.title)
         logging.info("post link: " + feed_item.link)
