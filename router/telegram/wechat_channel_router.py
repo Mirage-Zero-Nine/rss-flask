@@ -53,6 +53,8 @@ def get_articles_list():
 
 def get_individual_article(entry_list):
     for entry in entry_list:
+        logging.info("title: " + entry.title)
+        logging.info("created at: " + str(entry.created_time))
         if entry.with_content is False:
             soup = glc.get_link_content_with_bs_no_params(entry.link)
             content = soup.find_all('div', {'class': 'rich_media_content'})[0].find_all('p')
