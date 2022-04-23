@@ -25,18 +25,27 @@ def get_articles_list():
         link = item.find_all('a')[1]['href']
         created_time_string = created_time[index].get('datetime')
         if link not in fc.feed_item_cache.keys():
+            logging.info(link + " not found in cache.")
+            logging.info("Build created time: " + created_time)
             feed_item = do.FeedItem(
                 title=title,
                 link=link,
                 description='',
-                author='',
+                author='笔吧评测室',
                 guid=link,
                 created_time=tc.convert_time_with_pattern(created_time_string, '%Y-%m-%dT%H:%M:%S%z'),
                 with_content=False
             )
             index += 1
         else:
+            logging.info(link + " was found in cache.")
             feed_item = fc.feed_item_cache.get(link)
+            logging.info("item was created at: " + str(feed_item.created_time))
+
+        logging.info("post title: " + feed_item.title)
+        logging.info("post link: " + feed_item.link)
+        logging.info("post time: " + str(feed_item.created_time))
+
         article_list.append(feed_item)
 
     return article_list
@@ -44,14 +53,15 @@ def get_articles_list():
 
 def get_individual_article(entry_list):
     for entry in entry_list:
-        soup = glc.get_link_content_with_bs_no_params(entry.link)
-        content = soup.find_all('div', {'class': 'rich_media_content'})[0].find_all('p')
+        if entry.with_content is False:
+            soup = glc.get_link_content_with_bs_no_params(entry.link)
+            content = soup.find_all('div', {'class': 'rich_media_content'})[0].find_all('p')
 
-        for p in content:
-            entry.description += ('<p>' + p.text + '</p>')
+            for p in content:
+                entry.description += ('<p>' + p.text + '</p>')
 
-        entry.with_content = True
-        fc.feed_item_cache[entry.guid] = entry
+            entry.with_content = True
+            fc.feed_item_cache[entry.guid] = entry
 
 
 def generate_feed_rss():
