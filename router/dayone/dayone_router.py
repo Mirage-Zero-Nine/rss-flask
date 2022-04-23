@@ -43,6 +43,7 @@ def get_articles_list():
 def get_individual_article(entry_list):
     for post in entry_list:
         if post.with_content is False:
+            logging.info("title: " + post.title)
             soup = glc.get_link_content_with_bs_no_params(post.link, c.html_parser)
             description_list = soup.find_all(
                 "div",
