@@ -33,7 +33,7 @@ def get_articles_list():
                         title=title,
                         link=generate_link(link),
                         guid=link,
-                        withContent=False,
+                        with_content=False,
                         description='',
                         author='中华人民共和国驻洛杉矶总领事馆'
                     )
@@ -63,7 +63,7 @@ def extract_content(entry, link):
         soup = glc.get_link_content_with_urllib_request(link)
 
         created_time = soup.find('div', {'class': 'date text-center'}).text
-        entry.created_time = tc.convert_time_with_pattern(created_time, '%Y/%m/%d %H:%M', 8)
+        entry.created_time = tc.convert_time_with_pattern(created_time, '%Y/%m/%d %H:%M', -8)
 
         paragraph = soup.find_all('p', {'class': 'western'})
         entry.description = paragraph[0].text
@@ -73,22 +73,23 @@ def extract_content(entry, link):
         if len(created_time) == 0:
             try:
                 text = soup.find('div', {'id': 'News_Body_subitle'}).text.split('：')[1]
-                entry.created_time = tc.convert_time_with_pattern(text, '%Y/%m/%d', 8)
+                entry.created_time = tc.convert_time_with_pattern(text, '%Y/%m/%d', -8)
             except AttributeError:
                 pass
         else:
-            entry.created_time = tc.convert_time_with_pattern(created_time, '%Y-%m-%d %H:%M', 8)
+            entry.created_time = tc.convert_time_with_pattern(created_time, '%Y-%m-%d %H:%M', -8)
         paragraph = soup.find('div', {'id': 'News_Body_Txt_A'})
         for p in paragraph:
             entry.description = entry.description + "<p>" + p.text + "</p>"
-        entry.withContent = True
+        entry.with_content = True
         fc.feed_item_cache[entry.guid] = entry
 
 
 def get_individual_article(entry_list):
     for entry in entry_list:
-        extract_content(entry, entry.link)
-        entry.withContent = True
+        if entry.with_content is False:
+            extract_content(entry, entry.link)
+            entry.with_content = True
 
 
 def generate_feed_rss():
@@ -105,14 +106,14 @@ def generate_feed_rss():
     return feed
 
 
-def check_if_should_query(zaobao_key):
+def check_if_should_query(chinese_embassy_key):
     """
     Limit query to at most 1 time in 15 minutes.
     :return: if service should query now
     """
 
-    if len(fc.feed_cache) == 0 or zaobao_key not in fc.feed_cache.keys() or civ.check_should_query_no_state(
-            datetime.timestamp(fc.feed_cache[zaobao_key].lastBuildDate),
+    if len(fc.feed_cache) == 0 or chinese_embassy_key not in fc.feed_cache.keys() or civ.check_should_query_no_state(
+            datetime.timestamp(fc.feed_cache[chinese_embassy_key].lastBuildDate),
             c.china_embassy_period
     ):
         return True

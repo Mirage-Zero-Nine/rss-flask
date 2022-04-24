@@ -47,7 +47,7 @@ def get_articles_list():
                 created_time=tc.convert_millisecond_to_datetime(field["dateMillis"]),
                 description=description,
                 guid=link,
-                withContent=False
+                with_content=False
             )
 
         feed_item_list.append(feed_item)
@@ -57,7 +57,7 @@ def get_articles_list():
 
 def get_individual_article(feed_item_list):
     for feed_item in feed_item_list:
-        if feed_item.withContent is False:
+        if feed_item.with_content is False:
             logging.info("need to retrieve from link: " + feed_item.link)
             soup = glc.get_link_content_with_bs_and_header(feed_item.link, c.html_parser, c.reuters_header)
             description_list = soup.find_all(
@@ -73,7 +73,7 @@ def get_individual_article(feed_item_list):
                     description += str(paragraph)
 
             feed_item.description = feed_item.description + description
-            feed_item.withContent = True
+            feed_item.with_content = True
 
             rc.feed_item_cache[feed_item.guid] = feed_item
 
