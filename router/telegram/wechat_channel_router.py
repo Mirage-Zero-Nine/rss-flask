@@ -36,12 +36,13 @@ def get_articles_list():
                 created_time=tc.convert_time_with_pattern(created_time_string, '%Y-%m-%dT%H:%M:%S%z'),
                 with_content=False
             )
-            index += 1
+
         else:
             logging.info(link + " was found in cache.")
             feed_item = fc.feed_item_cache.get(link)
             logging.info("item was created at: " + str(feed_item.created_time))
 
+        index += 1
         logging.info("post title: " + feed_item.title)
         logging.info("post link: " + feed_item.link)
         logging.info("post time: " + str(feed_item.created_time))
