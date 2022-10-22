@@ -50,16 +50,17 @@ def generate_feed_rss():
                         if index == 4:
                             title_text += array[index - 1] + cell.text.strip() + " "
                         # title_text += array[index - 1] + cell.text.strip() + " "
-
-            if item.description is not None and item.description != '' and created_time_dedup != str(item.created_time):
-                # logging.info("created time: " + item.created_time.split(" ")[1])
+            if item.description is not None and item.description != '' and created_time_dedup != (
+                    # only one price entry in each hour, to reduce entry number
+                    str(item.created_time.date()) + " " + str(item.created_time.hour)
+            ):
                 item.title = title_text
                 item.link = c.currency_link
                 item.author = "中国银行"
-                item.guid = item.created_time
+                item.guid = str(item.created_time.date()) + " " + str(item.created_time.hour)
                 item.pubDate = item.created_time,
                 feed_item_object_list.append(item)
-                created_time_dedup = str(item.created_time)
+                created_time_dedup = str(item.created_time.date()) + " " + str(item.created_time.hour)
 
     feed = gxml.generate_feed_object(
         title="中国银行外汇牌价 - 人民币兑美元",

@@ -23,6 +23,7 @@ def convert_time_with_pattern(created_time_string, pattern, shift_hours=0):
                                                converted_time.second,
                                                0,
                                                pytz.UTC)
+
     return converted_time_with_timezone
 
 
