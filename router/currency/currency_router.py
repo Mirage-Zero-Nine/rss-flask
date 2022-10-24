@@ -18,8 +18,7 @@ logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=lo
 def generate_feed_rss():
     feed_item_object_list = []
     array = ["货币名称: ", "现汇买入价: ", "现钞买入价: ", "现汇卖出价: ", "现钞卖出价: ", "中行折算价: "]
-    created_time_dedup = ''  # remove duplicated price
-    for i in range(c.currency_query_page_count):  # query first 2 pages
+    for i in range(c.currency_query_page_count):  # query first 10 pages
         page = i + 1
         payload_data = cu.get_page_header(page)
         soup = glc.post_request_with_payload(c.currency_search_link, c.html_parser, payload_data)
@@ -52,16 +51,19 @@ def generate_feed_rss():
                         # title_text += array[index - 1] + cell.text.strip() + " "
 
             if item.description is not None and item.description != '':
-                dedup_key = str(item.created_time.date()) + " " + str(item.created_time.hour)
+                dedup_key = str(item.created_time.date()) \
+                            + "-" \
+                            + str(item.created_time.hour) \
+                            + "-" \
+                            + str(item.created_time.minute // 30)
                 if dedup_key not in fc.feed_item_cache.keys():
-
                     item.title = title_text
                     item.link = c.currency_link
                     item.author = "中国银行"
                     item.guid = str(item.created_time.date()) + " " + str(item.created_time.hour)
                     item.pubDate = item.created_time,
-                    feed_item_object_list.append(item)
                     fc.feed_item_cache[dedup_key] = item
+                    feed_item_object_list.append(item)
 
     feed = gxml.generate_feed_object(
         title="中国银行外汇牌价 - 人民币兑美元",
