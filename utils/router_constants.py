@@ -70,13 +70,6 @@ jandan_page_prefix = "http://jandan.net/"
 
 currency_search_link = "https://srh.bankofchina.com/search/whpj/search_cn.jsp"
 currency_link = "http://www.boc.cn/sourcedb/whpj/"
-currency_usd_payload_data = {
-    "erectDate": "",
-    "nothing": "",
-    "pjname": "美元",
-    "head": "head_620.js",
-    "bottom": "bottom_591.js"
-}
 
 reuters_page_link = "https://cn.reuters.com/assets/jsonWireNews?limit=20"
 reuters_article_link_prefix = "https://cn.reuters.com"

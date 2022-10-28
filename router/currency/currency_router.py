@@ -5,19 +5,17 @@ from datetime import datetime
 
 import utils.router_constants as c
 import utils.get_link_content as glc
-import data.feed_item_object as do
 import utils.generate_xml as gxml
-import utils.time_converter as tc
 import utils.check_if_valid as civ
 import router.currency.currency_util as cu
 import data.rss_cache as fc
 
 logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.DEBUG)
+array = ["货币名称: ", "现汇买入价: ", "现钞买入价: ", "现汇卖出价: ", "现钞卖出价: ", "中行折算价: "]
 
 
 def generate_feed_rss():
     feed_item_object_list = []
-    array = ["货币名称: ", "现汇买入价: ", "现钞买入价: ", "现汇卖出价: ", "现钞卖出价: ", "中行折算价: "]
     for i in range(c.currency_query_page_count):  # query first 10 pages
         page = i + 1
         payload_data = cu.get_page_header(page)
@@ -26,45 +24,18 @@ def generate_feed_rss():
             'table'
         )
         table = exchange_price_list[1]
+
+        # find all rows contain currency price
         rows = table.findChildren(['th', 'tr'])
-        index = 0
+
         for row in rows:
-            title_text = ""
-            item = do.FeedItem(description='')
-            cells = row.findChildren('td')
-            for cell in cells:
-                if index == 6:
-                    index = 0
-                    item.created_time = tc.convert_time_with_pattern(cell.text.strip(),
-                                                                     c.currency_time_convert_pattern,
-                                                                     8)
-                    item.description = "发布时间: " + item.created_time.isoformat() + item.description
-                    continue
-                else:
-                    index += 1
-                    if index == 1:
-                        continue
-                    else:
-                        item.description = "<p>" + item.description + array[index - 1] + cell.text.strip() + "</p>"
-                        if index == 4:
-                            title_text += array[index - 1] + cell.text.strip() + " "
-                        # title_text += array[index - 1] + cell.text.strip() + " "
+            if cu.validate_row(row) is not None:
+                title_text = ""
+                item = cu.extract_row(row, title_text)
+                logging.info("item: " + str(item))
+                cu.item_dedup_and_add_to_list(item, feed_item_object_list)
 
-            if item.description is not None and item.description != '':
-                dedup_key = str(item.created_time.date()) \
-                            + "-" \
-                            + str(item.created_time.hour) \
-                            + "-" \
-                            + str(item.created_time.minute // 30)
-                if dedup_key not in fc.feed_item_cache.keys():
-                    item.title = title_text
-                    item.link = c.currency_link
-                    item.author = "中国银行"
-                    item.guid = str(item.created_time.date()) + " " + str(item.created_time.hour)
-                    item.pubDate = item.created_time,
-                    fc.feed_item_cache[dedup_key] = item
-                    feed_item_object_list.append(item)
-
+    # create rss feed object
     feed = gxml.generate_feed_object(
         title="中国银行外汇牌价 - 人民币兑美元",
         link=c.currency_link,
@@ -83,10 +54,10 @@ def check_if_should_query(currency_key):
     """
 
     # if it's the first query, or the last query happened more than 10 minutes, then query again
-    if len(fc.feed_cache) == 0 or currency_key not in fc.feed_cache.keys() or civ.check_should_query_no_state(
-            datetime.timestamp(fc.feed_cache[currency_key].lastBuildDate),
-            c.currency_query_period
-    ):
+    if len(fc.feed_cache) == 0 \
+            or currency_key not in fc.feed_cache.keys() \
+            or civ.check_should_query_no_state(datetime.timestamp(fc.feed_cache[currency_key].lastBuildDate),
+                                               c.currency_query_period):
         return True
 
     return False
@@ -95,7 +66,7 @@ def check_if_should_query(currency_key):
 def get_rss_xml_response(currency_name):
     """
     Entry point of the router.
-    Currently currency_name is not used.
+    Currently, currency_name is not used.
     :return: XML feed
     """
     currency_key = 'currency/' + currency_name
