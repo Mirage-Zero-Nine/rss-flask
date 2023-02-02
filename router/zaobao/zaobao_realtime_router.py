@@ -71,8 +71,8 @@ def get_individual_news_content(news_list):
                 {'class': 'title-byline byline'}
             )
             time_list = soup.find_all(
-                'h4',
-                {'class': 'title-byline date-published'}
+                'div',
+                {'class': 'story-postdate'}
             )
             news_text = ""
             try:
@@ -84,6 +84,8 @@ def get_individual_news_content(news_list):
                 news_text = image_tag + figcaption
             except IndexError:
                 logging.error("Getting error when trying to extract image from: " + item.link)
+
+            logging.info("time_list: " + str(time_list))
 
             item.created_time = tc.convert_time_with_pattern(time_list[0].text.split('/')[1].strip(),
                                                              c.zaobao_time_convert_pattern,
