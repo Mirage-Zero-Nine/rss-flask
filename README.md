@@ -8,12 +8,6 @@ This is a simple web service written in Python to generate RSS feed for websites
 
 - Create a directory: `mkdir YOUR_DIRECTORY_NAME`.
 - Move to the directory and clone this repo: `cd YOUR_DIRECTORY_NAME && git clone https://github.com/Mirage-Zero-Nine/rss-flask.git`.
-- Create a `authentication.yaml` (required only if you want to generate Twitter user feed) to store your Twitter BEARER_TOKEN:
-  Sample:
-  ```yaml
-  token:
-    twitter_token: YOUR_TOKEN_HERE
-  ```
 - Build docker image: `docker build -t YOUR_IMAGE_NAME .`
 - Start container: `docker run -d --restart=always --name=YOUR_CONTAINER_NAME -p 5000:5000 YOUR_IMAGE_NAME:latest`.
 - Now you can access the RSS file via `localhost:5000/PATH_TO_ROUTER` to access RSS router.
@@ -28,7 +22,6 @@ See `app.py` for router path.
 
 ### Parameters for router
 - `/currency/<currency_name>`: only support CNY to USD, `currency_name` is a placeholder for future usage.
-- `/twitter/<user_name>`: replace `user_name` with the Twitter username you want to subscribe. Support `excludeRetweet` and  `excludeReply` as query parameter. Sample usage: `/twitter/SOME_USER_NAME?excludeReply=true&excludeRetweet=true`.
 - `/zaobao/realtime/<region>`: two regions supported for now: `world` and `china`.
 
 ## Known Issue

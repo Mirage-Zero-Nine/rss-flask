@@ -49,16 +49,18 @@ def get_individual_article(entry_list):
                 "div",
                 {"class": "entry-content"}
             )
+
             description_text = ''
-            metadata_list = soup.find_all(
-                "div",
+
+            publish_date = soup.find_all(
+                "ul",
                 {'class': "entry-meta"}
-            )
-            # sample metadata: December 31, 2020 by The Day One Team
-            split_metadata = metadata_list[0].text.split(" by ")
-            post.created_time = tc.convert_time_with_pattern(split_metadata[0].strip(),
-                                                             c.dayone_time_convert_pattern)
-            post.author = split_metadata[1]
+            )[0].find('li', text=True).get_text(strip=True)
+
+            # sample date: August 17, 2023
+            post.created_time = tc.convert_time_with_pattern(publish_date, c.dayone_time_convert_pattern)
+            post.author = soup.find('meta', attrs={'name': 'author'})['content']
+
             for description in description_list:
                 for text in description.find_all('p'):
                     description_text += str(text)
@@ -101,7 +103,6 @@ def check_if_should_query(dayone_key):
 def get_rss_xml_response():
     """
     Entry point of the router.
-    Currently currency_name is not used.
     :return: XML feed
     """
     dayone_key = 'dayone/blog'
@@ -113,11 +114,7 @@ def get_rss_xml_response():
     else:
         feed = rc.feed_cache[dayone_key]
 
-    response_currency = make_response(feed.rss())
-    response_currency.headers.set('Content-Type', 'application/rss+xml')
+    response_dayone = make_response(feed.rss())
+    response_dayone.headers.set('Content-Type', 'application/rss+xml')
 
-    return response_currency
-
-
-if __name__ == '__main__':
-    get_rss_xml_response()
+    return response_dayone

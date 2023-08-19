@@ -47,11 +47,11 @@ def telegram_wechat():
     xml_response = wechat_channel_router.get_rss_xml_response()
     return xml_response
 
-
-@app.route('/twitter/<user_name>', methods=['GET'])
-def twitter(user_name):
-    xml_response = twitter_router.generate_rss_xml_response(user_name, request.args)
-    return xml_response
+# Twitter API is not usable
+# @app.route('/twitter/<user_name>', methods=['GET'])
+# def twitter(user_name):
+#     xml_response = twitter_router.generate_rss_xml_response(user_name, request.args)
+#     return xml_response
 
 
 @app.route('/zaobao/realtime/<region>')
