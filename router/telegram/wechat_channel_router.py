@@ -1,5 +1,4 @@
 import logging
-import yaml
 
 from flask import make_response
 from datetime import datetime
@@ -15,8 +14,8 @@ import data.rss_cache as fc
 logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.DEBUG)
 
 
-def get_articles_list():
-    soup = glc.get_link_content_with_bs_no_params(get_config_variable())
+def get_articles_list(link_config):
+    soup = glc.get_link_content_with_bs_no_params(link_config[c.telegram_wechat_channel_url])
     all_articles = soup.find_all('div', {'class': 'tgme_widget_message_text'})
     created_time = soup.find_all('time', {'class': 'time'})
     index = 0
@@ -54,22 +53,34 @@ def get_individual_article(entry_list):
         logging.info("title: " + entry.title)
         logging.info("created at: " + str(entry.created_time))
         if entry.with_content is False:
-            soup = glc.get_link_content_with_bs_no_params(entry.link)
-            content = soup.find_all('div', {'class': 'rich_media_content'})[0].find_all('p')
 
-            for p in content:
-                entry.description += ('<p>' + p.text + '</p>')
+            soup = glc.get_link_content_with_bs_no_params(entry.link).find('div', class_='rich_media_content')
+
+            # remove all the style in the tags
+            for tag in soup.find_all(['p', 'span', 'strong']):
+                tag.attrs.pop('style', None)
+                tag.attrs.pop('data-vmark', None)
+
+            # only extract image source link and class name for img tag
+            for img in soup.find_all('img'):
+                if img.has_attr('class'):
+                    img_class = img['class']
+                    img_data_src = img['data-src']
+                    img.attrs = {'class': img_class, 'data-src': img_data_src}
+
+            for paragraph in soup.find_all('p'):
+                entry.description += str(paragraph)
 
             entry.with_content = True
             fc.feed_item_cache[entry.guid] = entry
 
 
-def generate_feed_rss():
-    entry_list = get_articles_list()
+def generate_feed_rss(link_config):
+    entry_list = get_articles_list(link_config)
     get_individual_article(entry_list)
     feed = gxml.generate_feed_object(
         title='微信公众号',
-        link='https://t.me/s/wecharrssfeed',
+        link=c.telegram_wechat_channel_url,
         description='微信公众号',
         language='zh-cn',
         feed_item_list=entry_list
@@ -93,7 +104,7 @@ def check_if_should_query(wechat_channel_key):
     return False
 
 
-def get_rss_xml_response():
+def get_rss_xml_response(link_config):
     """
     Entry point of the router.
     :return: XML feed
@@ -106,7 +117,7 @@ def get_rss_xml_response():
     )
 
     if should_query_telegram is True:
-        feed = generate_feed_rss()
+        feed = generate_feed_rss(link_config)
         fc.feed_cache[telegram_wechat_channel_key] = feed
     else:
         feed = fc.feed_cache[telegram_wechat_channel_key]
@@ -115,16 +126,3 @@ def get_rss_xml_response():
     telegram_wechat_channel_response.headers.set('Content-Type', 'application/rss+xml')
 
     return telegram_wechat_channel_response
-
-
-def get_config_variable():
-    # arr = os.listdir()
-    # file path started from app.py
-    with open('authentication.yaml') as f:
-        # use safe_load instead load
-        config = yaml.safe_load(f)
-        return config[c.telegram_wechat_channel_url]
-
-
-if __name__ == '__main__':
-    generate_feed_rss()
