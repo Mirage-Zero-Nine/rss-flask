@@ -1,3 +1,4 @@
+import yaml
 from flask import Flask, request
 
 from router.twitter import twitter_router
@@ -11,6 +12,11 @@ from router.embassy import china_embassy_router
 from router.telegram import wechat_channel_router
 
 app = Flask(__name__)
+
+# file path started from app.py
+with open('authentication.yaml') as f:
+    # use safe_load instead load
+    config = yaml.safe_load(f)
 
 
 @app.route('/currency/<currency_name>')
@@ -44,8 +50,9 @@ def jandan():
 
 @app.route('/telegram/wechat')
 def telegram_wechat():
-    xml_response = wechat_channel_router.get_rss_xml_response()
+    xml_response = wechat_channel_router.get_rss_xml_response(config)
     return xml_response
+
 
 # Twitter API is not usable
 # @app.route('/twitter/<user_name>', methods=['GET'])
