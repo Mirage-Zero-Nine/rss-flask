@@ -1,7 +1,6 @@
 import yaml
-from flask import Flask, request
+from flask import Flask
 
-from router.twitter import twitter_router
 from router.zaobao import zaobao_realtime_router
 from router.dayone import dayone_router
 from router.jandan import jandan_router
@@ -10,6 +9,7 @@ from router.earthquake import usgs_earthquake_router
 from router.zhihu import zhihu_daily_router
 from router.embassy import china_embassy_router
 from router.telegram import wechat_channel_router
+from router.wsdot import wsdot_news_router
 
 app = Flask(__name__)
 
@@ -75,6 +75,12 @@ def zaobao(region):
 @app.route('/zhihu/daily')
 def zhihu():
     xml_response = zhihu_daily_router.get_rss_xml_response()
+    return xml_response
+
+
+@app.route('/wsdot/news')
+def wsdot():
+    xml_response = wsdot_news_router.get_rss_xml_response()
     return xml_response
 
 

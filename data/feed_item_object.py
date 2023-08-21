@@ -17,10 +17,19 @@ class FeedItem:
         self.with_content = with_content  # if current item has query the source url and fill with content
 
     def __repr__(self):
-        string = "title: " + self.title + '\n' + \
-                 "link: " + self.link + '\n' + \
-                 "author: " + self.author + '\n' + \
-                 "description: " + self.description + '\n' + \
-                 "created_time: " + str(self.created_time) + '\n'
+        # Handle None values by providing default values or converting to empty string
+        title = self.title or ""
+        link = self.link or ""
+        author = self.author or ""
+        created_time = str(self.created_time) if self.created_time else ""
+        description = self.description or ""
+        guid = self.guid or ""
+        with_content = str(self.with_content)
 
-        return string
+        return "title: " + title + '\n' + \
+            "link: " + link + '\n' + \
+            "author: " + author + '\n' + \
+            "created_time: " + created_time + '\n' + \
+            "description: " + description + '\n' + \
+            "guid: " + guid + '\n' + \
+            "with content? " + with_content
