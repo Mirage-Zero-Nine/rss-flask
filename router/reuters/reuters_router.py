@@ -110,7 +110,6 @@ def check_if_should_query(reuters_key):
 def get_rss_xml_response():
     """
     Entry point of the router.
-    Currently currency_name is not used.
     :return: XML feed
     """
     reuters_key = 'reuters/realtime/cn'
