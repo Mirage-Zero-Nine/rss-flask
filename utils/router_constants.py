@@ -9,6 +9,7 @@ usgs_earthquake_query_period = 10 * 60 * 1000  # 10 minutes
 zhihu_query_period = 4 * 60 * 60 * 1000  # 4 hours
 china_embassy_period = 4 * 60 * 60 * 1000  # 4 hours
 telegram_wechat_channel_period = 60 * 60 * 1000  # 60 minutes
+wsdot_news_period = 10 * 60 * 1000  # 10 minutes
 
 currency_query_page_count = 10  # query 10 pages, only save the latest price in each hour
 twitter_query_page_count = 5
@@ -108,3 +109,7 @@ china_embassy_filter = "雇员招聘启事"
 china_embassy_prefix = 'http://losangeles.china-consulate.org/tzgg'
 
 telegram_wechat_channel_url = 'telegram_wechat_channel_url'
+
+wsdot_news_link = "https://wsdot.wa.gov/about/news"
+wsdot_news_prefix = "https://wsdot.wa.gov"
+wsdotblog_blogspot = "https://wsdotblog.blogspot.com"
