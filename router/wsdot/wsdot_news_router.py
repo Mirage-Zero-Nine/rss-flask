@@ -133,12 +133,12 @@ def get_rss_xml_response():
     """
 
     wsdot_news_key = "/wsdot/news"
-    should_query_telegram = check_if_should_query(wsdot_news_key)
+    should_query_the_verge = check_if_should_query(wsdot_news_key)
     logging.info(
-        "Should query WSDOT News for this call: " + str(should_query_telegram)
+        "Should query WSDOT News for this call: " + str(should_query_the_verge)
     )
 
-    if should_query_telegram is True:
+    if should_query_the_verge is True:
         feed = generate_feed_rss()
         fc.feed_cache[wsdot_news_key] = feed
     else:

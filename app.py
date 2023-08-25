@@ -10,6 +10,7 @@ from router.zhihu import zhihu_daily_router
 from router.embassy import china_embassy_router
 from router.telegram import wechat_channel_router
 from router.wsdot import wsdot_news_router
+from router.the_verge import the_verge_router
 
 app = Flask(__name__)
 
@@ -81,6 +82,12 @@ def zhihu():
 @app.route('/wsdot/news')
 def wsdot():
     xml_response = wsdot_news_router.get_rss_xml_response()
+    return xml_response
+
+
+@app.route('/theverge')
+def the_verge():
+    xml_response = the_verge_router.get_rss_xml_response()
     return xml_response
 
 
