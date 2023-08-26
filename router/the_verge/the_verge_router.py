@@ -12,7 +12,6 @@ import data.rss_cache as fc
 
 import pytz
 
-
 logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.DEBUG)
 
 
@@ -20,15 +19,12 @@ def get_articles_list():
     articles_list = []
 
     for i in range(0, 3):
-
-        soup = glc.get_link_content_with_bs_no_params(c.the_verge + str(i))
-
+        soup = glc.get_link_content_with_bs_no_params(c.the_verge + str(i + 1))
         content_cards = soup.find_all("div", class_="duet--content-cards--content-card")
 
         for card in content_cards:
-
             # remove subscriber only news
-            if card.find('a', href='/command-line-newsletter') is False:
+            if card.find('a', href='/command-line-newsletter') is None:
                 h2_element = card.find("h2")
                 if h2_element:
                     time_element = card.find("time")
@@ -185,4 +181,4 @@ def get_rss_xml_response():
 
 
 if __name__ == '__main__':
-    get_articles_list()
+    get_individual_article(get_articles_list())
