@@ -21,7 +21,7 @@ def get_articles_list():
 
     for i in range(0, 3):
 
-        soup = glc.get_link_content_with_bs_no_params(c.the_verge)
+        soup = glc.get_link_content_with_bs_no_params(c.the_verge + str(i))
 
         content_cards = soup.find_all("div", class_="duet--content-cards--content-card")
 
