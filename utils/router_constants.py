@@ -115,5 +115,5 @@ wsdot_news_link = "https://wsdot.wa.gov/about/news"
 wsdot_news_prefix = "https://wsdot.wa.gov"
 wsdotblog_blogspot = "https://wsdotblog.blogspot.com"
 
-the_verge = "https://www.theverge.com/tech/archives/1"
+the_verge = "https://www.theverge.com/tech/archives/"
 the_verge_prefix = "https://www.theverge.com"
