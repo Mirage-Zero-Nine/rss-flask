@@ -19,43 +19,46 @@ logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=lo
 def get_articles_list():
     articles_list = []
 
-    for i in range(0, 2):
+    for i in range(0, 1):
 
         soup = glc.get_link_content_with_bs_no_params(c.the_verge)
 
         content_cards = soup.find_all("div", class_="duet--content-cards--content-card")
 
         for card in content_cards:
-            h2_element = card.find("h2")
-            if h2_element:
-                time_element = card.find("time")
-                created_time = time_element.get("datetime")
 
-                href = c.the_verge_prefix + h2_element.find("a")["href"]
+            # remove subscriber only news
+            if card.find('a', href='/command-line-newsletter') is False:
+                h2_element = card.find("h2")
+                if h2_element:
+                    time_element = card.find("time")
+                    created_time = time_element.get("datetime")
 
-                author_name = card.find(
-                    lambda tag: tag.name == "a" and tag.get("href", "").startswith("/authors/")).get_text()
+                    href = c.the_verge_prefix + h2_element.find("a")["href"]
 
-                extracted_datetime = datetime.strptime(str(created_time), "%Y-%m-%dT%H:%M:%S.%fZ").replace(
-                    tzinfo=pytz.utc)
+                    author_name = card.find(
+                        lambda tag: tag.name == "a" and tag.get("href", "").startswith("/authors/")).get_text()
 
-                if href not in fc.feed_item_cache.keys():
-                    logging.info(href + " not found in cache.")
-                    feed_item = do.FeedItem(
-                        title=h2_element.text,
-                        link=href,
-                        description="",
-                        author=author_name,
-                        guid=href,
-                        created_time=extracted_datetime,
-                        with_content=False
-                    )
+                    extracted_datetime = datetime.strptime(str(created_time), "%Y-%m-%dT%H:%M:%S.%fZ").replace(
+                        tzinfo=pytz.utc)
 
-                else:
-                    logging.info(href + " was found in cache.")
-                    feed_item = fc.feed_item_cache.get(href)
-                    logging.info("Post was created at: " + str(feed_item.created_time))
-                articles_list.append(feed_item)
+                    if href not in fc.feed_item_cache.keys():
+                        logging.info(href + " not found in cache.")
+                        feed_item = do.FeedItem(
+                            title=h2_element.text,
+                            link=href,
+                            description="",
+                            author=author_name,
+                            guid=href,
+                            created_time=extracted_datetime,
+                            with_content=False
+                        )
+
+                    else:
+                        logging.info(href + " was found in cache.")
+                        feed_item = fc.feed_item_cache.get(href)
+                        logging.info("Post was created at: " + str(feed_item.created_time))
+                    articles_list.append(feed_item)
 
     return articles_list
 
@@ -182,4 +185,4 @@ def get_rss_xml_response():
 
 
 if __name__ == '__main__':
-    get_individual_article(get_articles_list())
+    get_articles_list()
