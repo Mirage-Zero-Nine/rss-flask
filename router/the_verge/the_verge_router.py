@@ -19,7 +19,7 @@ logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=lo
 def get_articles_list():
     articles_list = []
 
-    for i in range(0, 1):
+    for i in range(0, 3):
 
         soup = glc.get_link_content_with_bs_no_params(c.the_verge)
 
