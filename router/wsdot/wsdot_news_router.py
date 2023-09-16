@@ -1,18 +1,16 @@
 import logging
 
 from flask import make_response
-from datetime import datetime
 
-import utils.router_constants as c
-import utils.get_link_content as glc
-import data.feed_item_object as do
-import utils.generate_xml as gxml
-import utils.check_if_valid as civ
-import utils.time_converter as tc
-import data.rss_cache as fc
+from data.feed_item_object import FeedItem
+from data.rss_cache import feed_cache, feed_item_cache
+from utils.cache_utilities import check_query
+from utils.xml_utilities import generate_feed_object
+from utils.get_link_content import get_link_content_with_bs_no_params
+from utils.router_constants import wsdot_news_period, wsdot_news_link, wsdot_news_prefix, wsdotblog_blogspot
+from utils.time_converter import convert_wsdot_news_time
 
-
-# logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.DEBUG)
+logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.DEBUG)
 
 
 def get_articles_list():
@@ -21,7 +19,7 @@ def get_articles_list():
     for i in range(0, 3):
 
         # Find all elements with class "views-row"
-        views_row_elements = glc.get_link_content_with_bs_no_params(c.wsdot_news_link + '?page=' + str(i)).find_all(
+        views_row_elements = get_link_content_with_bs_no_params(wsdot_news_link + '?page=' + str(i)).find_all(
             class_='views-row')
 
         # Loop through each views-row element
@@ -35,11 +33,10 @@ def get_articles_list():
                 title = h2.text
 
                 if href.startswith("/about/news"):
-                    href = c.wsdot_news_prefix + href
+                    href = wsdot_news_prefix + href
 
-                if href not in fc.feed_item_cache.keys():
-                    logging.info(href + " not found in cache.")
-                    feed_item = do.FeedItem(
+                if href not in feed_item_cache.keys():
+                    feed_item = FeedItem(
                         title=title,
                         link=href,
                         description='Washington State Department of Transportation - News',
@@ -50,9 +47,7 @@ def get_articles_list():
                     )
 
                 else:
-                    logging.info(href + " was found in cache.")
-                    feed_item = fc.feed_item_cache.get(href)
-                    logging.info("Post was created at: " + str(feed_item.created_time))
+                    feed_item = feed_item_cache.get(href)
                 articles_list.append(feed_item)
 
     return articles_list
@@ -60,23 +55,21 @@ def get_articles_list():
 
 def get_individual_article(entry_list):
     for entry in entry_list:
-        logging.info("title: " + entry.title)
-        logging.info("created at: " + str(entry.created_time))
         if entry.with_content is False:
-            if entry.link.startswith(c.wsdotblog_blogspot):
+            if entry.link.startswith(wsdotblog_blogspot):
                 extract_wsdot_blog(entry)
             else:
                 extract_other_news(entry)
 
-            fc.feed_item_cache[entry.guid] = entry
+            feed_item_cache[entry.guid] = entry
 
 
 def generate_feed_rss():
     entry_list = get_articles_list()
     get_individual_article(entry_list)
-    feed = gxml.generate_feed_object(
+    feed = generate_feed_object(
         title='WSDOT - News',
-        link=c.wsdot_news_link,
+        link=wsdot_news_link,
         description='Washington State Department of Transportation - News',
         language='en-us',
         feed_item_list=entry_list
@@ -85,23 +78,8 @@ def generate_feed_rss():
     return feed
 
 
-def check_if_should_query(wsdot_news_key):
-    """
-    Limit query to at most 1 time in 15 minutes.
-    :return: if service should query now
-    """
-
-    if len(fc.feed_cache) == 0 or wsdot_news_key not in fc.feed_cache.keys() or civ.check_should_query_no_state(
-            datetime.timestamp(fc.feed_cache[wsdot_news_key].lastBuildDate),
-            c.wsdot_news_period
-    ):
-        return True
-
-    return False
-
-
 def extract_wsdot_blog(entry):
-    soup = glc.get_link_content_with_bs_no_params(entry.link)
+    soup = get_link_content_with_bs_no_params(entry.link)
 
     # Find the post content using its class name
     post_content = soup.find('div', class_='post-body entry-content')
@@ -109,11 +87,11 @@ def extract_wsdot_blog(entry):
     entry.with_content = True
 
     date_header = soup.find('h2', class_='date-header').span.text
-    entry.created_time = tc.convert_wsdot_news_time(str(date_header), "%A, %B %d, %Y")
+    entry.created_time = convert_wsdot_news_time(str(date_header), "%A, %B %d, %Y")
 
 
 def extract_other_news(entry):
-    soup = glc.get_link_content_with_bs_no_params(entry.link)
+    soup = get_link_content_with_bs_no_params(entry.link)
 
     post_content = soup.find('div',
                              class_='field field--name-body field--type-text-with-summary field--label-hidden field--item')
@@ -123,7 +101,7 @@ def extract_other_news(entry):
     # Extract the datetime string from the time tag's datetime attribute
     datetime_div = soup.find('div', class_='field--name-field-date')
     datetime_string = datetime_div.find('time')['datetime']
-    entry.created_time = tc.convert_wsdot_news_time(str(datetime_string), "%Y-%m-%dT%H:%M:%SZ")
+    entry.created_time = convert_wsdot_news_time(str(datetime_string), "%Y-%m-%dT%H:%M:%SZ")
 
 
 def get_rss_xml_response():
@@ -133,16 +111,13 @@ def get_rss_xml_response():
     """
 
     wsdot_news_key = "/wsdot/news"
-    should_query_the_verge = check_if_should_query(wsdot_news_key)
-    logging.info(
-        "Should query WSDOT News for this call: " + str(should_query_the_verge)
-    )
+    should_query_the_verge = check_query(wsdot_news_key, wsdot_news_period, "WSDOT")
 
     if should_query_the_verge is True:
         feed = generate_feed_rss()
-        fc.feed_cache[wsdot_news_key] = feed
+        feed_cache[wsdot_news_key] = feed
     else:
-        feed = fc.feed_cache[wsdot_news_key]
+        feed = feed_cache[wsdot_news_key]
 
     wsdot_news_response = make_response(feed.rss())
     wsdot_news_response.headers.set('Content-Type', 'application/rss+xml')

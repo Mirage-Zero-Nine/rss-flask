@@ -3,16 +3,14 @@ import logging
 from flask import make_response
 from datetime import datetime
 
-import utils.router_constants
-import utils.router_constants
-import utils.get_link_content
-import data.feed_item_object
-import utils.generate_xml
-import data.rss_cache
-
 import pytz
 
+from data.feed_item_object import FeedItem
+from data.rss_cache import feed_item_cache, feed_cache
 from utils.cache_utilities import check_query
+from utils.xml_utilities import generate_feed_object
+from utils.get_link_content import get_link_content_with_bs_no_params
+from utils.router_constants import the_verge_tech_archive, the_verge_prefix, the_verge_period
 
 logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.DEBUG)
 
@@ -21,7 +19,7 @@ def get_articles_list():
     articles_list = []
 
     for i in range(0, 3):
-        soup = utils.get_link_content.get_link_content_with_bs_no_params(utils.router_constants.the_verge + str(i + 1))
+        soup = get_link_content_with_bs_no_params(the_verge_tech_archive + str(i + 1))
         content_cards = soup.find_all("div", class_="duet--content-cards--content-card")
 
         for card in content_cards:
@@ -32,7 +30,7 @@ def get_articles_list():
                     time_element = card.find("time")
                     created_time = time_element.get("datetime")
 
-                    href = utils.router_constants.the_verge_prefix + h2_element.find("a")["href"]
+                    href = the_verge_prefix + h2_element.find("a")["href"]
 
                     author_name = card.find(
                         lambda tag: tag.name == "a" and tag.get("href", "").startswith("/authors/")).get_text()
@@ -40,9 +38,8 @@ def get_articles_list():
                     extracted_datetime = datetime.strptime(str(created_time), "%Y-%m-%dT%H:%M:%S.%fZ").replace(
                         tzinfo=pytz.utc)
 
-                    if href not in data.rss_cache.feed_item_cache.keys():
-                        logging.info(href + " not found in cache.")
-                        feed_item = data.feed_item_object.FeedItem(
+                    if href not in feed_item_cache.keys():
+                        feed_item = FeedItem(
                             title=h2_element.text,
                             link=href,
                             description="",
@@ -53,9 +50,7 @@ def get_articles_list():
                         )
 
                     else:
-                        logging.info(href + " was found in cache.")
-                        feed_item = data.rss_cache.feed_item_cache.get(href)
-                        logging.info("Post was created at: " + str(feed_item.created_time))
+                        feed_item = feed_item_cache.get(href)
                     articles_list.append(feed_item)
 
     return articles_list
@@ -63,10 +58,8 @@ def get_articles_list():
 
 def get_individual_article(entry_list):
     for entry in entry_list:
-        logging.info("title: " + entry.title)
-        logging.info("created at: " + str(entry.created_time))
         if entry.with_content is False:
-            soup = utils.get_link_content.get_link_content_with_bs_no_params(entry.link)
+            soup = get_link_content_with_bs_no_params(entry.link)
             figure_tag = soup.find('figure', class_='duet--article--lede-image w-full')
 
             if figure_tag is not None:
@@ -85,7 +78,6 @@ def get_individual_article(entry_list):
                 if 'decoding' in img_element.attrs:
                     del img_element['decoding']
 
-                print("figure: {}".format(str(figure_tag)))
                 entry.description = str(img_element) + str(div_element)
 
             content = soup.find("div", class_="duet--article--article-body-component-container")
@@ -126,15 +118,15 @@ def get_individual_article(entry_list):
                     noscript_tag.replace_with(new_img_tag)
 
             entry.description = entry.description + str(content)
-            data.rss_cache.feed_item_cache[entry.guid] = entry
+            feed_item_cache[entry.guid] = entry
 
 
 def generate_feed_rss():
     entry_list = get_articles_list()
     get_individual_article(entry_list)
-    feed = utils.generate_xml.generate_feed_object(
+    feed = generate_feed_object(
         title='The Verge',
-        link=utils.router_constants.the_verge_prefix,
+        link=the_verge_prefix,
         description='The Verge is about technology and how it makes us feel.',
         language='en-us',
         feed_item_list=entry_list
@@ -150,16 +142,13 @@ def get_rss_xml_response():
     """
 
     the_verge_news_key = "/theverge"
-    should_query_the_verge = check_query(the_verge_news_key, utils.router_constants.the_verge_period, 'The Verge')
-    logging.info(
-        "Should query The Verge for this call: " + str(should_query_the_verge)
-    )
+    should_query_the_verge = check_query(the_verge_news_key, the_verge_period, 'The Verge')
 
     if should_query_the_verge is True:
         feed = generate_feed_rss()
-        data.rss_cache.feed_cache[the_verge_news_key] = feed
+        feed_cache[the_verge_news_key] = feed
     else:
-        feed = data.rss_cache.feed_cache[the_verge_news_key]
+        feed = feed_cache[the_verge_news_key]
 
     the_verge_response = make_response(feed.rss())
     the_verge_response.headers.set('Content-Type', 'application/rss+xml')

@@ -1,21 +1,20 @@
 import logging
 
 from flask import make_response
-from datetime import datetime
 
-import utils.router_constants as c
-import utils.get_link_content as glc
-import data.feed_item_object as do
-import utils.generate_xml as gxml
-import utils.time_converter as tc
-import utils.check_if_valid as civ
-import data.rss_cache as rc
+from data.feed_item_object import FeedItem
+from data.rss_cache import feed_item_cache, feed_cache
+from utils.cache_utilities import check_query
+from utils.xml_utilities import generate_feed_object
+from utils.get_link_content import get_link_content_with_bs_no_params
+from utils.router_constants import dayone_query_period, html_parser, dayone_blog_link, dayone_time_convert_pattern
+from utils.time_converter import convert_time_with_pattern
 
 logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.DEBUG)
 
 
 def get_articles_list():
-    soup = glc.get_link_content_with_bs_no_params(c.dayone_blog_link, c.html_parser)
+    soup = get_link_content_with_bs_no_params(dayone_blog_link, html_parser)
     feed_item_list = []
     entry_list = soup.find_all(
         "h3",
@@ -26,15 +25,13 @@ def get_articles_list():
         title = entry.find("a").text
         link = entry.find('a')['href']
 
-        if link in rc.feed_item_cache.keys():
-            # logging.info("getting cache item with key: " + link)
-            feed_item_list.append(rc.feed_item_cache[link])
+        if link in feed_item_cache.keys():
+            feed_item_list.append(feed_item_cache[link])
         else:
-            # logging.info("key: " + link + " not found in the cache.")
-            feed_item = do.FeedItem(title=title,
-                                    link=link,
-                                    guid=link,
-                                    with_content=False)
+            feed_item = FeedItem(title=title,
+                                 link=link,
+                                 guid=link,
+                                 with_content=False)
             feed_item_list.append(feed_item)
 
     return feed_item_list
@@ -43,8 +40,7 @@ def get_articles_list():
 def get_individual_article(entry_list):
     for post in entry_list:
         if post.with_content is False:
-            logging.info("title: " + post.title)
-            soup = glc.get_link_content_with_bs_no_params(post.link, c.html_parser)
+            soup = get_link_content_with_bs_no_params(post.link, html_parser)
             description_list = soup.find_all(
                 "div",
                 {"class": "entry-content"}
@@ -58,7 +54,7 @@ def get_individual_article(entry_list):
             )[0].find('li', text=True).get_text(strip=True)
 
             # sample date: August 17, 2023
-            post.created_time = tc.convert_time_with_pattern(publish_date, c.dayone_time_convert_pattern)
+            post.created_time = convert_time_with_pattern(publish_date, dayone_time_convert_pattern)
             post.author = soup.find('meta', attrs={'name': 'author'})['content']
 
             for description in description_list:
@@ -67,15 +63,15 @@ def get_individual_article(entry_list):
             post.description = description_text
             post.with_content = True
 
-            rc.feed_item_cache[post.guid] = post
+            feed_item_cache[post.guid] = post
 
 
 def generate_feed_rss():
     entry_list = get_articles_list()
     get_individual_article(entry_list)
-    feed = gxml.generate_feed_object(
+    feed = generate_feed_object(
         title="Day One Blog",
-        link=c.dayone_blog_link,
+        link=dayone_blog_link,
         description="Day One Blog - Your Journal for Life | Day One",
         language="en-US",
         feed_item_list=entry_list
@@ -84,35 +80,18 @@ def generate_feed_rss():
     return feed
 
 
-def check_if_should_query(dayone_key):
-    """
-    Limit query to at most 1 time in 10 minutes.
-    :return: if service should query now
-    """
-
-    # if it's the first query, or the last query happened more than 10 minutes, then query again
-    if len(rc.feed_cache) == 0 or dayone_key not in rc.feed_cache.keys() or civ.check_should_query_no_state(
-            datetime.timestamp(rc.feed_cache[dayone_key].lastBuildDate),
-            c.dayone_query_period
-    ):
-        return True
-
-    return False
-
-
 def get_rss_xml_response():
     """
     Entry point of the router.
     :return: XML feed
     """
     dayone_key = 'dayone/blog'
-    should_query_website = check_if_should_query(dayone_key)
-    logging.info("Query Day One Blog for this call: " + str(should_query_website))
+    should_query_website = check_query(dayone_key, dayone_query_period, "day one")
     if should_query_website is True:
         feed = generate_feed_rss()
-        rc.feed_cache[dayone_key] = feed
+        feed_cache[dayone_key] = feed
     else:
-        feed = rc.feed_cache[dayone_key]
+        feed = feed_cache[dayone_key]
 
     response_dayone = make_response(feed.rss())
     response_dayone.headers.set('Content-Type', 'application/rss+xml')

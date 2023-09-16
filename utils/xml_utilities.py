@@ -44,7 +44,3 @@ def generate_feed_object(title, link, description, language, feed_item_list):
     )
 
     return feed
-
-
-if __name__ == '__main__':
-    print(dt.datetime.now(pytz.timezone('GMT')))

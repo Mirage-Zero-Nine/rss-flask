@@ -1,40 +1,39 @@
 import logging
 
 from flask import make_response
-from datetime import datetime
 
-import utils.router_constants as c
-import utils.get_link_content as glc
-import data.feed_item_object as do
-import utils.generate_xml as gxml
-import utils.time_converter as tc
-import utils.check_if_valid as civ
-import data.rss_cache as fc
+from data.feed_item_object import FeedItem
+from data.rss_cache import feed_cache
+from utils.cache_utilities import check_query
+from utils.xml_utilities import generate_feed_object
+from utils.get_link_content import load_json_response
+from utils.router_constants import usgs_earthquake_link, usgs_earthquake_query_period
+from utils.time_converter import convert_millisecond_to_datetime_with_format, convert_millisecond_to_datetime
 
 logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.DEBUG)
 
 
 def generate_feed_rss():
-    json_response = glc.load_json_response(c.usgs_earthquake_link)
+    json_response = load_json_response(usgs_earthquake_link)
     feed_item_list = []
     for feature in json_response["features"]:
         loc = "<p>Location: " + feature["properties"]['place'] + '</p>'
         occurred_time = "<p>Time: " + \
-                        str(tc.convert_millisecond_to_datetime_with_format(feature["properties"]['time'], 7)) + \
+                        str(convert_millisecond_to_datetime_with_format(feature["properties"]['time'], 7)) + \
                         '</p>'
         depth = '<p>Depth: ' + str(feature['geometry']['coordinates'][2]) + ' KM</p>'
         url = '<p>Details: <a href="%s">Click to see details...</a> ' % feature["properties"]['url']
-        feed_item_object = do.FeedItem(
+        feed_item_object = FeedItem(
             title=feature["properties"]['title'],
             link=feature["properties"]['url'],
             author='USGS',
-            created_time=tc.convert_millisecond_to_datetime(feature["properties"]['time']),
+            created_time=convert_millisecond_to_datetime(feature["properties"]['time']),
             guid=feature["properties"]['ids'],
             description=loc + occurred_time + depth + url
         )
         feed_item_list.append(feed_item_object)
 
-    feed = gxml.generate_feed_object(
+    feed = generate_feed_object(
         title="USGS - Earthquake Report",
         link="https://earthquake.usgs.gov/earthquakes/map",
         description="USGS Magnitude 2.5+ Earthquakes, Past Day",
@@ -45,38 +44,17 @@ def generate_feed_rss():
     return feed
 
 
-def check_if_should_query(usgs_key):
-    """
-    Limit query to at most 1 time in 10 minutes.
-    :return: if service should query now
-    """
-
-    # if it's the first query, or the last query happened more than 10 minutes, then query again
-    if len(fc.feed_cache) == 0 or usgs_key not in fc.feed_cache.keys() or civ.check_should_query_no_state(
-            datetime.timestamp(fc.feed_cache[usgs_key].lastBuildDate),
-            c.usgs_earthquake_query_period
-    ):
-        return True
-
-    return False
-
-
 def get_rss_xml_response():
     usgs_key = "usgs/earthquake"
 
-    bool_should_query = check_if_should_query(usgs_key)
-    logging.info("Query USGS for this call: " + str(bool_should_query))
+    bool_should_query = check_query(usgs_key, usgs_earthquake_query_period, "USGS")
     if bool_should_query is True:
         feed = generate_feed_rss()
-        fc.feed_cache[usgs_key] = feed
+        feed_cache[usgs_key] = feed
     else:
-        feed = fc.feed_cache[usgs_key]
+        feed = feed_cache[usgs_key]
 
     response_earthquake = make_response(feed.rss())
     response_earthquake.headers.set('Content-Type', 'application/rss+xml')
 
     return response_earthquake
-
-
-if __name__ == '__main__':
-    generate_feed_rss()
