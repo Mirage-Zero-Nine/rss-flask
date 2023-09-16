@@ -1,4 +1,5 @@
 import yaml
+from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask
 
 from router.zaobao import zaobao_realtime_router
@@ -12,6 +13,8 @@ from router.telegram import wechat_channel_router
 from router.wsdot import wsdot_news_router
 from router.the_verge import the_verge_router
 from router.cnbeta import cnbeta_router
+
+from utils.router_constants import routes_to_call, refresh_period_in_minutes
 
 app = Flask(__name__)
 
@@ -56,13 +59,6 @@ def telegram_wechat():
     return xml_response
 
 
-# Twitter API is not usable
-# @app.route('/twitter/<user_name>', methods=['GET'])
-# def twitter(user_name):
-#     xml_response = twitter_router.generate_rss_xml_response(user_name, request.args)
-#     return xml_response
-
-
 @app.route('/zaobao/realtime/<region>')
 def zaobao(region):
     """
@@ -102,6 +98,20 @@ def cnbeta():
 def hello_world():
     return "Hello there."
 
+
+# Create a scheduler
+scheduler = BackgroundScheduler()
+scheduler.start()
+
+
+def call_route(router_path):
+    with app.test_request_context(router_path):
+        print(f"scheduler run with path: {router_path}")
+        app.dispatch_request()
+
+
+for r in routes_to_call:
+    scheduler.add_job(call_route, 'interval', minutes=refresh_period_in_minutes, args=[r])
 
 if __name__ == '__main__':
     app.run()

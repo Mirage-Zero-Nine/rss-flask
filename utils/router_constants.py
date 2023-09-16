@@ -1,16 +1,32 @@
+# List of routers to refresh periodically
+routes_to_call = [
+    '/currency/usd',
+    '/dayone',
+    '/earthquake',
+    '/embassy',
+    '/jandan',
+    '/telegram/wechat',
+    '/zaobao/realtime/china',
+    '/zaobao/realtime/world',
+    '/zhihu/daily',
+    '/wsdot/news',
+    '/theverge',
+    '/cnbeta'
+]
+
+refresh_period_in_minutes = 10
+
 # router query period
-jandan_query_period = 2 * 60 * 60 * 1000  # 2 hours
-dayone_query_period = 2 * 60 * 60 * 1000  # 2 hours
-twitter_query_period = 10 * 60 * 1000  # 10 minutes
-zaobao_query_period = 15 * 60 * 1000  # 15 minutes
+jandan_query_period = 1 * 60 * 60 * 1000  # 1 hour
+dayone_query_period = 1 * 60 * 60 * 1000  # 1 hour
+zaobao_query_period = 5 * 60 * 1000  # 5 minutes
 currency_query_period = 10 * 60 * 1000  # 10 minutes
-reuters_query_period = 10 * 60 * 1000  # 10 minutes
 usgs_earthquake_query_period = 10 * 60 * 1000  # 10 minutes
-zhihu_query_period = 4 * 60 * 60 * 1000  # 4 hours
-china_embassy_period = 4 * 60 * 60 * 1000  # 4 hours
-telegram_wechat_channel_period = 60 * 60 * 1000  # 60 minutes
+zhihu_query_period = 1 * 60 * 60 * 1000  # 1 hours
+china_embassy_period = 10 * 60 * 1000  # 10 minutes
+telegram_wechat_channel_period = 30 * 60 * 1000  # 30 minutes
 wsdot_news_period = 10 * 60 * 1000  # 10 minutes
-the_verge_period = 45 * 60 * 1000  # 45 minutes
+the_verge_period = 15 * 60 * 1000  # 15 minutes
 cnbeta_period = 5 * 60 * 1000  # 5 minutes
 
 currency_query_page_count = 10  # query 10 pages, only save the latest price in each hour
