@@ -85,7 +85,6 @@ def get_individual_article(entry_list):
                 if 'decoding' in img_element.attrs:
                     del img_element['decoding']
 
-                print("figure: {}".format(str(figure_tag)))
                 entry.description = str(img_element) + str(div_element)
 
             content = soup.find("div", class_="duet--article--article-body-component-container")
