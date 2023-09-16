@@ -1,9 +1,9 @@
 import logging
 
-import utils.time_converter as tc
-import data.feed_item_object as do
-import data.rss_cache as fc
-import utils.router_constants as c
+from data.feed_item_object import FeedItem
+from data.rss_cache import feed_item_cache
+from utils.router_constants import currency_time_convert_pattern, currency_link
+from utils.time_converter import convert_time_with_pattern
 
 array = ["货币名称: ", "现汇买入价: ", "现钞买入价: ", "现汇卖出价: ", "现钞卖出价: ", "中行折算价: "]
 logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.DEBUG)
@@ -37,17 +37,16 @@ def extract_row(row, title_text):
     # each row, exclude first row, is a currency price entry (which will be appended to rss feed object)
     # each row contains 6 columns (cell)
     # each cell has a different price (offshore, onshore, etc.)
-    item = do.FeedItem(description='')
+    item = FeedItem(description='')
     cells = row.findChildren('td')
     index = 0
 
     for cell in cells:
         if index == 6:
             index = 0
-            item.created_time = tc.convert_time_with_pattern(cell.text.strip(),
-                                                             c.currency_time_convert_pattern,
-                                                             8)
-            logging.info("create time: " + str(item.created_time))
+            item.created_time = convert_time_with_pattern(cell.text.strip(),
+                                                          currency_time_convert_pattern,
+                                                          8)
             item.description = "发布时间: " + item.created_time.isoformat() + item.description
             continue
         else:
@@ -60,7 +59,7 @@ def extract_row(row, title_text):
                     title_text += array[index - 1] + cell.text.strip() + " "
 
     item.title = title_text
-    item.link = c.currency_link
+    item.link = currency_link
     item.author = "中国银行"
     item.pubDate = item.created_time
     item.guid = str(item.created_time.date()) + " " + str(item.created_time.hour)
@@ -86,8 +85,8 @@ def item_dedup_and_add_to_list(item, feed_item_object_list):
                     + "-" \
                     + str(item.created_time.minute // 30)
 
-        if dedup_key not in fc.feed_item_cache.keys():
-            fc.feed_item_cache[dedup_key] = item
+        if dedup_key not in feed_item_cache.keys():
+            feed_item_cache[dedup_key] = item
             feed_item_object_list.append(item)
 
 
@@ -106,7 +105,3 @@ def validate_row(row):
         return cells
     else:
         return None
-
-
-if __name__ == '__main__':
-    pass

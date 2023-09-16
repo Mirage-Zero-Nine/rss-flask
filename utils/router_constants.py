@@ -1,17 +1,17 @@
 # List of routers to refresh periodically
 routes_to_call = [
+    '/cnbeta',
     '/currency/usd',
     '/dayone',
     '/earthquake',
     '/embassy',
     '/jandan',
     '/telegram/wechat',
+    '/theverge',
+    '/wsdot/news',
     '/zaobao/realtime/china',
     '/zaobao/realtime/world',
-    '/zhihu/daily',
-    '/wsdot/news',
-    '/theverge',
-    '/cnbeta'
+    '/zhihu/daily'
 ]
 
 refresh_period_in_minutes = 10
@@ -27,10 +27,9 @@ china_embassy_period = 10 * 60 * 1000  # 10 minutes
 telegram_wechat_channel_period = 30 * 60 * 1000  # 30 minutes
 wsdot_news_period = 10 * 60 * 1000  # 10 minutes
 the_verge_period = 15 * 60 * 1000  # 15 minutes
-cnbeta_period = 5 * 60 * 1000  # 5 minutes
+cnbeta_period = 10 * 60 * 1000  # 5 minutes
 
 currency_query_page_count = 10  # query 10 pages, only save the latest price in each hour
-twitter_query_page_count = 5
 cnbeta_query_page_count = 3
 
 currency_time_convert_pattern = '%Y.%m.%d %H:%M:%S'
@@ -39,34 +38,6 @@ dayone_time_convert_pattern = '%B %d, %Y'
 jandan_time_convert_pattern = "%Y.%m.%d , %H:%M"
 
 html_parser = 'html.parser'
-
-get_user_id_by_user_name = 'getUserIdByName'
-get_tweet_by_user_id = 'getTweetByUserId'
-get_tweet_by_tweet_id = 'getTweetByTweetId'
-
-tweet_field = "tweet.fields"
-expansions = "expansions"
-media_fields = "media.fields"
-place_fields = "place.fields"
-referenced_tweet = "referenced_tweets"
-retweet = "retweeted"
-replied_to = "replied_to"
-exclude_retweet = "excludeRetweet"
-exclude_reply = "excludeReply"
-
-data = "data"
-created_at = "created_at"
-tweet_id = "id"
-reference_tweet_type = "type"
-
-twitter_token = "twitter_token"
-token = "token"
-pagination_token = "pagination_token"
-meta = "meta"
-next_token = "next_token"
-
-tweet_link_prefix = "https://twitter.com/SeattlePD/status/"
-twitter_prefix = "https://twitter.com/"
 
 zaobao_realtime_world_frontpage_prefix = "https://www.zaobao.com.sg/realtime/world"
 zaobao_realtime_china_frontpage_prefix = "https://www.zaobao.com.sg/realtime/china"
@@ -91,25 +62,6 @@ jandan_page_prefix = "http://jandan.net/"
 currency_search_link = "https://srh.bankofchina.com/search/whpj/search_cn.jsp"
 currency_link = "http://www.boc.cn/sourcedb/whpj/"
 
-reuters_page_link = "https://cn.reuters.com/assets/jsonWireNews?limit=20"
-reuters_article_link_prefix = "https://cn.reuters.com"
-reuters_source_link = "https://cn.reuters.com/theWire"  # can not directly get contents from this link
-reuters_static_source_prefix = "https://static.reuters.com/resources/r/"
-reuters_header = {
-    "Host": "cn.reuters.com",
-    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:98.0) Gecko/20100101 Firefox/98.0",
-    "Accept": 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-    "Accept-Language": "en-US,en;q=0.5",
-    "Accept-Encoding": "gzip, deflate, br",
-    "DNT": "1",
-    "Connection": "keep-alive",
-    "Upgrade-Insecure-Requests": "1",
-    "Sec-Fetch-Dest": "document",
-    "Sec-Fetch-Mode": "navigate",
-    "Sec-Fetch-Site": "none",
-    "Sec-Fetch-User": "?1"
-}
-
 usgs_earthquake_link = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson"
 
 zhihu_header = {
@@ -133,7 +85,7 @@ wsdot_news_link = "https://wsdot.wa.gov/about/news"
 wsdot_news_prefix = "https://wsdot.wa.gov"
 wsdotblog_blogspot = "https://wsdotblog.blogspot.com"
 
-the_verge = "https://www.theverge.com/tech/archives/"
+the_verge_tech_archive = "https://www.theverge.com/tech/archives/"
 the_verge_prefix = "https://www.theverge.com"
 
-cnbeta_prefix = "https://m.cnbeta.com.tw"
+cnbeta_prefix: str = "https://m.cnbeta.com.tw"

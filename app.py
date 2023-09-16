@@ -1,3 +1,5 @@
+import logging
+
 import yaml
 from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask
@@ -22,6 +24,17 @@ app = Flask(__name__)
 with open('authentication.yaml') as f:
     # use safe_load instead load
     config = yaml.safe_load(f)
+
+
+@app.route('/')
+def hello_world():
+    return "Hello there."
+
+
+@app.route('/cnbeta')
+def cnbeta():
+    xml_response = cnbeta_router.get_rss_xml_response()
+    return xml_response
 
 
 @app.route('/currency/<currency_name>')
@@ -59,6 +72,18 @@ def telegram_wechat():
     return xml_response
 
 
+@app.route('/theverge')
+def the_verge():
+    xml_response = the_verge_router.get_rss_xml_response()
+    return xml_response
+
+
+@app.route('/wsdot/news')
+def wsdot():
+    xml_response = wsdot_news_router.get_rss_xml_response()
+    return xml_response
+
+
 @app.route('/zaobao/realtime/<region>')
 def zaobao(region):
     """
@@ -76,29 +101,6 @@ def zhihu():
     return xml_response
 
 
-@app.route('/wsdot/news')
-def wsdot():
-    xml_response = wsdot_news_router.get_rss_xml_response()
-    return xml_response
-
-
-@app.route('/theverge')
-def the_verge():
-    xml_response = the_verge_router.get_rss_xml_response()
-    return xml_response
-
-
-@app.route('/cnbeta')
-def cnbeta():
-    xml_response = cnbeta_router.get_rss_xml_response()
-    return xml_response
-
-
-@app.route('/')
-def hello_world():
-    return "Hello there."
-
-
 # Create a scheduler
 scheduler = BackgroundScheduler()
 scheduler.start()
@@ -106,11 +108,12 @@ scheduler.start()
 
 def call_route(router_path):
     with app.test_request_context(router_path):
-        print(f"scheduler run with path: {router_path}")
+        logging.info(f"scheduler run with path: {router_path}")
         app.dispatch_request()
 
 
 for r in routes_to_call:
+    logging.info(f"Router {r} added to scheduler job.")
     scheduler.add_job(call_route, 'interval', minutes=refresh_period_in_minutes, args=[r])
 
 if __name__ == '__main__':
