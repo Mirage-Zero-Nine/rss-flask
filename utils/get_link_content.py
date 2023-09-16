@@ -11,6 +11,10 @@ def get_link_content_with_bs_no_params(link, parser=c.html_parser):
     return soup
 
 
+def get_link_content_with_utf8_decode(link, parser=c.html_parser):
+    return BeautifulSoup(requests.get(link).content.decode('utf-8'), parser)
+
+
 def get_link_content_with_bs_and_header(link, parser, header):
     soup = BeautifulSoup(requests.get(link, headers=header).text, parser)
     return soup
