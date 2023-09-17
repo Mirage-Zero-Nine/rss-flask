@@ -10,7 +10,7 @@ from utils.get_link_content import get_link_content_with_bs_no_params
 from utils.router_constants import wsdot_news_period, wsdot_news_link, wsdot_news_prefix, wsdotblog_blogspot
 from utils.time_converter import convert_wsdot_news_time
 
-logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.DEBUG)
+logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.INFO)
 
 
 def get_articles_list():

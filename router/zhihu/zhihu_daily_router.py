@@ -10,7 +10,7 @@ from utils.xml_utilities import generate_feed_object
 from utils.get_link_content import get_link_content_with_bs_and_header, get_link_content_with_urllib_request
 from utils.router_constants import zhihu_story_prefix, zhihu_query_period, zhihu_filter, html_parser, zhihu_header
 
-logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.DEBUG)
+logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.INFO)
 
 
 def get_articles_list():

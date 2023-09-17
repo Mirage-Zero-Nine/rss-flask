@@ -10,7 +10,7 @@ from utils.router_constants import cnbeta_query_page_count, cnbeta_prefix, cnbet
 from utils.time_converter import convert_time_with_pattern
 from utils.xml_utilities import generate_feed_object
 
-logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.DEBUG)
+logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.INFO)
 
 
 def get_articles_list():

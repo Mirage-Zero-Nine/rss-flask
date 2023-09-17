@@ -10,7 +10,7 @@ from utils.get_link_content import load_json_response
 from utils.router_constants import usgs_earthquake_link, usgs_earthquake_query_period
 from utils.time_converter import convert_millisecond_to_datetime_with_format, convert_millisecond_to_datetime
 
-logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.DEBUG)
+logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.INFO)
 
 
 def generate_feed_rss():

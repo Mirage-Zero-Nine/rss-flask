@@ -12,7 +12,7 @@ from utils.router_constants import zaobao_realtime_page_prefix, zaobao_realtime_
     zaobao_headers, zaobao_query_period, zaobao_story_prefix, zaobao_time_convert_pattern
 from utils.time_converter import convert_time_with_pattern
 
-logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.DEBUG)
+logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.INFO)
 
 
 def get_news_list(region):

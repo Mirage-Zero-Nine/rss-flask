@@ -19,6 +19,7 @@ from router.cnbeta import cnbeta_router
 from utils.router_constants import routes_to_call, refresh_period_in_minutes
 
 app = Flask(__name__)
+app.logger.setLevel(logging.INFO)
 
 # file path started from app.py
 with open('authentication.yaml') as f:
