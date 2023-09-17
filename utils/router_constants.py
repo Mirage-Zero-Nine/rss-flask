@@ -1,11 +1,12 @@
 # List of routers to refresh periodically
-routes_to_call = [
+routers_to_call = [
     '/cnbeta',
     '/currency/usd',
     '/dayone',
     '/earthquake',
     '/embassy',
     '/jandan',
+    "/meta/blog",
     '/telegram/wechat',
     '/theverge',
     '/wsdot/news',
@@ -88,4 +89,7 @@ wsdotblog_blogspot = "https://wsdotblog.blogspot.com"
 the_verge_tech_archive = "https://www.theverge.com/tech/archives/"
 the_verge_prefix = "https://www.theverge.com"
 
-cnbeta_prefix: str = "https://m.cnbeta.com.tw"
+cnbeta_prefix = "https://m.cnbeta.com.tw"
+
+language_chinese = "zh-cn"
+language_english = "en-us"

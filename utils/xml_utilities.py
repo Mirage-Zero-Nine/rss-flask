@@ -44,3 +44,12 @@ def generate_feed_object(title, link, description, language, feed_item_list):
     )
 
     return feed
+
+
+def check_need_to_filter(link, title, link_filter, title_filter):
+    if link_filter and link.startswith(link_filter):
+        return True
+    if title_filter and title.startswith(title_filter):
+        return True
+
+    return False
