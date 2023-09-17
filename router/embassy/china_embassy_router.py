@@ -10,7 +10,7 @@ from utils.get_link_content import get_link_content_with_urllib_request
 from utils.router_constants import china_embassy_filter, china_embassy_period, china_embassy_prefix
 from utils.time_converter import convert_time_with_pattern
 
-logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.DEBUG)
+logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.INFO)
 
 
 def get_articles_list():

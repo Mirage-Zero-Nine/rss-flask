@@ -10,7 +10,7 @@ from utils.get_link_content import post_request_with_payload
 from utils.router_constants import currency_query_page_count, currency_query_period, currency_link, \
     currency_search_link, html_parser
 
-logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.DEBUG)
+logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.INFO)
 array = ["货币名称: ", "现汇买入价: ", "现钞买入价: ", "现汇卖出价: ", "现钞卖出价: ", "中行折算价: "]
 
 

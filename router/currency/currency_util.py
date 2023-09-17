@@ -6,7 +6,7 @@ from utils.router_constants import currency_time_convert_pattern, currency_link
 from utils.time_converter import convert_time_with_pattern
 
 array = ["货币名称: ", "现汇买入价: ", "现钞买入价: ", "现汇卖出价: ", "现钞卖出价: ", "中行折算价: "]
-logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.DEBUG)
+logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.INFO)
 
 
 def get_page_header(page):
