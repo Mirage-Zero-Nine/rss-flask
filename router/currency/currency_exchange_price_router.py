@@ -10,7 +10,6 @@ from utils.xml_utilities import generate_feed_object
 class CurrencyExchangePriceRouter(BaseRouter):
 
     def _generate_feed_rss(self, link_filter=None, title_filter=None):
-        print("getting content...")
         feed_item_object_list = []
         for i in range(currency_exchange_price_query_page_count):  # query first 10 pages
             page = i + 1
