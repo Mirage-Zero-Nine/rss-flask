@@ -6,4 +6,4 @@ cnbeta_news_router_description = "cnBeta.COM - 中文业界资讯站"
 cnbeta_news_router_cache_key = "cnbeta/news"
 
 cnbeta_query_page_count = 3
-cnbeta_period = 10 * 60 * 1000  # 5 minutes
+cnbeta_period = 15 * 60 * 1000  # 15 minutes
