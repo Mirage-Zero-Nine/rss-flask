@@ -66,7 +66,6 @@ class BaseRouter:
         should_query = self.__check_query(cache_key, path)
 
         if should_query is True:
-            print("getting content......")
             feed = self._generate_feed_rss(link_filter, title_filter)
             feed_cache[cache_key] = feed
         else:

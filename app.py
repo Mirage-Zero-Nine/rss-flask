@@ -1,7 +1,6 @@
 import logging
 
 import yaml
-from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask
 
 from router.dayone import dayone_router
@@ -12,8 +11,9 @@ from router.telegram import wechat_channel_router
 from router.wsdot import wsdot_news_router
 from router.zaobao import zaobao_realtime_router
 from router.zhihu import zhihu_daily_router
-from router_objects import meta_blog, cnbeta, the_verge, usgs_earthquake_report, currency_exchange_price
-from utils.router_constants import routers_to_call, refresh_period_in_minutes
+from router_objects import meta_blog, cnbeta, the_verge, usgs_earthquake_report, currency_exchange_price, \
+    twitter_engineering_blog
+from utils.scheduler import router_refresh_job_scheduler
 
 app = Flask(__name__)
 app.logger.setLevel(logging.INFO)
@@ -77,6 +77,11 @@ def the_verge_router():
     return the_verge.get_rss_xml_response()
 
 
+@app.route('/twitter/blog')
+def twitter_engineering_blog_router():
+    return twitter_engineering_blog.get_rss_xml_response()
+
+
 @app.route('/wsdot/news')
 def wsdot():
     xml_response = wsdot_news_router.get_rss_xml_response()
@@ -100,20 +105,7 @@ def zhihu():
     return xml_response
 
 
-# Create a scheduler
-scheduler = BackgroundScheduler()
-scheduler.start()
-
-
-def call_route(router_path):
-    with app.test_request_context(router_path):
-        logging.info(f"scheduler run with path: {router_path}")
-        app.dispatch_request()
-
-
-for r in routers_to_call:
-    logging.info(f"Router {r} added to scheduler job.")
-    scheduler.add_job(call_route, 'interval', minutes=refresh_period_in_minutes, args=[r])
+router_refresh_job_scheduler(app)
 
 if __name__ == '__main__':
     app.run()

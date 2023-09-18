@@ -9,7 +9,7 @@ from utils.tools import check_need_to_filter
 class RouterForRssFeed(BaseRouter):
     def _get_articles_list(self, link_filter=None, title_filter=None):
         article_list = []
-        parse_feed = feedparser.parse(self.original_link)
+        parse_feed = feedparser.parse(self.articles_link)
         for entry in parse_feed.entries:
             entry_title = entry.title
             entry_link = entry.link

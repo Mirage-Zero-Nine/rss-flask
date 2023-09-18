@@ -16,13 +16,17 @@ from router.meta_blog.meta_router_constants import meta_blog_router_name, meta_b
 from router.the_verge.the_verge_constants import the_verge_name, the_verge_title, the_verge_prefix, \
     the_verge_tech_archive, the_verge_description, the_verge_news_key
 from router.the_verge.the_verge_router import TheVergeRouter
+from router.twitter_engineering_blog.twitter_engineering_blog_router import TwitterEngineeringBlogRouter
+from router.twitter_engineering_blog.twitter_engineering_blog_router_constants import twitter_engineering_blog_name, \
+    twitter_engineering_blog_title, twitter_engineering_blog_original_link, twitter_engineering_blog_rss_link, \
+    twitter_engineering_blog_description, twitter_engineering_blog_key, twitter_engineering_blog_period
 from utils.router_constants import language_english, language_chinese
 
 meta_blog = MetaBlog(
     name=meta_blog_router_name,
     feed_title=meta_blog_title,
-    original_link=meta_blog_rss_link,
-    articles_link=meta_blog_link,
+    original_link=meta_blog_link,
+    articles_link=meta_blog_rss_link,
     description=meta_blog_description,
     language=language_english,
     feed_cache_key=meta_blog_key,
@@ -71,4 +75,15 @@ currency_exchange_price = CurrencyExchangePriceRouter(
     language=language_chinese,
     feed_cache_key=currency_exchange_price_cache_key,
     period=currency_exchange_price_query_period
+)
+
+twitter_engineering_blog = TwitterEngineeringBlogRouter(
+    name=twitter_engineering_blog_name,
+    feed_title=twitter_engineering_blog_title,
+    original_link=twitter_engineering_blog_original_link,
+    articles_link=twitter_engineering_blog_rss_link,
+    description=twitter_engineering_blog_description,
+    language=language_english,
+    feed_cache_key=twitter_engineering_blog_key,
+    period=twitter_engineering_blog_period
 )
