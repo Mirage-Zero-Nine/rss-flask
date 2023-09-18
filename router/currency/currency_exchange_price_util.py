@@ -2,10 +2,11 @@ import logging
 
 from data.feed_item_object import FeedItem
 from data.rss_cache import feed_item_cache
-from utils.router_constants import currency_time_convert_pattern, currency_link
+from router.currency.currency_exchange_price_router_constants import currency_exchange_price_time_convert_pattern, \
+    currency_exchange_price_search_link
 from utils.time_converter import convert_time_with_pattern
 
-array = ["货币名称: ", "现汇买入价: ", "现钞买入价: ", "现汇卖出价: ", "现钞卖出价: ", "中行折算价: "]
+column_name = ["货币名称: ", "现汇买入价: ", "现钞买入价: ", "现汇卖出价: ", "现钞卖出价: ", "中行折算价: "]
 logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.INFO)
 
 
@@ -45,7 +46,7 @@ def extract_row(row, title_text):
         if index == 6:
             index = 0
             item.created_time = convert_time_with_pattern(cell.text.strip(),
-                                                          currency_time_convert_pattern,
+                                                          currency_exchange_price_time_convert_pattern,
                                                           8)
             item.description = "发布时间: " + item.created_time.isoformat() + item.description
             continue
@@ -54,12 +55,12 @@ def extract_row(row, title_text):
             if index == 1:
                 continue
             else:
-                item.description = "<p>" + item.description + array[index - 1] + cell.text.strip() + "</p>"
+                item.description = "<p>" + item.description + column_name[index - 1] + cell.text.strip() + "</p>"
                 if index == 4:
-                    title_text += array[index - 1] + cell.text.strip() + " "
+                    title_text += column_name[index - 1] + cell.text.strip() + " "
 
     item.title = title_text
-    item.link = currency_link
+    item.link = currency_exchange_price_search_link
     item.author = "中国银行"
     item.pubDate = item.created_time
     item.guid = str(item.created_time.date()) + " " + str(item.created_time.hour)

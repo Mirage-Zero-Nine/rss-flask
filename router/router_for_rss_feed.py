@@ -3,7 +3,7 @@ import feedparser
 from data.feed_item_object import FeedItem
 from data.rss_cache import feed_item_cache
 from router.base_router import BaseRouter
-from utils.xml_utilities import check_need_to_filter
+from utils.tools import check_need_to_filter
 
 
 class RouterForRssFeed(BaseRouter):
@@ -16,7 +16,6 @@ class RouterForRssFeed(BaseRouter):
 
             if entry_link and entry_title:
                 if check_need_to_filter(entry_link, entry_title, link_filter, title_filter) is False:
-                    print(entry_link)
                     if entry_link in feed_item_cache.keys():
                         feed_item = feed_item_cache[entry_link]
                     else:

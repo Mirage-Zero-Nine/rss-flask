@@ -3,6 +3,7 @@ from router.meta_blog.meta_router_constants import meta_ai_blog_prefix, meta_blo
 from router.router_for_rss_feed import RouterForRssFeed
 from utils.get_link_content import get_link_content_with_bs_no_params
 from utils.time_converter import convert_time_with_pattern
+from utils.tools import format_author_names
 
 
 class MetaBlog(RouterForRssFeed):
@@ -43,19 +44,10 @@ class MetaBlog(RouterForRssFeed):
             entry.description = entry_content_div
 
             authors = soup.find_all(class_="author url fn")
-            entry.author = self.__format_author_names([author.text for author in authors])
+            entry.author = format_author_names([author.text for author in authors])
 
             datetime_str = soup.find('time', class_='published updated')['datetime']
 
             entry.created_time = convert_time_with_pattern(datetime_str, '%Y-%m-%d')
             entry.with_content = True
             feed_item_cache[entry.guid] = entry
-
-    @staticmethod
-    def __format_author_names(author_list):
-        if not author_list:
-            return ""
-        elif len(author_list) == 1:
-            return author_list[0]
-        else:
-            return ', '.join(author_list)

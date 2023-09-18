@@ -4,19 +4,15 @@ import yaml
 from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask
 
-from router.cnbeta import cnbeta_router
-from router.currency import currency_router
 from router.dayone import dayone_router
-from router.earthquake import usgs_earthquake_router
 from router.embassy import china_embassy_router
 from router.jandan import jandan_router
 from router.meta_blog.meta_router_constants import meta_blog_prefix
 from router.telegram import wechat_channel_router
-from router.the_verge import the_verge_router
 from router.wsdot import wsdot_news_router
 from router.zaobao import zaobao_realtime_router
 from router.zhihu import zhihu_daily_router
-from router_objects import meta_blog
+from router_objects import meta_blog, cnbeta, the_verge, usgs_earthquake_report, currency_exchange_price
 from utils.router_constants import routers_to_call, refresh_period_in_minutes
 
 app = Flask(__name__)
@@ -34,15 +30,13 @@ def hello_world():
 
 
 @app.route('/cnbeta')
-def cnbeta():
-    xml_response = cnbeta_router.get_rss_xml_response()
-    return xml_response
+def cnbeta_router():
+    return cnbeta.get_rss_xml_response()
 
 
 @app.route('/currency/<currency_name>')
 def currency(currency_name):
-    xml_response = currency_router.get_rss_xml_response(currency_name)
-    return xml_response
+    return currency_exchange_price.get_rss_xml_response(parameter=currency_name)
 
 
 @app.route('/dayone')
@@ -53,8 +47,7 @@ def dayone():
 
 @app.route('/earthquake')
 def earthquake():
-    xml_response = usgs_earthquake_router.get_rss_xml_response()
-    return xml_response
+    return usgs_earthquake_report.get_rss_xml_response()
 
 
 @app.route('/embassy')
@@ -69,7 +62,7 @@ def jandan():
 
 
 @app.route('/meta/blog')
-def meta_engineering_blog():
+def meta_engineering_blog_router():
     return meta_blog.get_rss_xml_response(link_filter=meta_blog_prefix)
 
 
@@ -80,9 +73,8 @@ def telegram_wechat():
 
 
 @app.route('/theverge')
-def the_verge():
-    xml_response = the_verge_router.get_rss_xml_response()
-    return xml_response
+def the_verge_router():
+    return the_verge.get_rss_xml_response()
 
 
 @app.route('/wsdot/news')
