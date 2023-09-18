@@ -12,7 +12,8 @@ from router.telegram import wechat_channel_router
 from router.wsdot import wsdot_news_router
 from router.zaobao import zaobao_realtime_router
 from router.zhihu import zhihu_daily_router
-from router_objects import meta_blog, cnbeta, the_verge, usgs_earthquake_report, currency_exchange_price
+from router_objects import meta_blog, cnbeta, the_verge, usgs_earthquake_report, currency_exchange_price, \
+    twitter_engineering_blog
 from utils.router_constants import routers_to_call, refresh_period_in_minutes
 
 app = Flask(__name__)
@@ -75,6 +76,11 @@ def telegram_wechat():
 @app.route('/theverge')
 def the_verge_router():
     return the_verge.get_rss_xml_response()
+
+
+@app.route('/twitter/blog')
+def twitter_engineering_blog_router():
+    return twitter_engineering_blog.get_rss_xml_response()
 
 
 @app.route('/wsdot/news')
