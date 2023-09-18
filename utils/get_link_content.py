@@ -3,20 +3,20 @@ import urllib.request
 
 from bs4 import BeautifulSoup
 
-import utils.router_constants as c
+from utils.router_constants import html_parser
 
 
-def get_link_content_with_bs_no_params(link, parser=c.html_parser):
+def get_link_content_with_bs_no_params(link, parser=html_parser):
     soup = BeautifulSoup(requests.get(link).text, parser)
     return soup
 
 
-def get_link_content_with_utf8_decode(link, parser=c.html_parser):
+def get_link_content_with_utf8_decode(link, parser=html_parser):
     return BeautifulSoup(requests.get(link).content.decode('utf-8'), parser)
 
 
 def get_link_content_with_bs_and_header(link, parser, header):
-    soup = BeautifulSoup(requests.get(link, headers=header).text, parser)
+    soup = BeautifulSoup(requests.get(link, headers=header, cookies={"sspai_cross_token": "logout"}).text, parser)
     return soup
 
 
