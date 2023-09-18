@@ -21,7 +21,7 @@ refresh_period_in_minutes = 10
 # router query period
 jandan_query_period = 1 * 60 * 60 * 1000  # 1 hour
 dayone_query_period = 1 * 60 * 60 * 1000  # 1 hour
-zaobao_query_period = 5 * 60 * 1000  # 5 minutes
+zaobao_query_period = 10 * 60 * 1000  # 10 minutes
 zhihu_query_period = 1 * 60 * 60 * 1000  # 1 hour
 china_embassy_period = 10 * 60 * 1000  # 10 minutes
 telegram_wechat_channel_period = 30 * 60 * 1000  # 30 minutes
