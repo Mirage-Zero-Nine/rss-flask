@@ -9,6 +9,7 @@ routers_to_call = [
     "/meta/blog",
     '/telegram/wechat',
     '/theverge',
+    '/twitter/blog',
     '/wsdot/news',
     '/zaobao/realtime/china',
     '/zaobao/realtime/world',
