@@ -21,8 +21,8 @@ from utils.router_constants import language_english, language_chinese
 meta_blog = MetaBlog(
     name=meta_blog_router_name,
     feed_title=meta_blog_title,
-    original_link=meta_blog_rss_link,
-    articles_link=meta_blog_link,
+    original_link=meta_blog_link,
+    articles_link=meta_blog_rss_link,
     description=meta_blog_description,
     language=language_english,
     feed_cache_key=meta_blog_key,
