@@ -1,5 +1,5 @@
 /venv/
-/authentication.yaml
+/authentication.yml
 .idea
 *.log
 .DS_Store
