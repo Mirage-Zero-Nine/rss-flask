@@ -19,7 +19,7 @@ app = Flask(__name__)
 app.logger.setLevel(logging.INFO)
 
 # file path started from app.py
-with open('authentication.yaml') as f:
+with open('authentication.yml') as f:
     # use safe_load instead load
     config = yaml.safe_load(f)
 
