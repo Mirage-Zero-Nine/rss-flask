@@ -16,3 +16,5 @@ In memory cache to cache the feed item. This could reduce the website query, als
 - value: feed item
 """
 feed_item_cache = {}
+
+last_build_time_cache = {}

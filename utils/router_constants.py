@@ -1,19 +1,33 @@
+cnbeta_router_path = '/cnbeta'
+currency_exchange_price_router_path = "/currency/"
+dayone_blog_router_path = '/dayone'
+earthquake_router_path = '/earthquake'
+embassy_router_path = '/embassy'
+jandan_router_path = '/jandan'
+meta_engineering_blog_router = '/meta/blog'
+telegram_wechat_router_path = '/telegram/wechat'
+the_verge_router_path = '/theverge'
+twitter_engineering_blog_router_path = '/twitter/blog'
+wsdot_news_router_path = '/wsdot/news'
+zaobao_router_path_prefix = "/zaobao/realtime/"
+zhihu_router_path = '/zhihu/daily'
+
 # List of routers to refresh periodically
 routers_to_call = [
-    '/cnbeta',
-    '/currency/usd',
-    '/dayone',
-    '/earthquake',
-    '/embassy',
-    '/jandan',
-    "/meta/blog",
-    '/telegram/wechat',
-    '/theverge',
-    '/twitter/blog',
-    '/wsdot/news',
-    '/zaobao/realtime/china',
-    '/zaobao/realtime/world',
-    '/zhihu/daily'
+    cnbeta_router_path,
+    currency_exchange_price_router_path + 'usd',
+    dayone_blog_router_path,
+    earthquake_router_path,
+    embassy_router_path,
+    jandan_router_path,
+    meta_engineering_blog_router,
+    telegram_wechat_router_path,
+    the_verge_router_path,
+    twitter_engineering_blog_router_path,
+    wsdot_news_router_path,
+    zaobao_router_path_prefix + 'china',
+    zaobao_router_path_prefix + 'world',
+    zhihu_router_path
 ]
 
 refresh_period_in_minutes = 10
@@ -76,3 +90,5 @@ wsdotblog_blogspot = "https://wsdotblog.blogspot.com"
 
 language_chinese = "zh-cn"
 language_english = "en-us"
+
+data_path_prefix = "./data/"
