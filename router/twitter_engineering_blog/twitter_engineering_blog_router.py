@@ -1,3 +1,4 @@
+import logging
 import os
 
 from data.feed_item_object import read_feed_item_from_json, FeedItem
@@ -14,6 +15,7 @@ class TwitterEngineeringBlogRouter(RouterForRssFeed):
         if os.path.exists(article_metadata.json_name):
             entry = read_feed_item_from_json(article_metadata.json_name)
         else:
+            logging.info(f"Getting content for: {article_metadata.link}")
             entry = FeedItem(title=article_metadata.title,
                              link=article_metadata.link,
                              guid=article_metadata.link)

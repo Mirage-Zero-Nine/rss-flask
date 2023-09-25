@@ -1,3 +1,4 @@
+import logging
 import os
 
 from data.feed_item_object import FeedItem, convert_router_path_to_save_path_prefix, generate_json_name, Metadata, \
@@ -38,6 +39,7 @@ class CnbetaRouter(BaseRouterNew):
         if os.path.exists(article_metadata.json_name):
             entry = read_feed_item_from_json(article_metadata.json_name)
         else:
+            logging.info(f"Getting content for: {article_metadata.link}")
             entry = FeedItem(title=article_metadata.title,
                              link=article_metadata.link,
                              guid=article_metadata.link)

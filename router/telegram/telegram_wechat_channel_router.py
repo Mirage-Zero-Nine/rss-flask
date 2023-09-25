@@ -1,3 +1,4 @@
+import logging
 import os
 
 from data.feed_item_object import convert_router_path_to_save_path_prefix, Metadata, generate_json_name, \
@@ -48,13 +49,14 @@ class TelegramWechatChannelRouter(BaseRouterNew):
         if os.path.exists(article_metadata.json_name):
             entry = read_feed_item_from_json(article_metadata.json_name)
         else:
+            logging.info(f"Getting content for: {article_metadata.link}")
             entry = FeedItem(title=article_metadata.title,
                              link=article_metadata.link,
                              author=telegram_wechat_channel_router_description,
                              created_time=convert_time_with_pattern(article_metadata.created_time,
                                                                     "%Y-%m-%dT%H:%M:%S%z"),
                              guid=article_metadata.link)
-            soup = get_link_content_with_utf8_decode(entry.link)
+            soup = get_link_content_with_utf8_decode(article_metadata.link)
 
             selected_div = soup.find('div', class_='rich_media_content js_underline_content autoTypeSetting24psection')
             if selected_div and 'style' in selected_div.attrs:

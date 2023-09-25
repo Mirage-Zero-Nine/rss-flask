@@ -46,6 +46,7 @@ class ZaobaoRealtimeRouter(BaseRouterNew):
         if os.path.exists(article_metadata.json_name):
             entry = read_feed_item_from_json(article_metadata.json_name)
         else:
+            logging.info(f"Getting content for: {article_metadata.link}")
             entry = FeedItem(title=article_metadata.title,
                              link=article_metadata.link,
                              guid=article_metadata.link)
@@ -89,10 +90,6 @@ class ZaobaoRealtimeRouter(BaseRouterNew):
         feed_title = feed_title_mapping.get(parameter)
         feed_description = feed_description_mapping.get(parameter)
         feed_original_link = feed_prefix_mapping.get(parameter)
-        logging.info(f"{self.router_path + parameter} title: {feed_title}")
-        logging.info(f"{self.router_path + parameter} description: {feed_description}")
-        logging.info(f"{self.router_path + parameter} original link: {feed_original_link}")
-
         feed = generate_feed_object_for_new_router(
             title=feed_title,
             link=feed_original_link,
