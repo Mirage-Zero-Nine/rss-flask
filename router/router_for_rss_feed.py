@@ -6,7 +6,7 @@ from utils.tools import check_need_to_filter
 
 
 class RouterForRssFeed(BaseRouterNew):
-    def _get_articles_list(self, link_filter=None, title_filter=None):
+    def _get_articles_list(self, link_filter=None, title_filter=None, parameter=None):
         metadata_list = []
         parse_feed = feedparser.parse(self.articles_link)
         for entry in parse_feed.entries:

@@ -24,22 +24,20 @@ class BaseRouterNew:
         articles_link (str): The link to the page of getting articles (to get a list of articles)
         description (str): A description of the feed.
         language (str): The language used in the feed.
-        feed_cache_key (str): The key used in cache to avoid duplicated feed. Needs to be unique.
         period (str): The refresh period.
     """
 
-    def __init__(self, router_path, feed_title, original_link, articles_link, description, language, feed_cache_key,
-                 period):
+    def __init__(self, router_path="", feed_title="", original_link="", articles_link="", description="", language="",
+                 period=""):
         self.router_path = router_path
         self.feed_title = feed_title
         self.original_link = original_link
         self.articles_link = articles_link
         self.description = description
         self.language = language
-        self.feed_cache_key = feed_cache_key
         self.period = period
 
-    def _get_articles_list(self, link_filter=None, title_filter=None):
+    def _get_articles_list(self, parameter=None, link_filter=None, title_filter=None, ):
         """
         Override this method for each router.
         :return: list of articles
@@ -54,15 +52,14 @@ class BaseRouterNew:
         Entry point of the router.
         :return: XML feed
         """
-        if parameter is None:
-            cache_key = self.router_path
-        else:
-            cache_key = f"{self.router_path}/{parameter}"
-
         logging.info(f"Refreshing content: {self.router_path}")
+
+        cache_key = self.__generate_cache_key_for_router(parameter)
+        logging.info(f"cache key: {cache_key}")
         feed_entries_list = []
 
         save_path_prefix = convert_router_path_to_save_path_prefix(cache_key)
+        logging.info(f"prefix: {save_path_prefix}")
         # create a directory to save json
         os.makedirs(save_path_prefix, exist_ok=True)
 
@@ -78,7 +75,9 @@ class BaseRouterNew:
         else:
             logging.info(f"Query latest content for {cache_key}...")
 
-            article_metadata_list = self._get_articles_list(link_filter, title_filter)
+            article_metadata_list = self._get_articles_list(parameter=parameter,
+                                                            link_filter=link_filter,
+                                                            title_filter=title_filter)
             self.__write_article_list_to_file(article_list_file_name, article_metadata_list)
 
             last_build_time = dt.datetime.now(pytz.timezone('GMT'))
@@ -87,7 +86,18 @@ class BaseRouterNew:
         for article_metadata in article_metadata_list:
             feed_entries_list.append(self._get_individual_article(article_metadata))
 
-        feed = generate_feed_object_for_new_router(
+        feed = self._generate_response(last_build_time=last_build_time,
+                                       feed_entries_list=feed_entries_list,
+                                       parameter=parameter)
+        logging.info(f"last build date: {feed.lastBuildDate}")
+
+        response = make_response(feed.rss())
+        response.headers.set('Content-Type', 'application/rss+xml')
+        return response
+
+    def _generate_response(self, last_build_time, feed_entries_list, parameter=None):
+
+        return generate_feed_object_for_new_router(
             title=self.feed_title,
             link=self.original_link,
             description=self.description,
@@ -96,12 +106,14 @@ class BaseRouterNew:
             feed_item_list=feed_entries_list
         )
 
-        logging.info(f"last build date: {feed.lastBuildDate}")
-
-        response = make_response(feed.rss())
-        response.headers.set('Content-Type', 'application/rss+xml')
-
-        return response
+    def __generate_cache_key_for_router(self, parameter=None):
+        logging.info(f"router path: {self.router_path}")
+        logging.info(f"parameter: {parameter}")
+        if parameter is None:
+            cache_key = self.router_path
+        else:
+            cache_key = f"{self.router_path}/{parameter}"
+        return cache_key
 
     def __check_if_meet_refresh_time(self, last_query_time):
         logging.info("last query time: " + str(round(last_query_time) * 1000))

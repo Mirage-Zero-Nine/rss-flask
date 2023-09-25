@@ -7,3 +7,4 @@ currency_exchange_price_query_period = 20 * 60 * 1000  # 20 minutes
 currency_exchange_price_query_page_count = 10  # query 10 pages, only save the latest price in each hour
 currency_exchange_price_time_convert_pattern = '%Y.%m.%d %H:%M:%S'
 currency_exchange_price_cache_key = "currency/"
+currency_exchange_price_parameter = {'usd'}

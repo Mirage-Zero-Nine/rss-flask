@@ -10,7 +10,7 @@ from utils.time_converter import convert_time_with_pattern
 
 
 class CnbetaRouter(BaseRouterNew):
-    def _get_articles_list(self, link_filter=None, title_filter=None):
+    def _get_articles_list(self, link_filter=None, title_filter=None, parameter=None):
         articles_list = []
 
         for i in range(0, cnbeta_query_page_count):

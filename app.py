@@ -1,18 +1,18 @@
 import logging
 
-import yaml
 from flask import Flask
+from werkzeug.exceptions import abort
 
+from router.currency.currency_exchange_price_router_constants import currency_exchange_price_parameter
 from router.dayone import dayone_router
 from router.embassy import china_embassy_router
 from router.jandan import jandan_router
 from router.meta_blog.meta_router_constants import meta_blog_prefix
-from router.telegram import wechat_channel_router
 from router.wsdot import wsdot_news_router
-from router.zaobao import zaobao_realtime_router
+from router.zaobao.zaobao_realtime_router_constants import zaobao_region_parameter, title_filter
 from router.zhihu import zhihu_daily_router
 from router_objects import meta_blog, cnbeta, the_verge, usgs_earthquake_report, currency_exchange_price, \
-    twitter_engineering_blog
+    twitter_engineering_blog, telegram_wechat_channel, zaobao_realtime
 from utils.router_constants import zhihu_router_path, wsdot_news_router_path, \
     twitter_engineering_blog_router_path, the_verge_router_path, meta_engineering_blog_router, \
     telegram_wechat_router_path, jandan_router_path, earthquake_router_path, embassy_router_path, \
@@ -21,11 +21,6 @@ from utils.scheduler import router_refresh_job_scheduler
 
 app = Flask(__name__)
 app.logger.setLevel(logging.INFO)
-
-# file path started from app.py
-with open('config.yml') as f:
-    # use safe_load instead load
-    config = yaml.safe_load(f)
 
 
 @app.route('/')
@@ -38,8 +33,11 @@ def cnbeta_router():
     return cnbeta.get_rss_xml_response()
 
 
-@app.route(currency_exchange_price_router_path + '<currency_name>')
+@app.route(currency_exchange_price_router_path + '/<currency_name>')
 def currency_exchange_price_router(currency_name):
+    if currency_name not in currency_exchange_price_parameter:
+        abort(404)
+
     return currency_exchange_price.get_rss_xml_response(parameter=currency_name)
 
 
@@ -72,7 +70,7 @@ def meta_engineering_blog_router():
 
 @app.route(telegram_wechat_router_path)
 def telegram_wechat_router():
-    xml_response = wechat_channel_router.get_rss_xml_response(config)
+    xml_response = telegram_wechat_channel.get_rss_xml_response()
     return xml_response
 
 
@@ -92,15 +90,17 @@ def wsdot_router():
     return xml_response
 
 
-@app.route(zaobao_router_path_prefix + '<region>')
+@app.route(zaobao_router_path_prefix + '/<region>')
 def zaobao_router(region):
     """
     Currently support two regions: `china` and `world`.
     :param region: region to query
     :return: realtime news xml based on region
     """
-    xml_response = zaobao_realtime_router.get_rss_xml_response(region)
-    return xml_response
+    if region not in zaobao_region_parameter:
+        abort(404)
+
+    return zaobao_realtime.get_rss_xml_response(parameter=region, title_filter=title_filter)
 
 
 @app.route(zhihu_router_path)

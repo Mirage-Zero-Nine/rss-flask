@@ -64,8 +64,8 @@ class FeedItem:
 
         # create a directory to save json
         os.makedirs(save_path_prefix, exist_ok=True)
-        self.json_name = generate_json_name(save_path_prefix, self.guid)
 
+        self.json_name = generate_json_name(save_path_prefix, self.guid)
         with open(self.json_name, 'w') as json_file:
             json.dump({
                 "title": self.title,
@@ -119,13 +119,8 @@ def convert_router_path_to_save_path_prefix(router_path):
     return f"{data_path_prefix}{router_path[1:].replace('/', '-')}"
 
 
-# def generate_file_name(router_path, name):
-#     # save_path_prefix: ./data/{router_path_replaced_with_dash}
-#     save_path_prefix = convert_router_path_to_save_path_prefix(router_path)
-#
-#     # return path: ./data/{router_path_replaced_with_dash}/{encoded_name}
-#     return f"{save_path_prefix}/{base64.b64encode(name.encode('utf-8')).decode('utf-8')}"
-
-
 def generate_json_name(prefix, name):
-    return f"{prefix}/{base64.b64encode(name.encode('utf-8')).decode('utf-8')}.json"
+    json_name = base64.urlsafe_b64encode(name.encode('utf-8')).decode('utf-8').rstrip('=')
+    if len(json_name) > 100:
+        json_name = json_name[-100:]
+    return f"{prefix}/{json_name}.json"
