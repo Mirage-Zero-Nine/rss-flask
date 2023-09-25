@@ -1,4 +1,7 @@
-from data.rss_cache import feed_item_cache
+import os
+import logging
+
+from data.feed_item_object import read_feed_item_from_json, FeedItem
 from router.meta_blog.meta_router_constants import meta_ai_blog_prefix, meta_blog_prefix
 from router.router_for_rss_feed import RouterForRssFeed
 from utils.get_link_content import get_link_content_with_bs_no_params
@@ -8,21 +11,28 @@ from utils.tools import format_author_names
 
 class MetaBlog(RouterForRssFeed):
 
-    def _get_individual_article(self, entry_list):
+    def _get_individual_article(self, article_metadata):
 
-        for entry in entry_list:
-            if entry.with_content is False:
-                soup = get_link_content_with_bs_no_params(entry.link)
+        if os.path.exists(article_metadata.json_name):
+            entry = read_feed_item_from_json(article_metadata.json_name)
+        else:
+            logging.info(f"Getting content for: {article_metadata.link}")
+            entry = FeedItem(title=article_metadata.title,
+                             link=article_metadata.link,
+                             guid=article_metadata.link)
+            soup = get_link_content_with_bs_no_params(article_metadata.link)
 
-                if entry.link.startswith(meta_ai_blog_prefix):
-                    self.__extract_ai_blog(soup, entry)
-                elif entry.link.startswith(meta_blog_prefix):
-                    # unable to extract normal meta blog now
-                    pass
-                else:
-                    self.__extract_engineering_blog(soup, entry)
+            if article_metadata.link.startswith(meta_ai_blog_prefix):
+                self.__extract_ai_blog(soup, entry)
+            elif article_metadata.link.startswith(meta_blog_prefix):
+                # unable to extract normal meta blog now
+                pass
+            else:
+                self.__extract_engineering_blog(soup, entry)
+        return entry
 
     def __extract_ai_blog(self, soup, entry):
+
         entry_content_div = soup.find("div", {"class": "_amgj"})
         if entry_content_div:
             entry.author = soup.find('div', class_='_amgc').text
@@ -32,7 +42,8 @@ class MetaBlog(RouterForRssFeed):
 
             entry.description = entry_content_div
             entry.with_content = True
-            feed_item_cache[entry.guid] = entry
+
+            entry.save_to_json(self.router_path)
 
     def __extract_engineering_blog(self, soup, entry):
         entry_content_div = soup.find("div", {"class": "entry-content"})
@@ -50,4 +61,5 @@ class MetaBlog(RouterForRssFeed):
 
             entry.created_time = convert_time_with_pattern(datetime_str, '%Y-%m-%d')
             entry.with_content = True
-            feed_item_cache[entry.guid] = entry
+
+            entry.save_to_json(self.router_path)

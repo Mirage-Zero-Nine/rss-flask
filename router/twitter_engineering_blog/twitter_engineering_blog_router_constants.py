@@ -1,5 +1,4 @@
-twitter_engineering_blog_name = "Twitter Engineering Blog"
-twitter_engineering_blog_title = "Engineering - Twitter Blog"
+twitter_engineering_blog_title = "Engineering Blog - Twitter"
 twitter_engineering_blog_rss_link = "https://blog.twitter.com/engineering/feed"
 twitter_engineering_blog_original_link = "https://blog.twitter.com/engineering/en_us"
 twitter_engineering_blog_description = "Information from Twitter's engineering team about our tools, technology and services."

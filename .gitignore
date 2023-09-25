@@ -1,6 +1,7 @@
 /venv/
-/authentication.yml
+/config.yml
 .idea
 *.log
 .DS_Store
 __pycache__/
+/data/**/*.json
