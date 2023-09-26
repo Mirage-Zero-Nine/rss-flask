@@ -1,6 +1,6 @@
 cnbeta_router_path = '/cnbeta'
 currency_exchange_price_router_path = "/currency"
-dayone_blog_router_path = '/dayone'
+day_one_blog_router_path = '/dayone'
 earthquake_router_path = '/earthquake'
 embassy_router_path = '/embassy'
 jandan_router_path = '/jandan'
@@ -16,7 +16,7 @@ zhihu_router_path = '/zhihu/daily'
 routers_to_call = [
     cnbeta_router_path,
     # currency_exchange_price_router_path + '/usd',
-    dayone_blog_router_path,
+    day_one_blog_router_path,
     earthquake_router_path,
     embassy_router_path,
     jandan_router_path,
@@ -34,18 +34,13 @@ refresh_period_in_minutes = 10
 
 # router query period
 jandan_query_period = 1 * 60 * 60 * 1000  # 1 hour
-dayone_query_period = 1 * 60 * 60 * 1000  # 1 hour
 zhihu_query_period = 1 * 60 * 60 * 1000  # 1 hour
 china_embassy_period = 10 * 60 * 1000  # 10 minutes
 wsdot_news_period = 10 * 60 * 1000  # 10 minutes
 
-dayone_time_convert_pattern = '%B %d, %Y'
 jandan_time_convert_pattern = "%Y.%m.%d , %H:%M"
 
 html_parser = 'html.parser'
-
-
-dayone_blog_link = "https://dayoneapp.com/blog/"
 
 jandan_page_prefix = "http://jandan.net/"
 

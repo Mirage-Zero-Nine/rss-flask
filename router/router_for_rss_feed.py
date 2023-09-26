@@ -12,8 +12,8 @@ class RouterForRssFeed(BaseRouterNew):
         for entry in parse_feed.entries:
             entry_title = entry.title
             entry_link = entry.link
-            save_json_path_prefix = convert_router_path_to_save_path_prefix(self.router_path)
             if entry_link and entry_title:
+                save_json_path_prefix = convert_router_path_to_save_path_prefix(self.router_path)
                 if check_need_to_filter(entry_link, entry_title, link_filter, title_filter) is False:
                     feed_item = Metadata(title=entry_title,
                                          link=entry_link,
