@@ -32,6 +32,7 @@ class TelegramWechatChannelRouter(BaseRouterNew):
                     save_json_path_prefix = convert_router_path_to_save_path_prefix(self.router_path)
                     if href.startswith('http://'):
                         href = href.replace('http://', 'https://')
+                        href = self.__remove_tracker(href)
 
                     entry_title = link_element.text.strip()
                     entry_creat_time = message_bubble_div.find('time', class_='time')['datetime']
@@ -80,3 +81,10 @@ class TelegramWechatChannelRouter(BaseRouterNew):
             entry.save_to_json(self.router_path)
 
         return entry
+
+    @staticmethod
+    def __remove_tracker(url):
+        if "&amp;chksm=" in url:
+            return url.split("&amp;chksm=")[0]
+        else:
+            return url
