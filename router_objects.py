@@ -7,6 +7,9 @@ from router.currency.currency_exchange_price_router import CurrencyExchangePrice
 from router.currency.currency_exchange_price_router_constants import currency_exchange_price_title, \
     currency_exchange_price_name, currency_exchange_price_link, currency_exchange_price_search_link, \
     currency_exchange_price_description, currency_exchange_price_cache_key, currency_exchange_price_query_period
+from router.dayone.day_one_blog_constants import day_one_blog_router_title, day_one_blog_articles_link, \
+    day_one_blog_site_link, day_one_blog_query_period, day_one_blog_router_description
+from router.dayone.day_one_blog_router import DayOneBlogRouter
 from router.earthquake.usgs_earthquake_router import UsgsEarthquakeRouter
 from router.earthquake.usgs_earthquake_router_constants import usgs_earthquake_name, usgs_earthquake_feed_title, \
     usgs_earthquake_original_link, usgs_earthquake_link, usgs_earthquake_description, usgs_earthquake_cache_key, \
@@ -25,11 +28,12 @@ from router.twitter_engineering_blog.twitter_engineering_blog_router import Twit
 from router.twitter_engineering_blog.twitter_engineering_blog_router_constants import twitter_engineering_blog_title, \
     twitter_engineering_blog_original_link, twitter_engineering_blog_rss_link, \
     twitter_engineering_blog_description, twitter_engineering_blog_period
+from router.zaobao.zaobao_realtime_router import ZaobaoRealtimeRouter
 from router.zaobao.zaobao_realtime_router_constants import zaobao_realtime_page_prefix, zaobao_query_period, \
     zaobao_region_general_title
-from router.zaobao.zaobao_realtime_router import ZaobaoRealtimeRouter
 from utils.router_constants import language_english, language_chinese, meta_engineering_blog_router, \
-    twitter_engineering_blog_router_path, cnbeta_router_path, telegram_wechat_router_path, zaobao_router_path_prefix
+    twitter_engineering_blog_router_path, cnbeta_router_path, telegram_wechat_router_path, zaobao_router_path_prefix, \
+    day_one_blog_router_path
 
 # file path started from app.py
 with open('config.yml') as f:
@@ -115,4 +119,14 @@ zaobao_realtime = ZaobaoRealtimeRouter(
     articles_link=zaobao_realtime_page_prefix,
     language=language_chinese,
     period=zaobao_query_period
+)
+
+day_one_blog = DayOneBlogRouter(
+    router_path=day_one_blog_router_path,
+    feed_title=day_one_blog_router_title,
+    original_link=day_one_blog_site_link,
+    articles_link=day_one_blog_articles_link,
+    description=day_one_blog_router_description,
+    language=language_english,
+    period=day_one_blog_query_period
 )

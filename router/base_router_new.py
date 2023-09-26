@@ -8,7 +8,8 @@ import pytz
 from flask import make_response
 from datetime import datetime
 
-from data.feed_item_object import generate_json_name, convert_router_path_to_save_path_prefix, Metadata
+from data.feed_item_object import generate_json_name, convert_router_path_to_save_path_prefix, Metadata, \
+    read_feed_item_from_json, FeedItem
 from data.rss_cache import last_build_time_cache
 from utils.xml_utilities import generate_feed_object_for_new_router
 
@@ -45,7 +46,18 @@ class BaseRouterNew:
         return []
 
     def _get_individual_article(self, article_metadata):
-        return []
+        if os.path.exists(article_metadata.json_name):
+            entry = read_feed_item_from_json(article_metadata.json_name)
+        else:
+            logging.info(f"Getting content for: {article_metadata.link}")
+            entry = FeedItem(title=article_metadata.title,
+                             link=article_metadata.link,
+                             guid=article_metadata.link)
+            self._get_article_content(article_metadata, entry)
+        return entry
+
+    def _get_article_content(self, article_metadata, entry):
+        pass
 
     def get_rss_xml_response(self, parameter=None, link_filter=None, title_filter=None):
         """
