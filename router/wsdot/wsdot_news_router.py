@@ -4,7 +4,7 @@ from flask import make_response
 
 from data.feed_item_object import FeedItem
 from data.rss_cache import feed_cache, feed_item_cache
-from utils.cache_utilities import check_query
+from utils.tools import check_query
 from utils.xml_utilities import generate_feed_object
 from utils.get_link_content import get_link_content_with_bs_no_params
 from utils.router_constants import wsdot_news_period, wsdot_news_link, wsdot_news_prefix, wsdotblog_blogspot

@@ -1,3 +1,9 @@
+from datetime import datetime
+import logging
+import data.rss_cache
+import time
+
+
 def format_author_names(author_list):
     if not author_list:
         return ""
@@ -11,6 +17,32 @@ def check_need_to_filter(link, title, link_filter, title_filter):
     if link_filter and link.startswith(link_filter):
         return True
     if title_filter and title.startswith(title_filter):
+        return True
+
+    return False
+
+
+def check_query(key, period, name):
+    """
+    Check if current router needs to refresh. Unit of period is minute.
+    :return: if the app need to refresh the content for this router
+    """
+    should_refresh = (len(data.rss_cache.feed_cache) == 0
+                      or key not in data.rss_cache.feed_cache.keys()
+                      or check_should_query_no_state(datetime.timestamp(data.rss_cache.feed_cache[key].lastBuildDate),
+                                                     period))
+
+    logging.info(f"Query {name} for this call: {should_refresh}")
+
+    return should_refresh
+
+
+def check_should_query_no_state(last_query_time, cooldown_period):
+    logging.info("last query time: " + str(round(last_query_time) * 1000))
+    logging.info("current time: " + str(round(time.time() * 1000)))
+    logging.info("cooldown period: " + str(cooldown_period))
+
+    if round(time.time() * 1000) - round(last_query_time * 1000) > cooldown_period:
         return True
 
     return False
