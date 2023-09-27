@@ -67,15 +67,13 @@ class TelegramWechatChannelRouter(BaseRouterNew):
                 if mpaudio_section:
                     mpaudio_parent_section = mpaudio_section.find_parent('section')
                     mpaudio_parent_section.extract()
+                for tag in selected_div.find_all(True):
+                    tag.attrs = {key: value for key, value in tag.attrs.items() if key.lower() != 'style'}
 
             img_tags = soup.find_all('img', class_="rich_pages wxw-img")
             for img_tag in img_tags:
                 # Replace data-src with src and remove all other attributes
                 img_tag.attrs = {'src': img_tag['data-src']}
-
-            # Remove style attributes from the selected div and its children
-            for tag in selected_div.find_all(True):
-                tag.attrs = {key: value for key, value in tag.attrs.items() if key.lower() != 'style'}
 
             entry.description = selected_div
             entry.save_to_json(self.router_path)
