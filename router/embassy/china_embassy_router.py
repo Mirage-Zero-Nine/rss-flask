@@ -4,7 +4,7 @@ from flask import make_response
 
 from data.feed_item_object import FeedItem
 from data.rss_cache import feed_cache, feed_item_cache
-from utils.cache_utilities import check_query
+from utils.tools import check_query
 from utils.xml_utilities import generate_feed_object
 from utils.get_link_content import get_link_content_with_urllib_request
 from utils.router_constants import china_embassy_filter, china_embassy_period, china_embassy_prefix
