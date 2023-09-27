@@ -11,9 +11,8 @@ from router.dayone.day_one_blog_constants import day_one_blog_router_title, day_
     day_one_blog_site_link, day_one_blog_query_period, day_one_blog_router_description
 from router.dayone.day_one_blog_router import DayOneBlogRouter
 from router.earthquake.usgs_earthquake_router import UsgsEarthquakeRouter
-from router.earthquake.usgs_earthquake_router_constants import usgs_earthquake_name, usgs_earthquake_feed_title, \
-    usgs_earthquake_original_link, usgs_earthquake_link, usgs_earthquake_description, usgs_earthquake_cache_key, \
-    usgs_earthquake_query_period
+from router.earthquake.usgs_earthquake_router_constants import usgs_earthquake_feed_title, \
+    usgs_earthquake_original_link, usgs_earthquake_link, usgs_earthquake_description, usgs_earthquake_query_period
 from router.meta_blog.meta_blog import MetaBlog
 from router.meta_blog.meta_router_constants import meta_blog_title, meta_blog_rss_link, meta_blog_link, \
     meta_blog_description, meta_blog_period
@@ -33,7 +32,7 @@ from router.zaobao.zaobao_realtime_router_constants import zaobao_realtime_page_
     zaobao_region_general_title
 from utils.router_constants import language_english, language_chinese, meta_engineering_blog_router, \
     twitter_engineering_blog_router_path, cnbeta_router_path, telegram_wechat_router_path, zaobao_router_path_prefix, \
-    day_one_blog_router_path
+    day_one_blog_router_path, earthquake_router_path
 
 # file path started from app.py
 with open('config.yml') as f:
@@ -72,13 +71,12 @@ the_verge = TheVergeRouter(
 )
 
 usgs_earthquake_report = UsgsEarthquakeRouter(
-    name=usgs_earthquake_name,
+    router_path=earthquake_router_path,
     feed_title=usgs_earthquake_feed_title,
     original_link=usgs_earthquake_original_link,
     articles_link=usgs_earthquake_link,
     description=usgs_earthquake_description,
     language=language_english,
-    feed_cache_key=usgs_earthquake_cache_key,
     period=usgs_earthquake_query_period
 )
 

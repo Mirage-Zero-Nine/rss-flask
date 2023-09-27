@@ -1,4 +1,7 @@
+from flask import make_response
+
 from data.feed_item_object import FeedItem
+from router.earthquake.usgs_earthquake_router_constants import usgs_earthquake_name
 from router.router_for_json_feed import RouterForJsonFeed
 from utils.router_constants import language_english
 from utils.time_converter import convert_millisecond_to_datetime_with_format, convert_millisecond_to_datetime
@@ -6,7 +9,7 @@ from utils.xml_utilities import generate_feed_object
 
 
 class UsgsEarthquakeRouter(RouterForJsonFeed):
-    def _generate_feed_rss(self, link_filter=None, title_filter=None):
+    def get_rss_xml_response(self, parameter=None, link_filter=None, title_filter=None):
         json_response = self._load_json_response()
         feed_item_list = []
         for feature in json_response["features"]:
@@ -19,7 +22,7 @@ class UsgsEarthquakeRouter(RouterForJsonFeed):
             feed_item_object = FeedItem(
                 title=feature["properties"]['title'],
                 link=feature["properties"]['url'],
-                author=self.name,  # they don't have a specific author
+                author=usgs_earthquake_name,  # they don't have a specific author
                 created_time=convert_millisecond_to_datetime(feature["properties"]['time']),
                 guid=feature["properties"]['ids'],
                 description=loc + occurred_time + depth + url
@@ -34,4 +37,6 @@ class UsgsEarthquakeRouter(RouterForJsonFeed):
             feed_item_list=feed_item_list
         )
 
-        return feed
+        response = make_response(feed.rss())
+        response.headers.set('Content-Type', 'application/rss+xml')
+        return response
