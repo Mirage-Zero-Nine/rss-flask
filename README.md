@@ -26,7 +26,6 @@ See `app.py` for router path.
 - `/currency/<currency_name>`: only support CNY to USD, `currency_name` is a placeholder for future usage.
 - `/zaobao/realtime/<region>`: two regions supported for now: `world` and `china`.
 
-
 ## Scheduler
 
 You can add a router in `utils/scheduler.py`. This can make the specific router to automatically refresh content, and the time period is controlled by `refresh_period_in_minutes`.
