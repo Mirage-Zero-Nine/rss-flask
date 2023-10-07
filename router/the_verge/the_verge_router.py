@@ -4,13 +4,13 @@ from datetime import datetime
 
 import pytz
 
-from data.feed_item_object import FeedItem, read_feed_item_from_json, Metadata, generate_json_name, \
+from utils.feed_item_object import FeedItem, read_feed_item_from_json, Metadata, generate_json_name, \
     convert_router_path_to_save_path_prefix
-from router.base_router_new import BaseRouterNew
+from router.base_router import BaseRouter
 from utils.get_link_content import get_link_content_with_bs_no_params
 
 
-class TheVergeRouter(BaseRouterNew):
+class TheVergeRouter(BaseRouter):
     def _get_articles_list(self, parameter=None, link_filter=None, title_filter=None):
 
         metadata_list = []

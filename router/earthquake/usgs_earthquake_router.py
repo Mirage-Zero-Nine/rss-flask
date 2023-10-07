@@ -1,6 +1,6 @@
 from flask import make_response
 
-from data.feed_item_object import FeedItem
+from utils.feed_item_object import FeedItem
 from router.earthquake.usgs_earthquake_router_constants import usgs_earthquake_name
 from router.router_for_json_feed import RouterForJsonFeed
 from utils.router_constants import language_english

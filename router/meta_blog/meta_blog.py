@@ -1,7 +1,7 @@
 import os
 import logging
 
-from data.feed_item_object import read_feed_item_from_json, FeedItem
+from utils.feed_item_object import read_feed_item_from_json, FeedItem
 from router.meta_blog.meta_router_constants import meta_ai_blog_prefix, meta_blog_prefix
 from router.router_for_rss_feed import RouterForRssFeed
 from utils.get_link_content import get_link_content_with_bs_no_params

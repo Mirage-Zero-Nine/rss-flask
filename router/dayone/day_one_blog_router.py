@@ -1,12 +1,12 @@
-from data.feed_item_object import Metadata, convert_router_path_to_save_path_prefix, generate_json_name
-from router.base_router_new import BaseRouterNew
+from utils.feed_item_object import Metadata, convert_router_path_to_save_path_prefix, generate_json_name
+from router.base_router import BaseRouter
 from router.dayone.day_one_blog_constants import day_one_blog_time_convert_pattern
 from utils.get_link_content import get_link_content_with_bs_no_params
 from utils.router_constants import html_parser
 from utils.time_converter import convert_time_with_pattern
 
 
-class DayOneBlogRouter(BaseRouterNew):
+class DayOneBlogRouter(BaseRouter):
     def _get_articles_list(self, link_filter=None, title_filter=None, parameter=None):
         """
         Override this method for each router.

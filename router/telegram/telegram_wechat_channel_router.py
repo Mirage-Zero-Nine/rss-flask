@@ -1,9 +1,9 @@
 import logging
 import os
 
-from data.feed_item_object import convert_router_path_to_save_path_prefix, Metadata, generate_json_name, \
+from utils.feed_item_object import convert_router_path_to_save_path_prefix, Metadata, generate_json_name, \
     read_feed_item_from_json, FeedItem
-from router.base_router_new import BaseRouterNew
+from router.base_router import BaseRouter
 from router.telegram.telegram_wechat_channel_router_constant import telegram_wechat_channel_link_filter, \
     telegram_wechat_channel_router_description
 from utils.get_link_content import get_link_content_with_bs_no_params, get_link_content_with_utf8_decode
@@ -11,7 +11,7 @@ from utils.time_converter import convert_time_with_pattern
 from utils.tools import check_need_to_filter
 
 
-class TelegramWechatChannelRouter(BaseRouterNew):
+class TelegramWechatChannelRouter(BaseRouter):
     def _get_articles_list(self, link_filter=None, title_filter=None, parameter=None):
         # list of metadata of the articles
         metadata_list = []

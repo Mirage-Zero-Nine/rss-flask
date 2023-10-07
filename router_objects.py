@@ -16,8 +16,8 @@ from router.telegram.telegram_wechat_channel_router import TelegramWechatChannel
 from router.telegram.telegram_wechat_channel_router_constant import telegram_wechat_channel_router_title, \
     telegram_wechat_channel_router_site_link, telegram_wechat_channel_router_description, \
     telegram_wechat_channel_period, telegram_wechat_channel_url
-from router.the_verge.the_verge_constants import the_verge_name, the_verge_title, the_verge_prefix, \
-    the_verge_tech_archive, the_verge_description, the_verge_news_key
+from router.the_verge.the_verge_constants import the_verge_title, the_verge_prefix, the_verge_tech_archive, \
+    the_verge_description
 from router.the_verge.the_verge_router import TheVergeRouter
 from router.twitter_engineering_blog.twitter_engineering_blog_router import TwitterEngineeringBlogRouter
 from router.twitter_engineering_blog.twitter_engineering_blog_router_constants import twitter_engineering_blog_title, \
