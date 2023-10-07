@@ -6,7 +6,7 @@ import pytz
 from rfeed import Feed
 from datetime import datetime
 
-from data.feed_item_object import FeedItem, convert_router_path_to_save_path_prefix, generate_json_name
+from utils.feed_item_object import FeedItem, convert_router_path_to_save_path_prefix, generate_json_name
 
 
 def write_entry_to_json(output_file_path, feed_entries):

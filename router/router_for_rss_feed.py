@@ -1,11 +1,11 @@
 import feedparser
 
-from data.feed_item_object import Metadata, convert_router_path_to_save_path_prefix, generate_json_name
-from router.base_router_new import BaseRouterNew
+from utils.feed_item_object import Metadata, convert_router_path_to_save_path_prefix, generate_json_name
+from router.base_router import BaseRouter
 from utils.tools import check_need_to_filter
 
 
-class RouterForRssFeed(BaseRouterNew):
+class RouterForRssFeed(BaseRouter):
     def _get_articles_list(self, link_filter=None, title_filter=None, parameter=None):
         metadata_list = []
         parse_feed = feedparser.parse(self.articles_link)

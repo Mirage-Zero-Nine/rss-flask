@@ -3,8 +3,8 @@ import logging
 from flask import make_response
 from datetime import datetime
 
-from data.feed_item_object import FeedItem
-from data.rss_cache import feed_item_cache, feed_cache
+from utils.feed_item_object import FeedItem
+from utils.rss_cache import feed_item_cache, feed_cache
 from utils.tools import check_query
 from utils.xml_utilities import generate_feed_object
 from utils.get_link_content import get_link_content_with_bs_and_header, get_link_content_with_urllib_request

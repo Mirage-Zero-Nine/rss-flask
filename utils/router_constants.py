@@ -1,5 +1,4 @@
 cnbeta_router_path = '/cnbeta'
-currency_exchange_price_router_path = "/currency"
 day_one_blog_router_path = '/dayone'
 earthquake_router_path = '/earthquake'
 embassy_router_path = '/embassy'
@@ -15,7 +14,6 @@ zhihu_router_path = '/zhihu/daily'
 # List of routers to refresh periodically
 routers_to_call = [
     cnbeta_router_path,
-    # currency_exchange_price_router_path + '/usd',
     day_one_blog_router_path,
     earthquake_router_path,
     embassy_router_path,
