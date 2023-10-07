@@ -38,7 +38,7 @@ class BaseRouterNew:
         self.language = language
         self.period = period
 
-    def _get_articles_list(self, parameter=None, link_filter=None, title_filter=None, ):
+    def _get_articles_list(self, parameter=None, link_filter=None, title_filter=None):
         """
         Override this method for each router.
         :return: list of articles

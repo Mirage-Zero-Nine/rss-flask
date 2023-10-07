@@ -28,7 +28,7 @@ from router.zaobao.zaobao_realtime_router_constants import zaobao_realtime_page_
     zaobao_region_general_title
 from utils.router_constants import language_english, language_chinese, meta_engineering_blog_router, \
     twitter_engineering_blog_router_path, cnbeta_router_path, telegram_wechat_router_path, zaobao_router_path_prefix, \
-    day_one_blog_router_path, earthquake_router_path
+    day_one_blog_router_path, earthquake_router_path, the_verge_router_path
 
 # file path started from app.py
 with open('config.yml') as f:
@@ -56,13 +56,12 @@ cnbeta = CnbetaRouter(
 )
 
 the_verge = TheVergeRouter(
-    name=the_verge_name,
+    router_path=the_verge_router_path,
     feed_title=the_verge_title,
     original_link=the_verge_prefix,
     articles_link=the_verge_tech_archive,
     description=the_verge_description,
     language=language_english,
-    feed_cache_key=the_verge_news_key,
     period=cnbeta_period
 )
 
