@@ -3,19 +3,18 @@ import logging
 from flask import Flask
 from werkzeug.exceptions import abort
 
-from router.currency.currency_exchange_price_router_constants import currency_exchange_price_parameter
 from router.embassy import china_embassy_router
 from router.jandan import jandan_router
 from router.meta_blog.meta_router_constants import meta_blog_prefix
 from router.wsdot import wsdot_news_router
 from router.zaobao.zaobao_realtime_router_constants import zaobao_region_parameter, title_filter
 from router.zhihu import zhihu_daily_router
-from router_objects import meta_blog, cnbeta, the_verge, usgs_earthquake_report, currency_exchange_price, \
-    twitter_engineering_blog, telegram_wechat_channel, zaobao_realtime, day_one_blog
+from router_objects import meta_blog, cnbeta, the_verge, usgs_earthquake_report, twitter_engineering_blog, \
+    telegram_wechat_channel, zaobao_realtime, day_one_blog
 from utils.router_constants import zhihu_router_path, wsdot_news_router_path, \
     twitter_engineering_blog_router_path, the_verge_router_path, meta_engineering_blog_router, \
     telegram_wechat_router_path, jandan_router_path, earthquake_router_path, embassy_router_path, \
-    day_one_blog_router_path, cnbeta_router_path, zaobao_router_path_prefix, currency_exchange_price_router_path
+    day_one_blog_router_path, cnbeta_router_path, zaobao_router_path_prefix
 from utils.scheduler import router_refresh_job_scheduler
 
 app = Flask(__name__)
@@ -30,14 +29,6 @@ def hello_world():
 @app.route(cnbeta_router_path)
 def cnbeta_router():
     return cnbeta.get_rss_xml_response()
-
-
-@app.route(currency_exchange_price_router_path + '/<currency_name>')
-def currency_exchange_price_router(currency_name):
-    if currency_name not in currency_exchange_price_parameter:
-        abort(404)
-
-    return currency_exchange_price.get_rss_xml_response(parameter=currency_name)
 
 
 @app.route(day_one_blog_router_path)

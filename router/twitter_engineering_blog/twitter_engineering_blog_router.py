@@ -1,7 +1,7 @@
 import logging
 import os
 
-from data.feed_item_object import read_feed_item_from_json, FeedItem
+from utils.feed_item_object import read_feed_item_from_json, FeedItem
 from router.router_for_rss_feed import RouterForRssFeed
 from router.twitter_engineering_blog.twitter_engineering_blog_router_constants import \
     twitter_engineering_blog_date_format

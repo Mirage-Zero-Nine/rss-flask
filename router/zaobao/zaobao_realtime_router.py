@@ -1,9 +1,9 @@
 import logging
 import os
 
-from data.feed_item_object import Metadata, generate_json_name, convert_router_path_to_save_path_prefix, \
+from utils.feed_item_object import Metadata, generate_json_name, convert_router_path_to_save_path_prefix, \
     read_feed_item_from_json, FeedItem
-from router.base_router_new import BaseRouterNew
+from router.base_router import BaseRouter
 from router.zaobao.zaobao_realtime_router_constants import zaobao_realtime_page_suffix, zaobao_headers, \
     zaobao_story_prefix, zaobao_time_convert_pattern, unwanted_div_id, unwanted_div_class, feed_title_mapping, \
     feed_description_mapping, feed_prefix_mapping, zaobao_time_general_author
@@ -14,7 +14,7 @@ from utils.tools import check_need_to_filter
 from utils.xml_utilities import generate_feed_object_for_new_router
 
 
-class ZaobaoRealtimeRouter(BaseRouterNew):
+class ZaobaoRealtimeRouter(BaseRouter):
     def _get_articles_list(self, link_filter=None, title_filter=None, parameter=""):
         # list of metadata of the articles
         metadata_list = []

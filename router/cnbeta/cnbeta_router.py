@@ -1,16 +1,16 @@
 import logging
 import os
 
-from data.feed_item_object import FeedItem, convert_router_path_to_save_path_prefix, generate_json_name, Metadata, \
+from utils.feed_item_object import FeedItem, convert_router_path_to_save_path_prefix, generate_json_name, Metadata, \
     read_feed_item_from_json
-from router.base_router_new import BaseRouterNew
+from router.base_router import BaseRouter
 from router.cnbeta.cnbeta_router_constants import cnbeta_query_page_count, cnbeta_articles_link, \
     cnbeta_news_router_author
 from utils.get_link_content import get_link_content_with_utf8_decode
 from utils.time_converter import convert_time_with_pattern
 
 
-class CnbetaRouter(BaseRouterNew):
+class CnbetaRouter(BaseRouter):
     def _get_articles_list(self, link_filter=None, title_filter=None, parameter=None):
         articles_list = []
 
