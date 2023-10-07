@@ -3,10 +3,6 @@ import yaml
 from router.cnbeta.cnbeta_router import CnbetaRouter
 from router.cnbeta.cnbeta_router_constants import cnbeta_news_router_title, cnbeta_news_site_link, \
     cnbeta_news_router_description, cnbeta_period, cnbeta_articles_link
-from router.currency.currency_exchange_price_router import CurrencyExchangePriceRouter
-from router.currency.currency_exchange_price_router_constants import currency_exchange_price_title, \
-    currency_exchange_price_name, currency_exchange_price_link, currency_exchange_price_search_link, \
-    currency_exchange_price_description, currency_exchange_price_cache_key, currency_exchange_price_query_period
 from router.dayone.day_one_blog_constants import day_one_blog_router_title, day_one_blog_articles_link, \
     day_one_blog_site_link, day_one_blog_query_period, day_one_blog_router_description
 from router.dayone.day_one_blog_router import DayOneBlogRouter
@@ -78,17 +74,6 @@ usgs_earthquake_report = UsgsEarthquakeRouter(
     description=usgs_earthquake_description,
     language=language_english,
     period=usgs_earthquake_query_period
-)
-
-currency_exchange_price = CurrencyExchangePriceRouter(
-    name=currency_exchange_price_name,
-    feed_title=currency_exchange_price_title,
-    original_link=currency_exchange_price_link,
-    articles_link=currency_exchange_price_search_link,
-    description=currency_exchange_price_description,
-    language=language_chinese,
-    feed_cache_key=currency_exchange_price_cache_key,
-    period=currency_exchange_price_query_period
 )
 
 twitter_engineering_blog = TwitterEngineeringBlogRouter(

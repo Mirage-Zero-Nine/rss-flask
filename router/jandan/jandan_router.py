@@ -87,7 +87,6 @@ def generate_feed_rss():
 def get_rss_xml_response():
     """
     Entry point of the router.
-    Currently, currency_name is not used.
     :return: XML feed
     """
     jandan_key = 'jandan/latest'
