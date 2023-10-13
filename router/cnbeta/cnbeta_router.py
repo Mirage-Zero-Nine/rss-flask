@@ -48,7 +48,7 @@ class CnbetaRouter(BaseRouter):
             time_object = self.__extract_time(soup)
             entry.created_time = convert_time_with_pattern(time_object, '%Y-%m-%d %H:%M:%S', 8)
 
-            entry.description = self.__extract_content(soup)
+            entry.description = self.__extract_summary(soup) + self.__extract_content(soup)
 
             entry.author = cnbeta_news_router_author  # they don't have a specific author
 
@@ -61,6 +61,11 @@ class CnbetaRouter(BaseRouter):
         return time_element.get_text() if time_element else None
 
     @staticmethod
+    def __extract_summary(soup):
+        article_summary_div = soup.find('div', class_='article-summ')
+        return article_summary_div.decode_contents() if article_summary_div else ""
+
+    @staticmethod
     def __extract_content(soup):
         article_cont_div = soup.find('div', class_='articleCont')
-        return article_cont_div.decode_contents() if article_cont_div else None
+        return article_cont_div.decode_contents() if article_cont_div else ""
