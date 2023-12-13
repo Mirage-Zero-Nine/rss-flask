@@ -1,5 +1,6 @@
 import logging
 import os
+from datetime import datetime
 
 from utils.feed_item_object import Metadata, generate_json_name, convert_router_path_to_save_path_prefix, \
     read_feed_item_from_json, FeedItem
@@ -46,12 +47,16 @@ class ZaobaoRealtimeRouter(BaseRouter):
         if os.path.exists(article_metadata.json_name):
             entry = read_feed_item_from_json(article_metadata.json_name)
         else:
-            logging.info(f"Getting content for: {article_metadata.link}")
+            logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Getting content for: {article_metadata.link}")
             entry = FeedItem(title=article_metadata.title,
                              link=article_metadata.link,
                              guid=article_metadata.link)
             soup = get_link_content_with_bs_and_header(article_metadata.link,
                                                        html_parser, zaobao_headers).find('article', class_='article')
+            if soup is None:
+                logging.error(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Getting empty page: {article_metadata.link}")
+                return entry
+
             # Find the element containing the publication date and time
             timestamp_text = soup.find('div', class_='story-postdate').text.strip().replace('发布 / ', '')
             entry.created_time = convert_time_with_pattern(timestamp_text,

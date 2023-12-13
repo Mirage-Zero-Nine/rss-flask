@@ -49,7 +49,7 @@ class BaseRouter:
         if os.path.exists(article_metadata.json_name):
             entry = read_feed_item_from_json(article_metadata.json_name)
         else:
-            logging.info(f"Getting content for: {article_metadata.link}")
+            logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Getting content for: {article_metadata.link}")
             entry = FeedItem(title=article_metadata.title,
                              link=article_metadata.link,
                              guid=article_metadata.link)
@@ -64,14 +64,14 @@ class BaseRouter:
         Entry point of the router.
         :return: XML feed
         """
-        logging.info(f"Refreshing content: {self.router_path}")
+        logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Refreshing content: {self.router_path}")
 
         cache_key = self.__generate_cache_key_for_router(parameter)
-        logging.info(f"cache key: {cache_key}")
+        logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} cache key: {cache_key}")
         feed_entries_list = []
 
         save_path_prefix = convert_router_path_to_save_path_prefix(cache_key)
-        logging.info(f"prefix: {save_path_prefix}")
+        logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} prefix: {save_path_prefix}")
         # create a directory to save json
         os.makedirs(save_path_prefix, exist_ok=True)
 
@@ -81,11 +81,11 @@ class BaseRouter:
         if cache_key in last_build_time_cache.keys() and self.__check_if_meet_refresh_time(
                 datetime.timestamp(last_build_time_cache[cache_key])) is False and os.path.exists(
                 article_list_file_name):
-            logging.info(f"Reading saved content for {cache_key}...")
+            logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Reading saved content for {cache_key}...")
             article_metadata_list = self.__read_article_list_from_file(article_list_file_name)
             last_build_time = last_build_time_cache[cache_key]
         else:
-            logging.info(f"Query latest content for {cache_key}...")
+            logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Query latest content for {cache_key}...")
 
             article_metadata_list = self._get_articles_list(parameter=parameter,
                                                             link_filter=link_filter,
@@ -101,7 +101,7 @@ class BaseRouter:
         feed = self._generate_response(last_build_time=last_build_time,
                                        feed_entries_list=feed_entries_list,
                                        parameter=parameter)
-        logging.info(f"last build date: {feed.lastBuildDate}")
+        logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Last build date: {feed.lastBuildDate}")
 
         response = make_response(feed.rss())
         response.headers.set('Content-Type', 'application/rss+xml')
@@ -119,8 +119,8 @@ class BaseRouter:
         )
 
     def __generate_cache_key_for_router(self, parameter=None):
-        logging.info(f"router path: {self.router_path}")
-        logging.info(f"parameter: {parameter}")
+        logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Router path: {self.router_path}")
+        logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Parameter: {parameter}")
         if parameter is None:
             cache_key = self.router_path
         else:
@@ -128,9 +128,8 @@ class BaseRouter:
         return cache_key
 
     def __check_if_meet_refresh_time(self, last_query_time):
-        logging.info("last query time: " + str(round(last_query_time) * 1000))
-        logging.info("current time: " + str(round(time.time() * 1000)))
-        logging.info("cooldown period: " + str(self.period))
+        logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Last query time: " + str(round(last_query_time) * 1000))
+        logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Cooldown period: " + str(self.period))
 
         if round(time.time() * 1000) - round(last_query_time * 1000) > int(self.period):
             return True

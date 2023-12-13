@@ -1,3 +1,4 @@
+from datetime import datetime
 import logging
 import os
 
@@ -50,7 +51,7 @@ class TelegramWechatChannelRouter(BaseRouter):
         if os.path.exists(article_metadata.json_name):
             entry = read_feed_item_from_json(article_metadata.json_name)
         else:
-            logging.info(f"Getting content for: {article_metadata.link}")
+            logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Getting content for: {article_metadata.link}")
             entry = FeedItem(title=article_metadata.title,
                              link=article_metadata.link,
                              author=telegram_wechat_channel_router_description,

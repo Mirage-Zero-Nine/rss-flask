@@ -32,15 +32,14 @@ def check_query(key, period, name):
                       or check_should_query_no_state(datetime.timestamp(utils.rss_cache.feed_cache[key].lastBuildDate),
                                                      period))
 
-    logging.info(f"Query {name} for this call: {should_refresh}")
+    logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Query {name} for this call: {should_refresh}")
 
     return should_refresh
 
 
 def check_should_query_no_state(last_query_time, cooldown_period):
-    logging.info("last query time: " + str(round(last_query_time) * 1000))
-    logging.info("current time: " + str(round(time.time() * 1000)))
-    logging.info("cooldown period: " + str(cooldown_period))
+    logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Last query time: " + str(round(last_query_time) * 1000))
+    logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Cooldown period: " + str(cooldown_period))
 
     if round(time.time() * 1000) - round(last_query_time * 1000) > cooldown_period:
         return True

@@ -17,7 +17,7 @@ class TheVergeRouter(BaseRouter):
 
         for i in range(0, 3):
             soup = get_link_content_with_bs_no_params(self.articles_link + str(i + 1))
-            content_cards = soup.find_all("div", class_="duet--content-cards--content-card")
+            content_cards = soup.find_all("div", class_=lambda value: value and 'duet--content-cards--content-card group relative z-10 flex' in value)
 
             for card in content_cards:
 
@@ -49,7 +49,7 @@ class TheVergeRouter(BaseRouter):
         if os.path.exists(article_metadata.json_name):
             entry = read_feed_item_from_json(article_metadata.json_name)
         else:
-            logging.info(f"Getting content for: {article_metadata.link}")
+            logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Getting content for: {article_metadata.link}")
             entry = FeedItem(title=article_metadata.title,
                              link=article_metadata.link,
                              guid=article_metadata.link,
@@ -78,7 +78,7 @@ class TheVergeRouter(BaseRouter):
                 img_tag = noscript_tag.find('img')
                 if img_tag:
                     # Create a new img tag with only src and alt attributes
-                    new_img_tag = soup.new_tag('img', src=img_tag['src'], alt=img_tag['alt'])
+                    new_img_tag = soup.new_tag('img', src=img_tag['src'])
 
                     img_tag.replace_with(new_img_tag)
                     noscript_tag.replace_with(new_img_tag)
