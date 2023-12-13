@@ -113,7 +113,7 @@ def read_feed_item_from_json(json_file_path):
 
 def convert_router_path_to_save_path_prefix(router_path):
     if router_path.startswith('/') is False:
-        logging.error(f"Invalid path, it's not started with a '/': {router_path}")
+        logging.error(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Invalid path, it's not started with a '/': {router_path}")
         raise Exception("Invalid path, it's not started with a '/'")
 
     return f"{data_path_prefix}{router_path[1:].replace('/', '-')}"
