@@ -9,7 +9,7 @@ from router.telegram.telegram_wechat_channel_router_constant import telegram_wec
     telegram_wechat_channel_router_description
 from utils.get_link_content import get_link_content_with_bs_no_params, get_link_content_with_utf8_decode
 from utils.time_converter import convert_time_with_pattern
-from utils.tools import check_need_to_filter
+from utils.tools import check_need_to_filter, remove_empty_tag
 
 
 class TelegramWechatChannelRouter(BaseRouter):
@@ -22,8 +22,7 @@ class TelegramWechatChannelRouter(BaseRouter):
 
         for message_bubble_div in message_bubble_divs:
 
-            link_elements = message_bubble_div.find_all('a', {
-                'onclick': "return confirm('Open this link?\\n\\n'+this.href);", 'rel': 'noopener', 'target': '_blank'})
+            link_elements = message_bubble_div.find_all('a', {'onclick': "return confirm('Open this link?\\n\\n'+this.href);", 'rel': 'noopener', 'target': '_blank'})
             for link_element in link_elements:
                 href = link_element['href']
 
@@ -48,36 +47,42 @@ class TelegramWechatChannelRouter(BaseRouter):
         return metadata_list
 
     def _get_individual_article(self, article_metadata):
+        # get content from cache
         if os.path.exists(article_metadata.json_name):
-            entry = read_feed_item_from_json(article_metadata.json_name)
-        else:
-            logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Getting content for: {article_metadata.link}")
-            entry = FeedItem(title=article_metadata.title,
-                             link=article_metadata.link,
-                             author=telegram_wechat_channel_router_description,
-                             created_time=convert_time_with_pattern(article_metadata.created_time,
-                                                                    "%Y-%m-%dT%H:%M:%S%z"),
-                             guid=article_metadata.link)
-            soup = get_link_content_with_utf8_decode(article_metadata.link)
+            return read_feed_item_from_json(article_metadata.json_name)
 
-            selected_div = soup.find('div', class_='rich_media_content js_underline_content autoTypeSetting24psection')
-            if selected_div and 'style' in selected_div.attrs:
-                del selected_div['style']
-            if selected_div:
-                mpaudio_section = selected_div.find('mp-common-mpaudio')
-                if mpaudio_section:
-                    mpaudio_parent_section = mpaudio_section.find_parent('section')
-                    mpaudio_parent_section.extract()
-                for tag in selected_div.find_all(True):
-                    tag.attrs = {key: value for key, value in tag.attrs.items() if key.lower() != 'style'}
+        # otherwise, query data
+        logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Getting content for: {article_metadata.link}")
+        entry = FeedItem(title=article_metadata.title,
+                         link=article_metadata.link,
+                         author=telegram_wechat_channel_router_description,
+                         created_time=convert_time_with_pattern(article_metadata.created_time, "%Y-%m-%dT%H:%M:%S%z"),
+                         guid=article_metadata.link)
+        soup = get_link_content_with_utf8_decode(article_metadata.link)
 
-            img_tags = soup.find_all('img', class_="rich_pages wxw-img")
-            for img_tag in img_tags:
-                # Replace data-src with src and remove all other attributes
-                img_tag.attrs = {'src': img_tag['data-src']}
+        selected_div = soup.find("div", class_=lambda
+            x: x and "rich_media_content" in x.split() and "js_underline_content" in x.split())
+        if selected_div and 'style' in selected_div.attrs:
+            del selected_div['style']
+        if selected_div:
+            mpaudio_section = selected_div.find('mp-common-mpaudio')
+            if mpaudio_section:
+                mpaudio_parent_section = mpaudio_section.find_parent('section')
+                mpaudio_parent_section.extract()
+            for tag in selected_div.find_all(True):
+                tag.attrs = {key: value for key, value in tag.attrs.items() if key.lower() != 'style'}
 
-            entry.description = selected_div
-            entry.save_to_json(self.router_path)
+        img_tags = soup.find_all('img', class_="rich_pages wxw-img")
+        for img_tag in img_tags:
+            # Replace data-src with src and remove all other attributes
+            img_tag.attrs = {'src': img_tag['data-src']}
+
+        # remove empty p and section tag
+        remove_empty_tag(selected_div, "p")
+        remove_empty_tag(selected_div, "section")
+
+        entry.description = selected_div
+        entry.save_to_json(self.router_path)
 
         return entry
 
@@ -85,5 +90,5 @@ class TelegramWechatChannelRouter(BaseRouter):
     def __remove_tracker(url):
         if "&amp;chksm=" in url:
             return url.split("&amp;chksm=")[0]
-        else:
-            return url
+
+        return url
