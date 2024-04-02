@@ -45,3 +45,12 @@ def check_should_query_no_state(last_query_time, cooldown_period):
         return True
 
     return False
+
+
+def remove_empty_tag(div, tag_name):
+    empty_p_tags = div.find_all(tag_name)
+    for tag in empty_p_tags:
+        if tag.text.strip() == "":
+            if tag.find('img'):
+                continue
+            tag.extract()

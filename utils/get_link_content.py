@@ -32,7 +32,3 @@ def load_json_response(link, header=None):
 
 def get_link_content_with_urllib_request(link):
     return BeautifulSoup(urllib.request.urlopen(link), 'lxml')
-
-
-def get_link_content_with_html_entity(link):
-    return BeautifulSoup(link, 'lxml', from_encoding='utf-8')
