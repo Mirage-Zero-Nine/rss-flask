@@ -3,13 +3,10 @@ import datetime as dt
 import pytz
 
 
-def convert_time_twitter(created_time_string):
-    return datetime.strptime(created_time_string, '%Y-%m-%dT%H:%M:%S.%fZ')
-
-
 def convert_time_with_pattern(created_time_string, pattern, shift_hours=0):
     converted_time = datetime.strptime(created_time_string, pattern)
-    if shift_hours >= 0:  # convert it to UTC, for instance, UTC +1 -> shift_hour=1
+    if shift_hours >= 0:
+        # convert it to UTC, for instance, UTC +1 -> shift_hour=1
         converted_time = converted_time - dt.timedelta(hours=shift_hours)
     else:
         converted_time = converted_time + dt.timedelta(hours=abs(shift_hours))
