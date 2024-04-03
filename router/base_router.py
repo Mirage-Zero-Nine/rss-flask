@@ -47,14 +47,14 @@ class BaseRouter:
 
     def _get_individual_article(self, article_metadata):
         if os.path.exists(article_metadata.json_name):
-            entry = read_feed_item_from_json(article_metadata.json_name)
+            return read_feed_item_from_json(article_metadata.json_name)
         else:
             logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Getting content for: {article_metadata.link}")
             entry = FeedItem(title=article_metadata.title,
                              link=article_metadata.link,
                              guid=article_metadata.link)
             self._get_article_content(article_metadata, entry)
-        return entry
+            return entry
 
     def _get_article_content(self, article_metadata, entry):
         pass
@@ -96,7 +96,9 @@ class BaseRouter:
             last_build_time_cache[cache_key] = last_build_time
 
         for article_metadata in article_metadata_list:
-            feed_entries_list.append(self._get_individual_article(article_metadata))
+            entry = self._get_individual_article(article_metadata)
+            if entry.description is not None:
+                feed_entries_list.append(entry)
 
         feed = self._generate_response(last_build_time=last_build_time,
                                        feed_entries_list=feed_entries_list,

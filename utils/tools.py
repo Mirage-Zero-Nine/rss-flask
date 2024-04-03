@@ -54,3 +54,12 @@ def remove_empty_tag(div, tag_name):
             if tag.find('img'):
                 continue
             tag.extract()
+
+
+def decompose_div(soup, class_name):
+    decompose_tag_by_name(soup, 'div', class_name)
+
+
+def decompose_tag_by_name(soup, tag_name, class_name):
+    for div in soup.find_all(tag_name, class_=class_name):
+        div.decompose()

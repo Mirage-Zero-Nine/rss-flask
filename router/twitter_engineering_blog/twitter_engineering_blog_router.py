@@ -12,35 +12,26 @@ from utils.tools import format_author_names
 
 
 class TwitterEngineeringBlogRouter(RouterForRssFeed):
-    def _get_individual_article(self, article_metadata):
-        if os.path.exists(article_metadata.json_name):
-            entry = read_feed_item_from_json(article_metadata.json_name)
-        else:
-            logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Getting content for: {article_metadata.link}")
-            entry = FeedItem(title=article_metadata.title,
-                             link=article_metadata.link,
-                             guid=article_metadata.link)
-            soup = get_link_content_with_utf8_decode(entry.link)
+    def _get_article_content(self, article_metadata, entry):
+        soup = get_link_content_with_utf8_decode(entry.link)
 
-            author_divs = soup.select('div.blog__author--link:not(div.bl09-related-posts div.blog__author--link)')
-            authors = format_author_names([div['data-account-name'] for div in author_divs])
-            entry.author = authors
+        author_divs = soup.select('div.blog__author--link:not(div.bl09-related-posts div.blog__author--link)')
+        authors = format_author_names([div['data-account-name'] for div in author_divs])
+        entry.author = authors
 
-            create_time_text = soup.find('span', class_='b02-blog-post-no-masthead__date').text
-            datetime_object = convert_time_with_pattern(
-                create_time_text,
-                twitter_engineering_blog_date_format
-            )
-            entry.created_time = datetime_object
+        create_time_text = soup.find('span', class_='b02-blog-post-no-masthead__date').text
+        datetime_object = convert_time_with_pattern(
+            create_time_text,
+            twitter_engineering_blog_date_format
+        )
+        entry.created_time = datetime_object
 
-            self.__remove_unwanted_div(soup)
-            entry_content_div = soup.find("div", {"class": "column column-6"})
-            entry.description = entry_content_div
-            entry.with_content = True
+        self.__remove_unwanted_div(soup)
+        entry_content_div = soup.find("div", {"class": "column column-6"})
+        entry.description = entry_content_div
+        entry.with_content = True
 
-            entry.save_to_json(self.router_path)
-
-        return entry
+        entry.save_to_json(self.router_path)
 
     @staticmethod
     def __remove_unwanted_div(soup):
