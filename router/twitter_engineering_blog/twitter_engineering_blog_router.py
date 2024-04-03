@@ -1,8 +1,3 @@
-import logging
-import os
-from datetime import datetime
-
-from utils.feed_item_object import read_feed_item_from_json, FeedItem
 from router.router_for_rss_feed import RouterForRssFeed
 from router.twitter_engineering_blog.twitter_engineering_blog_router_constants import \
     twitter_engineering_blog_date_format
@@ -13,8 +8,8 @@ from utils.tools import format_author_names
 
 class TwitterEngineeringBlogRouter(RouterForRssFeed):
     def _get_article_content(self, article_metadata, entry):
-        soup = get_link_content_with_utf8_decode(entry.link)
 
+        soup = get_link_content_with_utf8_decode(entry.link)
         author_divs = soup.select('div.blog__author--link:not(div.bl09-related-posts div.blog__author--link)')
         authors = format_author_names([div['data-account-name'] for div in author_divs])
         entry.author = authors

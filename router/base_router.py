@@ -45,7 +45,15 @@ class BaseRouter:
         """
         return []
 
-    def _get_individual_article(self, article_metadata):
+    def _get_article(self, article_metadata):
+        """
+        Entry point to get content of each article.
+        It will try to read if it's stored in local first, then do the actual query.
+        Do not override this method in child router unless to modify the way of retrieving from local disk.
+        Override _get_article_content instead.
+        :param article_metadata: metadata of articles
+        :return: entry that contains all the metadata and the content
+        """
         if os.path.exists(article_metadata.json_name):
             return read_feed_item_from_json(article_metadata.json_name)
         else:
@@ -57,6 +65,11 @@ class BaseRouter:
             return entry
 
     def _get_article_content(self, article_metadata, entry):
+        """
+        Actual method to retrieve content
+        :param article_metadata: metadata of article
+        :param entry: object stores all the metadata and the content
+        """
         pass
 
     def get_rss_xml_response(self, parameter=None, link_filter=None, title_filter=None):
@@ -78,9 +91,7 @@ class BaseRouter:
         article_list_file_name = generate_json_name(save_path_prefix, self.feed_title)
 
         # get metadata of the articles
-        if cache_key in last_build_time_cache.keys() and self.__check_if_meet_refresh_time(
-                datetime.timestamp(last_build_time_cache[cache_key])) is False and os.path.exists(
-                article_list_file_name):
+        if cache_key in last_build_time_cache.keys() and self.__check_if_meet_refresh_time(datetime.timestamp(last_build_time_cache[cache_key])) is False and os.path.exists(article_list_file_name):
             logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Reading saved content for {cache_key}...")
             article_metadata_list = self.__read_article_list_from_file(article_list_file_name)
             last_build_time = last_build_time_cache[cache_key]
@@ -96,7 +107,7 @@ class BaseRouter:
             last_build_time_cache[cache_key] = last_build_time
 
         for article_metadata in article_metadata_list:
-            entry = self._get_individual_article(article_metadata)
+            entry = self._get_article(article_metadata)
             if entry.description is not None:
                 feed_entries_list.append(entry)
 

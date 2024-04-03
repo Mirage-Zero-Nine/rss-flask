@@ -1,12 +1,7 @@
-import logging
-import os
-from datetime import datetime
-
-from utils.feed_item_object import FeedItem, convert_router_path_to_save_path_prefix, generate_json_name, Metadata, \
-    read_feed_item_from_json
 from router.base_router import BaseRouter
 from router.cnbeta.cnbeta_router_constants import cnbeta_query_page_count, cnbeta_articles_link, \
     cnbeta_news_router_author
+from utils.feed_item_object import convert_router_path_to_save_path_prefix, generate_json_name, Metadata
 from utils.get_link_content import get_link_content_with_utf8_decode
 from utils.time_converter import convert_time_with_pattern
 
@@ -36,24 +31,18 @@ class CnbetaRouter(BaseRouter):
 
         return articles_list
 
-    def _get_individual_article(self, article_metadata):
-        if os.path.exists(article_metadata.json_name):
-            entry = read_feed_item_from_json(article_metadata.json_name)
-        else:
-            logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Getting content for: {article_metadata.link}")
-            entry = FeedItem(title=article_metadata.title,
-                             link=article_metadata.link,
-                             guid=article_metadata.link)
-            soup = get_link_content_with_utf8_decode(article_metadata.link)
+    def _get_article_content(self, article_metadata, entry):
 
-            time_object = self.__extract_time(soup)
-            entry.created_time = convert_time_with_pattern(time_object, '%Y-%m-%d %H:%M:%S', 8)
+        soup = get_link_content_with_utf8_decode(article_metadata.link)
 
-            entry.description = self.__extract_summary(soup) + self.__extract_content(soup)
+        time_object = self.__extract_time(soup)
+        entry.created_time = convert_time_with_pattern(time_object, '%Y-%m-%d %H:%M:%S', 8)
 
-            entry.author = cnbeta_news_router_author  # they don't have a specific author
+        entry.description = self.__extract_summary(soup) + self.__extract_content(soup)
 
-            entry.save_to_json(self.router_path)
+        entry.author = cnbeta_news_router_author  # they don't have a specific author
+
+        entry.save_to_json(self.router_path)
         return entry
 
     @staticmethod
