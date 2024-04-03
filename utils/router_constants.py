@@ -34,7 +34,6 @@ refresh_period_in_minutes = 10
 
 # router query period
 jandan_query_period = 1 * 60 * 60 * 1000  # 1 hour
-zhihu_query_period = 1 * 60 * 60 * 1000  # 1 hour
 china_embassy_period = 10 * 60 * 1000  # 10 minutes
 
 jandan_time_convert_pattern = "%Y.%m.%d , %H:%M"
@@ -42,18 +41,6 @@ jandan_time_convert_pattern = "%Y.%m.%d , %H:%M"
 html_parser = 'html.parser'
 
 jandan_page_prefix = "http://jandan.net/"
-
-zhihu_header = {
-    "Host": "daily.zhihu.com",
-    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:98.0) Gecko/20100101 Firefox/98.0",
-    "Accept": 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-    "Accept-Language": "en-US,en;q=0.5",
-    "Accept-Encoding": "gzip, deflate, br",
-    "Connection": "keep-alive"
-}
-
-zhihu_story_prefix = "https://daily.zhihu.com"
-zhihu_filter = "瞎扯 · "
 
 china_embassy_filter = "雇员招聘启事"
 china_embassy_prefix = 'http://losangeles.china-consulate.org/tzgg'
