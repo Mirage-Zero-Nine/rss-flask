@@ -9,7 +9,7 @@ from router.meta_blog.meta_router_constants import meta_blog_prefix
 from router.zaobao.zaobao_realtime_router_constants import zaobao_region_parameter, title_filter
 from router.zhihu import zhihu_daily_router
 from router_objects import meta_blog, cnbeta, the_verge, usgs_earthquake_report, twitter_engineering_blog, \
-    telegram_wechat_channel, zaobao_realtime, day_one_blog, nbc_news, wsdot_news
+    telegram_wechat_channel, zaobao_realtime, day_one_blog, nbc_news, wsdot_news, zhihu_daily
 from utils.router_constants import zhihu_router_path, wsdot_news_router_path, \
     twitter_engineering_blog_router_path, the_verge_router_path, meta_engineering_blog_router, \
     telegram_wechat_router_path, jandan_router_path, earthquake_router_path, embassy_router_path, \
@@ -97,8 +97,7 @@ def zaobao_router(region):
 
 @app.route(zhihu_router_path)
 def zhihu_router():
-    xml_response = zhihu_daily_router.get_rss_xml_response()
-    return xml_response
+    return zhihu_daily.get_rss_xml_response()
 
 
 router_refresh_job_scheduler(app)

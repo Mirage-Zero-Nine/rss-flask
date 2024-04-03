@@ -28,14 +28,17 @@ from router.twitter_engineering_blog.twitter_engineering_blog_router_constants i
     twitter_engineering_blog_description, twitter_engineering_blog_period
 from router.wsdot.wsdot_news_router_constant import wsdot_news_title, wsdot_news_link, wsdot_news_description, \
     wsdot_news_period
-from router.wsdot.wsdot_news_router_new import WsdotNewsRouter
+from router.wsdot.wsdot_news_router import WsdotNewsRouter
 from router.zaobao.zaobao_realtime_router import ZaobaoRealtimeRouter
 from router.zaobao.zaobao_realtime_router_constants import zaobao_realtime_page_prefix, zaobao_query_period, \
     zaobao_region_general_title
+from router.zhihu.zhihu_daily_router_constants import zhihu_daily_title, zhihu_daily_link, zhihu_daily_description, \
+    zhihu_query_period
+from router.zhihu.zhihu_daily_router import ZhihuDailyRouter
 from utils.router_constants import language_english, language_chinese, meta_engineering_blog_router, \
     twitter_engineering_blog_router_path, cnbeta_router_path, telegram_wechat_router_path, zaobao_router_path_prefix, \
     day_one_blog_router_path, earthquake_router_path, the_verge_router_path, nbc_news_router_path, \
-    wsdot_news_router_path
+    wsdot_news_router_path, zhihu_router_path
 
 # file path started from app.py
 with open('config.yml') as f:
@@ -138,4 +141,14 @@ wsdot_news = WsdotNewsRouter(
     description=wsdot_news_description,
     language=language_english,
     period=wsdot_news_period
+)
+
+zhihu_daily = ZhihuDailyRouter(
+    router_path=zhihu_router_path,
+    feed_title=zhihu_daily_title,
+    original_link=zhihu_daily_link,
+    articles_link=zhihu_daily_link,
+    description=zhihu_daily_description,
+    language=language_chinese,
+    period=zhihu_query_period
 )
