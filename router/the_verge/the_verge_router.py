@@ -45,6 +45,7 @@ class TheVergeRouter(BaseRouter):
 
         entry.created_time = datetime.strptime(article_metadata.created_time, "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=pytz.utc)
         entry.author = article_metadata.author
+        entry.description = ""
         soup = get_link_content_with_bs_no_params(entry.link)
 
         zoom_divs = soup.find_all('div', {'aria-label': 'Zoom'})
@@ -72,11 +73,12 @@ class TheVergeRouter(BaseRouter):
                 noscript_tag.replace_with(new_img_tag)
 
         h2_div = soup.find('h2', class_='inline selection:bg-franklin-20')
-        if h2_div:
+
+        if h2_div and h2_div.get_text():
             entry.description += f"<p>{h2_div.get_text()}</p>"
 
         p_div = soup.find('p', class_='duet--article--article-byline')
-        if p_div:
+        if p_div and p_div.get_text():
             entry.description += f"<p>{p_div.get_text()}</p>"
 
         figure_tag = soup.find('figure', class_='duet--article--lede-image w-full')
