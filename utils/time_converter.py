@@ -22,8 +22,8 @@ def convert_time_with_pattern(created_time_string, pattern, shift_hours=0):
     return converted_time_with_timezone
 
 
-def convert_wsdot_news_time(time_string, format):
-    time_object = datetime.strptime(str(time_string), format)
+def convert_wsdot_news_time(time_string, format_string):
+    time_object = datetime.strptime(str(time_string), format_string)
     return time_object.astimezone(pytz.timezone('US/Pacific'))
 
 

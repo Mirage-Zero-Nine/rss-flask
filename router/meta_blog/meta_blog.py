@@ -1,8 +1,3 @@
-import os
-import logging
-from datetime import datetime
-
-from utils.feed_item_object import read_feed_item_from_json, FeedItem
 from router.meta_blog.meta_router_constants import meta_ai_blog_prefix, meta_blog_prefix
 from router.router_for_rss_feed import RouterForRssFeed
 from utils.get_link_content import get_link_content_with_bs_no_params
@@ -12,24 +7,17 @@ from utils.tools import format_author_names
 
 class MetaBlog(RouterForRssFeed):
 
-    def _get_individual_article(self, article_metadata):
+    def _get_article_content(self, article_metadata, entry):
 
-        if os.path.exists(article_metadata.json_name):
-            entry = read_feed_item_from_json(article_metadata.json_name)
+        soup = get_link_content_with_bs_no_params(article_metadata.link)
+
+        if article_metadata.link.startswith(meta_ai_blog_prefix):
+            self.__extract_ai_blog(soup, entry)
+        elif article_metadata.link.startswith(meta_blog_prefix):
+            # unable to extract normal meta blog now
+            pass
         else:
-            logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Getting content for: {article_metadata.link}")
-            entry = FeedItem(title=article_metadata.title,
-                             link=article_metadata.link,
-                             guid=article_metadata.link)
-            soup = get_link_content_with_bs_no_params(article_metadata.link)
-
-            if article_metadata.link.startswith(meta_ai_blog_prefix):
-                self.__extract_ai_blog(soup, entry)
-            elif article_metadata.link.startswith(meta_blog_prefix):
-                # unable to extract normal meta blog now
-                pass
-            else:
-                self.__extract_engineering_blog(soup, entry)
+            self.__extract_engineering_blog(soup, entry)
         return entry
 
     def __extract_ai_blog(self, soup, entry):

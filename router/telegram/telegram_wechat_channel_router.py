@@ -1,12 +1,7 @@
-from datetime import datetime
-import logging
-import os
-
-from utils.feed_item_object import convert_router_path_to_save_path_prefix, Metadata, generate_json_name, \
-    read_feed_item_from_json, FeedItem
 from router.base_router import BaseRouter
 from router.telegram.telegram_wechat_channel_router_constant import telegram_wechat_channel_link_filter, \
     telegram_wechat_channel_router_description
+from utils.feed_item_object import convert_router_path_to_save_path_prefix, Metadata, generate_json_name
 from utils.get_link_content import get_link_content_with_bs_no_params, get_link_content_with_utf8_decode
 from utils.time_converter import convert_time_with_pattern
 from utils.tools import check_need_to_filter, remove_empty_tag
@@ -46,18 +41,11 @@ class TelegramWechatChannelRouter(BaseRouter):
 
         return metadata_list
 
-    def _get_individual_article(self, article_metadata):
-        # get content from cache
-        if os.path.exists(article_metadata.json_name):
-            return read_feed_item_from_json(article_metadata.json_name)
+    def _get_article_content(self, article_metadata, entry):
 
-        # otherwise, query data
-        logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Getting content for: {article_metadata.link}")
-        entry = FeedItem(title=article_metadata.title,
-                         link=article_metadata.link,
-                         author=telegram_wechat_channel_router_description,
-                         created_time=convert_time_with_pattern(article_metadata.created_time, "%Y-%m-%dT%H:%M:%S%z"),
-                         guid=article_metadata.link)
+        entry.author=telegram_wechat_channel_router_description
+        entry.created_time=convert_time_with_pattern(article_metadata.created_time, "%Y-%m-%dT%H:%M:%S%z")
+
         soup = get_link_content_with_utf8_decode(article_metadata.link)
 
         selected_div = soup.find("div", class_=lambda
