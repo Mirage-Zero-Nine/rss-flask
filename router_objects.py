@@ -26,12 +26,16 @@ from router.twitter_engineering_blog.twitter_engineering_blog_router import Twit
 from router.twitter_engineering_blog.twitter_engineering_blog_router_constants import twitter_engineering_blog_title, \
     twitter_engineering_blog_original_link, twitter_engineering_blog_rss_link, \
     twitter_engineering_blog_description, twitter_engineering_blog_period
+from router.wsdot.wsdot_news_router_constant import wsdot_news_title, wsdot_news_link, wsdot_news_description, \
+    wsdot_news_period
+from router.wsdot.wsdot_news_router_new import WsdotNewsRouter
 from router.zaobao.zaobao_realtime_router import ZaobaoRealtimeRouter
 from router.zaobao.zaobao_realtime_router_constants import zaobao_realtime_page_prefix, zaobao_query_period, \
     zaobao_region_general_title
 from utils.router_constants import language_english, language_chinese, meta_engineering_blog_router, \
     twitter_engineering_blog_router_path, cnbeta_router_path, telegram_wechat_router_path, zaobao_router_path_prefix, \
-    day_one_blog_router_path, earthquake_router_path, the_verge_router_path, nbc_news_router_path
+    day_one_blog_router_path, earthquake_router_path, the_verge_router_path, nbc_news_router_path, \
+    wsdot_news_router_path
 
 # file path started from app.py
 with open('config.yml') as f:
@@ -124,4 +128,14 @@ nbc_news = NbcNewsRouter(
     description=nbc_news_description,
     language=language_english,
     period=nbc_news_period
+)
+
+wsdot_news = WsdotNewsRouter(
+    router_path=wsdot_news_router_path,
+    feed_title=wsdot_news_title,
+    original_link=wsdot_news_link,
+    articles_link=wsdot_news_link,
+    description=wsdot_news_description,
+    language=language_english,
+    period=wsdot_news_period
 )
