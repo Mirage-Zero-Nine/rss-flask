@@ -36,7 +36,6 @@ refresh_period_in_minutes = 10
 jandan_query_period = 1 * 60 * 60 * 1000  # 1 hour
 zhihu_query_period = 1 * 60 * 60 * 1000  # 1 hour
 china_embassy_period = 10 * 60 * 1000  # 10 minutes
-wsdot_news_period = 10 * 60 * 1000  # 10 minutes
 
 jandan_time_convert_pattern = "%Y.%m.%d , %H:%M"
 
@@ -59,9 +58,6 @@ zhihu_filter = "瞎扯 · "
 china_embassy_filter = "雇员招聘启事"
 china_embassy_prefix = 'http://losangeles.china-consulate.org/tzgg'
 
-wsdot_news_link = "https://wsdot.wa.gov/about/news"
-wsdot_news_prefix = "https://wsdot.wa.gov"
-wsdotblog_blogspot = "https://wsdotblog.blogspot.com"
 
 language_chinese = "zh-cn"
 language_english = "en-us"
