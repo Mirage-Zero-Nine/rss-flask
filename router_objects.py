@@ -12,6 +12,9 @@ from router.earthquake.usgs_earthquake_router_constants import usgs_earthquake_f
 from router.meta_blog.meta_blog import MetaBlog
 from router.meta_blog.meta_router_constants import meta_blog_title, meta_blog_rss_link, meta_blog_link, \
     meta_blog_description, meta_blog_period
+from router.nbc_news.nbc_news_router import NbcNewsRouter
+from router.nbc_news.nbc_news_router_constants import nbc_news_title, nbc_news_original_link, nbc_news_rss_link, \
+    nbc_news_description, nbc_news_period
 from router.telegram.telegram_wechat_channel_router import TelegramWechatChannelRouter
 from router.telegram.telegram_wechat_channel_router_constant import telegram_wechat_channel_router_title, \
     telegram_wechat_channel_router_site_link, telegram_wechat_channel_router_description, \
@@ -28,7 +31,7 @@ from router.zaobao.zaobao_realtime_router_constants import zaobao_realtime_page_
     zaobao_region_general_title
 from utils.router_constants import language_english, language_chinese, meta_engineering_blog_router, \
     twitter_engineering_blog_router_path, cnbeta_router_path, telegram_wechat_router_path, zaobao_router_path_prefix, \
-    day_one_blog_router_path, earthquake_router_path, the_verge_router_path
+    day_one_blog_router_path, earthquake_router_path, the_verge_router_path, nbc_news_router_path
 
 # file path started from app.py
 with open('config.yml') as f:
@@ -111,4 +114,14 @@ day_one_blog = DayOneBlogRouter(
     description=day_one_blog_router_description,
     language=language_english,
     period=day_one_blog_query_period
+)
+
+nbc_news = NbcNewsRouter(
+    router_path=nbc_news_router_path,
+    feed_title=nbc_news_title,
+    original_link=nbc_news_original_link,
+    articles_link=nbc_news_rss_link,
+    description=nbc_news_description,
+    language=language_english,
+    period=nbc_news_period
 )
