@@ -17,6 +17,7 @@ from utils.scheduler import router_refresh_job_scheduler
 
 app = Flask(__name__)
 app.logger.setLevel(logging.INFO)
+logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.INFO)
 
 
 @app.route('/')
