@@ -47,35 +47,4 @@ class ChinaEmbassyNewsRouter(BaseRouter):
         for tag in soup.find_all(True):
             tag.attrs = {key: val for key, val in tag.attrs.items() if key != 'style'}
         entry.description = soup.find('div', id='News_Body_Txt_A')
-
-
-# if __name__ == '__main__':
-    # soup = get_link_content_with_urllib_request("http://losangeles.china-consulate.org/tzgg")
-    # page = soup.find("ul", {"class": "tt"})
-    #
-    # for item in page:
-    #     article = item.find('a')
-    #     if article != -1:
-    #         title = article.text
-    #         link = article['href']
-    #         if len(link) < 35:
-    #             link = china_embassy_news_prefix + link[1:]
-    #
-    #         print(article)
-    #         # print(title)
-    #         print(link)
-    # soup = get_link_content_with_urllib_request("http://losangeles.china-consulate.gov.cn/tzgg/202403/t20240327_11271477.htm")
-    # # print(soup)
-    # # print(convert_time_with_pattern(soup.find("div", id="News_Body_Time").get_text(), "%Y-%m-%d %H:%M"))
-    # # Remove all inline styles
-    # for tag in soup.find_all(True):
-    #     tag.attrs = {key: val for key, val in tag.attrs.items() if key != 'style'}
-    # print(soup.find('div', id='News_Body_Txt_A'))
-    #
-    # soup = get_link_content_with_urllib_request("http://losangeles.china-consulate.gov.cn/tzgg/202404/t20240404_11276459.htm")
-    # # print(soup)
-    # # print(convert_time_with_pattern(soup.find("div", id="News_Body_Time").get_text(), "%Y-%m-%d %H:%M"))
-    # # Remove all inline styles
-    # for tag in soup.find_all(True):
-    #     tag.attrs = {key: val for key, val in tag.attrs.items() if key != 'style'}
-    # print(soup.find('div', id='News_Body_Txt_A'))
+        entry.save_to_json(self.router_path)

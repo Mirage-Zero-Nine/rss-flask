@@ -32,15 +32,7 @@ routers_to_call = [
 
 refresh_period_in_minutes = 10
 
-# router query period
-jandan_query_period = 1 * 60 * 60 * 1000  # 1 hour
-china_embassy_period = 10 * 60 * 1000  # 10 minutes
-
-jandan_time_convert_pattern = "%Y.%m.%d , %H:%M"
-
 html_parser = 'html.parser'
-
-jandan_page_prefix = "http://jandan.net/"
 
 language_chinese = "zh-cn"
 language_english = "en-us"

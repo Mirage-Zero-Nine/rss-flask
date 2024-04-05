@@ -12,6 +12,8 @@ from router.earthquake.usgs_earthquake_router_constants import usgs_earthquake_f
 from router.embassy.china_embassy_news import ChinaEmbassyNewsRouter
 from router.embassy.china_embassy_news_constants import china_embassy_news_title, china_embassy_news_prefix, \
     china_embassy_news_description, china_embassy_news_period
+from router.jandan.jandan_constant import jandan_query_period, jandan_page_prefix, jandan_title, jandan_description
+from router.jandan.jandan_router import JandanRouter
 from router.meta_blog.meta_blog import MetaBlog
 from router.meta_blog.meta_router_constants import meta_blog_title, meta_blog_rss_link, meta_blog_link, \
     meta_blog_description, meta_blog_period
@@ -41,7 +43,7 @@ from router.zhihu.zhihu_daily_router import ZhihuDailyRouter
 from utils.router_constants import language_english, language_chinese, meta_engineering_blog_router, \
     twitter_engineering_blog_router_path, cnbeta_router_path, telegram_wechat_router_path, zaobao_router_path_prefix, \
     day_one_blog_router_path, earthquake_router_path, the_verge_router_path, nbc_news_router_path, \
-    wsdot_news_router_path, zhihu_router_path, embassy_router_path
+    wsdot_news_router_path, zhihu_router_path, embassy_router_path, jandan_router_path
 
 # file path started from app.py
 with open('config.yml') as f:
@@ -164,4 +166,14 @@ chinese_embassy_news = ChinaEmbassyNewsRouter(
     description=china_embassy_news_description,
     language=language_chinese,
     period=china_embassy_news_period
+)
+
+jandan_news = JandanRouter(
+    router_path=jandan_router_path,
+    feed_title=jandan_title,
+    original_link=jandan_page_prefix,
+    articles_link=jandan_page_prefix,
+    description=jandan_description,
+    language=language_chinese,
+    period=jandan_query_period
 )
