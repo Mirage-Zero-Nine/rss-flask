@@ -8,8 +8,8 @@ import pytz
 from flask import make_response
 from datetime import datetime
 
-from utils.feed_item_object import generate_json_name, convert_router_path_to_save_path_prefix, Metadata, \
-    read_feed_item_from_json, FeedItem
+from utils.feed_item_object import Metadata, FeedItem, generate_json_name, convert_router_path_to_save_path_prefix
+from utils.json_parser import read_feed_item_from_json
 from utils.rss_cache import last_build_time_cache
 from utils.xml_utilities import generate_feed_object_for_new_router
 

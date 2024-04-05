@@ -96,19 +96,11 @@ class Metadata:
         self.json_name = json_name
 
 
-def read_feed_item_from_json(json_file_path):
-    with open(json_file_path, 'r') as json_file:
-        json_data = json.load(json_file)
-
-    return FeedItem(
-        title=json_data.get("title"),
-        link=json_data.get("link"),
-        description=json_data.get("description"),
-        author=json_data.get("author"),
-        guid=json_data.get("guid"),
-        created_time=datetime.fromisoformat(json_data.get("created_time")) if json_data.get("created_time") else None,
-        with_content=json_data.get("with_content")
-    )
+def generate_json_name(prefix, name):
+    json_name = base64.urlsafe_b64encode(name.encode('utf-8')).decode('utf-8').rstrip('=')
+    if len(json_name) > 100:
+        json_name = json_name[-100:]
+    return f"{prefix}/{json_name}.json"
 
 
 def convert_router_path_to_save_path_prefix(router_path):
@@ -117,10 +109,3 @@ def convert_router_path_to_save_path_prefix(router_path):
         raise Exception("Invalid path, it's not started with a '/'")
 
     return f"{data_path_prefix}{router_path[1:].replace('/', '-')}"
-
-
-def generate_json_name(prefix, name):
-    json_name = base64.urlsafe_b64encode(name.encode('utf-8')).decode('utf-8').rstrip('=')
-    if len(json_name) > 100:
-        json_name = json_name[-100:]
-    return f"{prefix}/{json_name}.json"
