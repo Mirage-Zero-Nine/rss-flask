@@ -1,12 +1,10 @@
 import json
+import logging
 import os
-import datetime as dt
-
-import pytz
-from rfeed import Feed
+import traceback
 from datetime import datetime
 
-from utils.feed_item_object import FeedItem, convert_router_path_to_save_path_prefix, generate_json_name
+from utils.feed_item_object import FeedItem, generate_json_name, convert_router_path_to_save_path_prefix
 
 
 def write_entry_to_json(output_file_path, feed_entries):
@@ -59,20 +57,29 @@ def save_feed_to_json(feed, router_path, file_name):
     return feed
 
 
-def read_feed_from_json(router_path, file_name):
-    save_path_prefix = convert_router_path_to_save_path_prefix(router_path)
-    json_name = generate_json_name(save_path_prefix, file_name)
+def read_feed_item_from_json(json_file_path):
+    try:
+        with open(json_file_path, 'r') as json_file:
+            json_data = json.load(json_file)
 
-    with open(json_name, 'r') as json_file:
-        json_data = json.load(json_file)
+            return FeedItem(
+                title=json_data.get("title"),
+                link=json_data.get("link"),
+                description=json_data.get("description"),
+                author=json_data.get("author"),
+                guid=json_data.get("guid"),
+                created_time=datetime.fromisoformat(json_data.get("created_time")) if json_data.get("created_time") else None,
+                with_content=json_data.get("with_content")
+            )
 
-    json_data['lastBuildDate'] = dt.datetime.fromisoformat(json_data['lastBuildDate']).astimezone(pytz.timezone('GMT'))
+    except FileNotFoundError:
+        logging.error(f"JSON file not found: {json_file_path}")
+        logging.error(traceback.format_exc())  # Log error trace
+    except json.JSONDecodeError:
+        logging.error(f"Error decoding JSON file: {json_file_path}")
+        logging.error(traceback.format_exc())  # Log error trace
+        # Delete the JSON file if it cannot be loaded
+        os.remove(json_file_path)
+        logging.info(f"Deleted JSON file: {json_file_path}")
 
-    return Feed(
-        title=json_data.get("title"),
-        link=json_data.get("link"),
-        description=json_data.get("description"),
-        language=json_data.get("language"),
-        lastBuildDate=json_data['lastBuildDate'],
-        items=json_data.get("items")
-    )
+    return None

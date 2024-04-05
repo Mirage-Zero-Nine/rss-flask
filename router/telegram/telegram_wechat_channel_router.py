@@ -1,7 +1,7 @@
 from router.base_router import BaseRouter
 from router.telegram.telegram_wechat_channel_router_constant import telegram_wechat_channel_link_filter, \
     telegram_wechat_channel_router_description
-from utils.feed_item_object import convert_router_path_to_save_path_prefix, Metadata, generate_json_name
+from utils.feed_item_object import Metadata, generate_json_name, convert_router_path_to_save_path_prefix
 from utils.get_link_content import get_link_content_with_bs_no_params, get_link_content_with_utf8_decode
 from utils.time_converter import convert_time_with_pattern
 from utils.tools import check_need_to_filter, remove_empty_tag

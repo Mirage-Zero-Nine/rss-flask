@@ -1,7 +1,7 @@
 from router.base_router import BaseRouter
 from router.cnbeta.cnbeta_router_constants import cnbeta_query_page_count, cnbeta_articles_link, \
     cnbeta_news_router_author
-from utils.feed_item_object import convert_router_path_to_save_path_prefix, generate_json_name, Metadata
+from utils.feed_item_object import Metadata, generate_json_name, convert_router_path_to_save_path_prefix
 from utils.get_link_content import get_link_content_with_utf8_decode
 from utils.time_converter import convert_time_with_pattern
 
