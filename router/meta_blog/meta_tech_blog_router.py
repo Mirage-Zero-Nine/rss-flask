@@ -1,4 +1,4 @@
-from router.meta_blog.meta_router_constants import meta_ai_blog_prefix, meta_blog_prefix
+from router.meta_blog.meta_tech_blog_router_constants import meta_ai_blog_prefix, meta_blog_prefix
 from router.router_for_rss_feed import RouterForRssFeed
 from utils.get_link_content import get_link_content_with_bs_no_params
 from utils.time_converter import convert_time_with_pattern

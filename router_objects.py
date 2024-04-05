@@ -14,8 +14,8 @@ from router.embassy.china_embassy_news_constants import china_embassy_news_title
     china_embassy_news_description, china_embassy_news_period
 from router.jandan.jandan_constant import jandan_query_period, jandan_page_prefix, jandan_title, jandan_description
 from router.jandan.jandan_router import JandanRouter
-from router.meta_blog.meta_blog import MetaBlog
-from router.meta_blog.meta_router_constants import meta_blog_title, meta_blog_rss_link, meta_blog_link, \
+from router.meta_blog.meta_tech_blog_router import MetaBlog
+from router.meta_blog.meta_tech_blog_router_constants import meta_blog_title, meta_blog_rss_link, meta_blog_link, \
     meta_blog_description, meta_blog_period
 from router.nbc_news.nbc_news_router import NbcNewsRouter
 from router.nbc_news.nbc_news_router_constants import nbc_news_title, nbc_news_original_link, nbc_news_rss_link, \
@@ -50,7 +50,7 @@ with open('config.yml') as f:
     # use safe_load instead load
     config = yaml.safe_load(f)
 
-meta_blog = MetaBlog(
+meta_tech_blog = MetaBlog(
     router_path=meta_engineering_blog_router,
     feed_title=meta_blog_title,
     original_link=meta_blog_link,

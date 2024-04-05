@@ -4,9 +4,9 @@ from flask import Flask
 from werkzeug.exceptions import abort
 
 from router.embassy.china_embassy_news_constants import china_embassy_news_filter
-from router.meta_blog.meta_router_constants import meta_blog_prefix
+from router.meta_blog.meta_tech_blog_router_constants import meta_blog_prefix
 from router.zaobao.zaobao_realtime_router_constants import zaobao_region_parameter, title_filter
-from router_objects import meta_blog, cnbeta, the_verge, usgs_earthquake_report, twitter_engineering_blog, \
+from router_objects import meta_tech_blog, cnbeta, the_verge, usgs_earthquake_report, twitter_engineering_blog, \
     telegram_wechat_channel, zaobao_realtime, day_one_blog, nbc_news, wsdot_news, zhihu_daily, chinese_embassy_news, \
     jandan_news
 from utils.router_constants import zhihu_router_path, wsdot_news_router_path, \
@@ -52,7 +52,7 @@ def jandan():
 
 @app.route(meta_engineering_blog_router)
 def meta_engineering_blog_router():
-    return meta_blog.get_rss_xml_response(link_filter=meta_blog_prefix)
+    return meta_tech_blog.get_rss_xml_response(link_filter=meta_blog_prefix)
 
 
 @app.route(nbc_news_router_path)
