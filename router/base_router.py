@@ -108,7 +108,7 @@ class BaseRouter:
 
         for article_metadata in article_metadata_list:
             entry = self._get_article(article_metadata)
-            if entry.description is not None:
+            if entry is not None and entry.description is not None:
                 feed_entries_list.append(entry)
 
         feed = self._generate_response(last_build_time=last_build_time,
