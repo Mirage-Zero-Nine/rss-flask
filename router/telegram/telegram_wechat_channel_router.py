@@ -66,8 +66,14 @@ class TelegramWechatChannelRouter(BaseRouter):
             img_tag.attrs = {'src': img_tag['data-src']}
 
         # remove empty p and section tag
-        remove_empty_tag(selected_div, "p")
-        remove_empty_tag(selected_div, "section")
+        try:
+            remove_empty_tag(selected_div, "p")
+        except AttributeError:
+            pass
+        try:
+            remove_empty_tag(selected_div, "section")
+        except AttributeError:
+            pass
 
         entry.description = selected_div
         entry.save_to_json(self.router_path)

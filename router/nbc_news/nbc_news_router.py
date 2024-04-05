@@ -1,7 +1,7 @@
 from router.router_for_rss_feed import RouterForRssFeed
 from utils.get_link_content import get_link_content_with_bs_no_params
 from utils.time_converter import convert_time_with_pattern
-from utils.tools import decompose_div, decompose_tag_by_name
+from utils.tools import decompose_div, decompose_tag_by_class_name
 
 
 class NbcNewsRouter(RouterForRssFeed):
@@ -27,7 +27,7 @@ class NbcNewsRouter(RouterForRssFeed):
             decompose_div(soup, 'article-social-share-top')
             decompose_div(soup, 'expanded-byline-contributors articleBylineContainer')
             decompose_div(soup, 'article-hero__video')
-            decompose_tag_by_name(soup, 'aside', 'article-hero__unibrow-grid')
+            decompose_tag_by_class_name(soup, 'aside', 'article-hero__unibrow-grid')
 
             entry.description = soup
             entry.save_to_json(self.router_path)

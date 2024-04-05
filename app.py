@@ -4,11 +4,11 @@ from flask import Flask
 from werkzeug.exceptions import abort
 
 from router.embassy.china_embassy_news_constants import china_embassy_news_filter
-from router.jandan import jandan_router
 from router.meta_blog.meta_router_constants import meta_blog_prefix
 from router.zaobao.zaobao_realtime_router_constants import zaobao_region_parameter, title_filter
 from router_objects import meta_blog, cnbeta, the_verge, usgs_earthquake_report, twitter_engineering_blog, \
-    telegram_wechat_channel, zaobao_realtime, day_one_blog, nbc_news, wsdot_news, zhihu_daily, chinese_embassy_news
+    telegram_wechat_channel, zaobao_realtime, day_one_blog, nbc_news, wsdot_news, zhihu_daily, chinese_embassy_news, \
+    jandan_news
 from utils.router_constants import zhihu_router_path, wsdot_news_router_path, \
     twitter_engineering_blog_router_path, the_verge_router_path, meta_engineering_blog_router, \
     telegram_wechat_router_path, jandan_router_path, earthquake_router_path, embassy_router_path, \
@@ -46,7 +46,7 @@ def embassy_router():
 
 @app.route(jandan_router_path)
 def jandan():
-    return jandan_router.get_rss_xml_response()
+    return jandan_news.get_rss_xml_response()
 
 
 @app.route(meta_engineering_blog_router)
