@@ -47,8 +47,7 @@ class WsdotNewsRouter(BaseRouter):
         else:
             self.__extract_other_news(soup, entry)
 
-    @staticmethod
-    def __extract_wsdot_blog(soup, entry):
+    def __extract_wsdot_blog(self, soup, entry):
 
         # Find the post content using its class name
         post_content = soup.find('div', class_='post-body entry-content')
@@ -57,9 +56,10 @@ class WsdotNewsRouter(BaseRouter):
 
             date_header = soup.find('h2', class_='date-header').span.text
             entry.created_time = convert_wsdot_news_time(str(date_header), "%A, %B %d, %Y")
+            entry.save_to_json(self.router_path)
 
     @staticmethod
-    def __extract_other_news(soup, entry):
+    def __extract_other_news(self, soup, entry):
 
         post_content = soup.find('div',class_='field field--name-body field--type-text-with-summary field--label-hidden field--item')
         if post_content is not None:
@@ -69,3 +69,4 @@ class WsdotNewsRouter(BaseRouter):
             datetime_div = soup.find('div', class_='field--name-field-date')
             datetime_string = datetime_div.find('time')['datetime']
             entry.created_time = convert_wsdot_news_time(str(datetime_string), "%Y-%m-%dT%H:%M:%SZ")
+            entry.save_to_json(self.router_path)

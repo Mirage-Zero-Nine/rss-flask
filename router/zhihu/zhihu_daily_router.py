@@ -39,4 +39,5 @@ class ZhihuDailyRouter(BaseRouter):
         )
         entry.description = content
         entry.created_time = datetime.today()
+        entry.save_to_json(self.router_path)
 
