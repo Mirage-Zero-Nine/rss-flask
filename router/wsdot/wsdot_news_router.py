@@ -1,5 +1,5 @@
 from router.base_router import BaseRouter
-from router.wsdot.wsdot_news_router_constant import wsdot_news_prefix, wsdot_news_link, wsdot_blog_blogspot
+from router.wsdot.wsdot_news_router_constant import wsdot_news_prefix, wsdot_blog_blogspot
 from utils.feed_item_object import convert_router_path_to_save_path_prefix, Metadata, generate_json_name
 from utils.get_link_content import get_link_content_with_bs_no_params
 from utils.time_converter import convert_wsdot_news_time
@@ -58,7 +58,6 @@ class WsdotNewsRouter(BaseRouter):
             entry.created_time = convert_wsdot_news_time(str(date_header), "%A, %B %d, %Y")
             entry.save_to_json(self.router_path)
 
-    @staticmethod
     def __extract_other_news(self, soup, entry):
 
         post_content = soup.find('div',class_='field field--name-body field--type-text-with-summary field--label-hidden field--item')
