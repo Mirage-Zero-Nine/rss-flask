@@ -42,10 +42,6 @@ html_parser = 'html.parser'
 
 jandan_page_prefix = "http://jandan.net/"
 
-china_embassy_filter = "雇员招聘启事"
-china_embassy_prefix = 'http://losangeles.china-consulate.org/tzgg'
-
-
 language_chinese = "zh-cn"
 language_english = "en-us"
 

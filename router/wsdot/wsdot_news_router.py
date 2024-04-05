@@ -36,10 +36,6 @@ class WsdotNewsRouter(BaseRouter):
                     )
 
                     metadata_list.append(metadata)
-                # for h2 in h2_tags:
-                #
-                #     link = h2.a.get('href')
-                #     title = h2.text
 
         return metadata_list
 
