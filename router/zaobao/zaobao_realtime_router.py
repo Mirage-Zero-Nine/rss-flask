@@ -6,8 +6,8 @@ from router.zaobao.zaobao_realtime_router_constants import zaobao_realtime_page_
     zaobao_story_prefix, zaobao_time_convert_pattern, unwanted_div_id, unwanted_div_class, feed_title_mapping, \
     feed_description_mapping, feed_prefix_mapping, zaobao_time_general_author
 from utils.feed_item_object import Metadata, generate_json_name, convert_router_path_to_save_path_prefix
-from utils.get_link_content import get_link_content_with_bs_and_header
-from utils.router_constants import html_parser, language_chinese
+from utils.get_link_content import get_link_content_with_header_and_empty_cookie
+from utils.router_constants import language_chinese
 from utils.time_converter import convert_time_with_pattern
 from utils.tools import check_need_to_filter
 from utils.xml_utilities import generate_feed_object_for_new_router
@@ -20,9 +20,8 @@ class ZaobaoRealtimeRouter(BaseRouter):
 
         for x in range(2):  # get 2 pages, each page contains 24 items
             link = self.articles_link + parameter + zaobao_realtime_page_suffix + str(x)
-            soup = get_link_content_with_bs_and_header(link,
-                                                       html_parser,
-                                                       zaobao_headers)
+            soup = get_link_content_with_header_and_empty_cookie(link,
+                                                                 zaobao_headers)
             news_list = soup.find_all(
                 "div",
                 {"class": "col col-lg-12"}
@@ -42,8 +41,10 @@ class ZaobaoRealtimeRouter(BaseRouter):
 
     def _get_article_content(self, article_metadata, entry):
 
+        soup = get_link_content_with_header_and_empty_cookie(
+            article_metadata.link,
+            zaobao_headers).find('article', class_='article')
 
-        soup = get_link_content_with_bs_and_header(article_metadata.link,html_parser, zaobao_headers).find('article', class_='article')
         if soup is None:
             logging.error(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Getting empty page: {article_metadata.link}")
             return entry

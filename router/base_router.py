@@ -55,6 +55,7 @@ class BaseRouter:
         :return: entry that contains all the metadata and the content
         """
         if os.path.exists(article_metadata.json_name):
+            logging.info(f"Getting {article_metadata.link} from saved json: {article_metadata.json_name}")
             return read_feed_item_from_json(article_metadata.json_name)
         else:
             logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Getting content for: {article_metadata.link}")
