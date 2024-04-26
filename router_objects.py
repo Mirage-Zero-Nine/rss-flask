@@ -1,5 +1,4 @@
 import yaml
-
 from router.cnbeta.cnbeta_router import CnbetaRouter
 from router.cnbeta.cnbeta_router_constants import cnbeta_news_router_title, cnbeta_news_site_link, \
     cnbeta_news_router_description, cnbeta_period, cnbeta_articles_link
@@ -20,13 +19,9 @@ from router.meta_blog.meta_tech_blog_router_constants import meta_blog_title, me
 from router.nbc_news.nbc_news_router import NbcNewsRouter
 from router.nbc_news.nbc_news_router_constants import nbc_news_title, nbc_news_original_link, nbc_news_rss_link, \
     nbc_news_description, nbc_news_period
-from router.reuters.reuters_router import ReutersRouter
 from router.reuters.reuters_constants import reuters_fetch_api_base_link, reuters_site_link, reuters_description, \
     reuters_period
-from router.telegram.telegram_wechat_channel_router import TelegramWechatChannelRouter
-from router.telegram.telegram_wechat_channel_router_constant import telegram_wechat_channel_router_title, \
-    telegram_wechat_channel_router_site_link, telegram_wechat_channel_router_description, \
-    telegram_wechat_channel_period, telegram_wechat_channel_url
+from router.reuters.reuters_router import ReutersRouter
 from router.the_verge.the_verge_constants import the_verge_title, the_verge_prefix, the_verge_tech_archive, \
     the_verge_description
 from router.the_verge.the_verge_router import TheVergeRouter
@@ -34,17 +29,17 @@ from router.twitter_engineering_blog.twitter_engineering_blog_router import Twit
 from router.twitter_engineering_blog.twitter_engineering_blog_router_constants import twitter_engineering_blog_title, \
     twitter_engineering_blog_original_link, twitter_engineering_blog_rss_link, \
     twitter_engineering_blog_description, twitter_engineering_blog_period
+from router.wsdot.wsdot_news_router import WsdotNewsRouter
 from router.wsdot.wsdot_news_router_constant import wsdot_news_title, wsdot_news_link, wsdot_news_description, \
     wsdot_news_period
-from router.wsdot.wsdot_news_router import WsdotNewsRouter
 from router.zaobao.zaobao_realtime_router import ZaobaoRealtimeRouter
 from router.zaobao.zaobao_realtime_router_constants import zaobao_realtime_page_prefix, zaobao_query_period, \
     zaobao_region_general_title
+from router.zhihu.zhihu_daily_router import ZhihuDailyRouter
 from router.zhihu.zhihu_daily_router_constants import zhihu_daily_title, zhihu_daily_link, zhihu_daily_description, \
     zhihu_query_period
-from router.zhihu.zhihu_daily_router import ZhihuDailyRouter
 from utils.router_constants import language_english, language_chinese, meta_engineering_blog_router, \
-    twitter_engineering_blog_router_path, cnbeta_router_path, telegram_wechat_router_path, zaobao_router_path_prefix, \
+    twitter_engineering_blog_router_path, cnbeta_router_path, zaobao_router_path_prefix, \
     day_one_blog_router_path, earthquake_router_path, the_verge_router_path, nbc_news_router_path, \
     wsdot_news_router_path, zhihu_router_path, embassy_router_path, jandan_router_path, reuters_news_router_path
 
@@ -101,16 +96,6 @@ twitter_engineering_blog = TwitterEngineeringBlogRouter(
     description=twitter_engineering_blog_description,
     language=language_english,
     period=twitter_engineering_blog_period
-)
-
-telegram_wechat_channel = TelegramWechatChannelRouter(
-    router_path=telegram_wechat_router_path,
-    feed_title=telegram_wechat_channel_router_title,
-    original_link=telegram_wechat_channel_router_site_link,
-    articles_link=config[telegram_wechat_channel_url],
-    description=telegram_wechat_channel_router_description,
-    language=language_chinese,
-    period=telegram_wechat_channel_period
 )
 
 zaobao_realtime = ZaobaoRealtimeRouter(
