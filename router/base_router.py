@@ -55,6 +55,7 @@ class BaseRouter:
         :return: entry that contains all the metadata and the content
         """
         if os.path.exists(article_metadata.json_name):
+            logging.info(f"Getting {article_metadata.link} from saved json: {article_metadata.json_name}")
             return read_feed_item_from_json(article_metadata.json_name)
         else:
             logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Getting content for: {article_metadata.link}")
@@ -84,7 +85,7 @@ class BaseRouter:
         feed_entries_list = []
 
         save_path_prefix = convert_router_path_to_save_path_prefix(cache_key)
-        logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} prefix: {save_path_prefix}")
+        # logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} prefix: {save_path_prefix}")
         # create a directory to save json
         os.makedirs(save_path_prefix, exist_ok=True)
 
@@ -120,7 +121,7 @@ class BaseRouter:
         response.headers.set('Content-Type', 'application/rss+xml')
         return response
 
-    def _generate_response(self, last_build_time, feed_entries_list, parameter=None):
+    def _generate_response(self, last_build_time, feed_entries_list, parameter):
 
         return generate_feed_object_for_new_router(
             title=self.feed_title,
@@ -137,7 +138,11 @@ class BaseRouter:
         if parameter is None:
             cache_key = self.router_path
         else:
-            cache_key = f"{self.router_path}/{parameter}"
+            values = [str(value) for value in parameter.values()]
+
+            # Combine values into a string
+            combined_values = "/".join(values)
+            cache_key = f"{self.router_path}/{combined_values}"
         return cache_key
 
     def __check_if_meet_refresh_time(self, last_query_time):

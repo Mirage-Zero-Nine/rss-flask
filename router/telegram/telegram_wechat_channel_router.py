@@ -2,7 +2,8 @@ from router.base_router import BaseRouter
 from router.telegram.telegram_wechat_channel_router_constant import telegram_wechat_channel_link_filter, \
     telegram_wechat_channel_router_description
 from utils.feed_item_object import Metadata, generate_json_name, convert_router_path_to_save_path_prefix
-from utils.get_link_content import get_link_content_with_bs_no_params, get_link_content_with_utf8_decode
+from utils.get_link_content import get_link_content_with_bs_no_params, \
+    get_content_with_utf8_decode_and_disable_verification
 from utils.time_converter import convert_time_with_pattern
 from utils.tools import check_need_to_filter, remove_empty_tag
 
@@ -17,7 +18,8 @@ class TelegramWechatChannelRouter(BaseRouter):
 
         for message_bubble_div in message_bubble_divs:
 
-            link_elements = message_bubble_div.find_all('a', {'onclick': "return confirm('Open this link?\\n\\n'+this.href);", 'rel': 'noopener', 'target': '_blank'})
+            link_elements = message_bubble_div.find_all('a', {
+                'onclick': "return confirm('Open this link?\\n\\n'+this.href);", 'rel': 'noopener', 'target': '_blank'})
             for link_element in link_elements:
                 href = link_element['href']
 
@@ -43,10 +45,10 @@ class TelegramWechatChannelRouter(BaseRouter):
 
     def _get_article_content(self, article_metadata, entry):
 
-        entry.author=telegram_wechat_channel_router_description
-        entry.created_time=convert_time_with_pattern(article_metadata.created_time, "%Y-%m-%dT%H:%M:%S%z")
+        entry.author = telegram_wechat_channel_router_description
+        entry.created_time = convert_time_with_pattern(article_metadata.created_time, "%Y-%m-%dT%H:%M:%S%z")
 
-        soup = get_link_content_with_utf8_decode(article_metadata.link)
+        soup = get_content_with_utf8_decode_and_disable_verification(article_metadata.link)
 
         selected_div = soup.find("div", class_=lambda
             x: x and "rich_media_content" in x.split() and "js_underline_content" in x.split())

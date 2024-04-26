@@ -5,6 +5,7 @@ embassy_router_path = '/embassy'
 jandan_router_path = '/jandan'
 meta_engineering_blog_router = '/meta/blog'
 nbc_news_router_path = '/nbc/top'
+reuters_news_router_path = '/reuters'
 telegram_wechat_router_path = '/telegram/wechat'
 the_verge_router_path = '/theverge'
 twitter_engineering_blog_router_path = '/twitter/blog'
@@ -27,6 +28,7 @@ routers_to_call = [
     wsdot_news_router_path,
     zaobao_router_path_prefix + '/china',
     zaobao_router_path_prefix + '/world',
+    reuters_news_router_path + '/world',
     zhihu_router_path
 ]
 
