@@ -14,12 +14,13 @@ from utils.xml_utilities import generate_feed_object_for_new_router
 
 
 class ZaobaoRealtimeRouter(BaseRouter):
-    def _get_articles_list(self, link_filter=None, title_filter=None, parameter=""):
+    def _get_articles_list(self, link_filter=None, title_filter=None, parameter=None):
         # list of metadata of the articles
         metadata_list = []
+        region = parameter["region"]
 
         for x in range(2):  # get 2 pages, each page contains 24 items
-            link = self.articles_link + parameter + zaobao_realtime_page_suffix + str(x)
+            link = self.articles_link + region + zaobao_realtime_page_suffix + str(x)
             soup = get_link_content_with_header_and_empty_cookie(link,
                                                                  zaobao_headers)
             news_list = soup.find_all(
@@ -84,9 +85,10 @@ class ZaobaoRealtimeRouter(BaseRouter):
         return entry
 
     def _generate_response(self, last_build_time, feed_entries_list, parameter=None):
-        feed_title = feed_title_mapping.get(parameter)
-        feed_description = feed_description_mapping.get(parameter)
-        feed_original_link = feed_prefix_mapping.get(parameter)
+        region = parameter['region']
+        feed_title = feed_title_mapping.get(region)
+        feed_description = feed_description_mapping.get(region)
+        feed_original_link = feed_prefix_mapping.get(region)
         feed = generate_feed_object_for_new_router(
             title=feed_title,
             link=feed_original_link,
