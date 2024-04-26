@@ -1,19 +1,20 @@
 import logging
 
 from flask import Flask
-from werkzeug.exceptions import abort
-
 from router.embassy.china_embassy_news_constants import china_embassy_news_filter
 from router.meta_blog.meta_tech_blog_router_constants import meta_blog_prefix
+from router.reuters.reuters_constants import is_valid_reuters_parameter
 from router.zaobao.zaobao_realtime_router_constants import zaobao_region_parameter, title_filter
 from router_objects import meta_tech_blog, cnbeta, the_verge, usgs_earthquake_report, twitter_engineering_blog, \
     telegram_wechat_channel, zaobao_realtime, day_one_blog, nbc_news, wsdot_news, zhihu_daily, chinese_embassy_news, \
-    jandan_news
+    jandan_news, reuters_news
 from utils.router_constants import zhihu_router_path, wsdot_news_router_path, \
     twitter_engineering_blog_router_path, the_verge_router_path, meta_engineering_blog_router, \
     telegram_wechat_router_path, jandan_router_path, earthquake_router_path, embassy_router_path, \
-    day_one_blog_router_path, cnbeta_router_path, zaobao_router_path_prefix, nbc_news_router_path
+    day_one_blog_router_path, cnbeta_router_path, zaobao_router_path_prefix, nbc_news_router_path, \
+    reuters_news_router_path
 from utils.scheduler import router_refresh_job_scheduler
+from werkzeug.exceptions import abort
 
 app = Flask(__name__)
 app.logger.setLevel(logging.INFO)
@@ -60,6 +61,31 @@ def nbc_news_router():
     return nbc_news.get_rss_xml_response()
 
 
+@app.route(reuters_news_router_path + '/<category>')
+@app.route(reuters_news_router_path + '/<category>/<string:topic>')
+@app.route(reuters_news_router_path + '/<category>/<string:topic>/<int:limit>')
+def reuters_news_router(category, topic=None, limit=20):
+    """
+    Reuters news.
+    :param category: required for the Reuters API
+    :param topic: optional for the Reuters API
+    :param limit: amount of articles retrieved from API, 20 maximum
+    :return: RSS XML
+    """
+
+    if is_valid_reuters_parameter(category, topic) is False:
+        abort(404)
+
+    parameters = {
+        "category": category,
+        "topic": topic,
+        "limit": limit
+    }
+
+    logging.info(f"category: {category}, topic:{topic}")
+    return reuters_news.get_rss_xml_response(parameter=parameters)
+
+
 @app.route(telegram_wechat_router_path)
 def telegram_wechat_router():
     xml_response = telegram_wechat_channel.get_rss_xml_response()
@@ -88,10 +114,15 @@ def zaobao_router(region):
     :param region: region to query
     :return: realtime news xml based on region
     """
+
+    # region is a required argument
     if region not in zaobao_region_parameter:
         abort(404)
 
-    return zaobao_realtime.get_rss_xml_response(parameter=region, title_filter=title_filter)
+    parameters = {
+        "region": region
+    }
+    return zaobao_realtime.get_rss_xml_response(parameter=parameters, title_filter=title_filter)
 
 
 @app.route(zhihu_router_path)

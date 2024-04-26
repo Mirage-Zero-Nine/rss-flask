@@ -20,6 +20,9 @@ from router.meta_blog.meta_tech_blog_router_constants import meta_blog_title, me
 from router.nbc_news.nbc_news_router import NbcNewsRouter
 from router.nbc_news.nbc_news_router_constants import nbc_news_title, nbc_news_original_link, nbc_news_rss_link, \
     nbc_news_description, nbc_news_period
+from router.reuters.reuters_router import ReutersRouter
+from router.reuters.reuters_constants import reuters_fetch_api_base_link, reuters_site_link, reuters_description, \
+    reuters_period
 from router.telegram.telegram_wechat_channel_router import TelegramWechatChannelRouter
 from router.telegram.telegram_wechat_channel_router_constant import telegram_wechat_channel_router_title, \
     telegram_wechat_channel_router_site_link, telegram_wechat_channel_router_description, \
@@ -43,7 +46,7 @@ from router.zhihu.zhihu_daily_router import ZhihuDailyRouter
 from utils.router_constants import language_english, language_chinese, meta_engineering_blog_router, \
     twitter_engineering_blog_router_path, cnbeta_router_path, telegram_wechat_router_path, zaobao_router_path_prefix, \
     day_one_blog_router_path, earthquake_router_path, the_verge_router_path, nbc_news_router_path, \
-    wsdot_news_router_path, zhihu_router_path, embassy_router_path, jandan_router_path
+    wsdot_news_router_path, zhihu_router_path, embassy_router_path, jandan_router_path, reuters_news_router_path
 
 # file path started from app.py
 with open('config.yml') as f:
@@ -176,4 +179,14 @@ jandan_news = JandanRouter(
     description=jandan_description,
     language=language_chinese,
     period=jandan_query_period
+)
+
+reuters_news = ReutersRouter(
+    router_path=reuters_news_router_path,
+    feed_title="Reuters News",
+    original_link=reuters_site_link,
+    articles_link=reuters_fetch_api_base_link,
+    description=reuters_description,
+    language=language_english,
+    period=reuters_period
 )
