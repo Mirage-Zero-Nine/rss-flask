@@ -3,10 +3,10 @@ from datetime import datetime
 
 from router.base_router import BaseRouter
 from router.zaobao.zaobao_realtime_router_constants import zaobao_realtime_page_suffix, zaobao_headers, \
-    zaobao_story_prefix, zaobao_time_convert_pattern, unwanted_div_id, unwanted_div_class, feed_title_mapping, \
-    feed_description_mapping, feed_prefix_mapping, zaobao_time_general_author
+    zaobao_time_convert_pattern, unwanted_div_id, unwanted_div_class, feed_title_mapping, \
+    feed_description_mapping, feed_prefix_mapping, zaobao_time_general_author, zaobao_link
 from utils.feed_item_object import Metadata, generate_json_name, convert_router_path_to_save_path_prefix
-from utils.get_link_content import get_link_content_with_header_and_empty_cookie
+from utils.get_link_content import get_link_content_with_header_and_empty_cookie, load_json_response
 from utils.router_constants import language_chinese
 from utils.time_converter import convert_time_with_pattern
 from utils.tools import check_need_to_filter
@@ -14,40 +14,39 @@ from utils.xml_utilities import generate_feed_object_for_new_router
 
 
 class ZaobaoRealtimeRouter(BaseRouter):
+
     def _get_articles_list(self, link_filter=None, title_filter=None, parameter=None):
         # list of metadata of the articles
         metadata_list = []
         region = parameter["region"]
 
-        for x in range(2):  # get 2 pages, each page contains 24 items
+        for x in range(3):
             link = self.articles_link + region + zaobao_realtime_page_suffix + str(x)
-            soup = get_link_content_with_header_and_empty_cookie(link,
-                                                                 zaobao_headers)
-            news_list = soup.find_all(
-                "div",
-                {"class": "col col-lg-12"}
-            )  # type is bs4.element.ResultSet
+            response = load_json_response(link, headers=zaobao_headers, cookies={})
+            articles = response['response']['articles']
 
-            for news in news_list:
-                title = news.find('a').contents[0].text
-                link = zaobao_story_prefix + news.find('a')['href']
+            for article in articles:
+                title = article['title']
+                article_link = zaobao_link + article['href']
+
                 if check_need_to_filter(link, title, link_filter, title_filter) is False:
+                    # example: https://www.zaobao.com.sg/realtime/china/story20240612-3918781
                     save_json_path_prefix = convert_router_path_to_save_path_prefix(self.router_path)
                     metadata = Metadata(title=title,
-                                        link=link,
-                                        json_name=generate_json_name(prefix=save_json_path_prefix, name=link))
+                                        link=article_link,
+                                        json_name=generate_json_name(prefix=save_json_path_prefix, name=article_link))
                     metadata_list.append(metadata)
 
         return metadata_list
 
     def _get_article_content(self, article_metadata, entry):
-
         soup = get_link_content_with_header_and_empty_cookie(
             article_metadata.link,
             zaobao_headers).find('article', class_='article')
 
         if soup is None:
-            logging.error(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Getting empty page: {article_metadata.link}")
+            logging.error(
+                f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Getting empty page: {article_metadata.link}")
             return entry
 
         # Find the element containing the publication date and time
