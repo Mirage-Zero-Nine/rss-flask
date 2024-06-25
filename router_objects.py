@@ -20,8 +20,11 @@ from router.nbc_news.nbc_news_router import NbcNewsRouter
 from router.nbc_news.nbc_news_router_constants import nbc_news_title, nbc_news_original_link, nbc_news_rss_link, \
     nbc_news_description, nbc_news_period
 from router.reuters.reuters_constants import reuters_fetch_api_base_link, reuters_site_link, reuters_description, \
-    reuters_period
+    reuters_period, reuters_news_name
 from router.reuters.reuters_router import ReutersRouter
+from router.sony_alpha_rumor.sony_alpha_rumor_router import SonyAlphaRumorsRouter
+from router.sony_alpha_rumor.sony_alpha_rumor_router_constants import sar_name, sar_link, sar_rss_link, \
+    sar_query_period, sar_description
 from router.the_verge.the_verge_constants import the_verge_title, the_verge_prefix, the_verge_tech_archive, \
     the_verge_description
 from router.the_verge.the_verge_router import TheVergeRouter
@@ -41,7 +44,8 @@ from router.zhihu.zhihu_daily_router_constants import zhihu_daily_title, zhihu_d
 from utils.router_constants import language_english, language_chinese, meta_engineering_blog_router, \
     twitter_engineering_blog_router_path, cnbeta_router_path, zaobao_router_path_prefix, \
     day_one_blog_router_path, earthquake_router_path, the_verge_router_path, nbc_news_router_path, \
-    wsdot_news_router_path, zhihu_router_path, embassy_router_path, jandan_router_path, reuters_news_router_path
+    wsdot_news_router_path, zhihu_router_path, embassy_router_path, jandan_router_path, reuters_news_router_path, \
+    sar_router_path
 
 # file path started from app.py
 with open('config.yml') as f:
@@ -168,10 +172,20 @@ jandan_news = JandanRouter(
 
 reuters_news = ReutersRouter(
     router_path=reuters_news_router_path,
-    feed_title="Reuters News",
+    feed_title=reuters_news_name,
     original_link=reuters_site_link,
     articles_link=reuters_fetch_api_base_link,
     description=reuters_description,
     language=language_english,
     period=reuters_period
+)
+
+sony_alpha_rumors = SonyAlphaRumorsRouter(
+    router_path=sar_router_path,
+    feed_title=sar_name,
+    original_link=sar_link,
+    articles_link=sar_rss_link,
+    description=sar_description,
+    language=language_english,
+    period=sar_query_period
 )

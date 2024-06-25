@@ -19,17 +19,17 @@ class BaseRouter:
     Represents a feed information object.
 
     Args:
-        router_path (str): The path to current router.
-        feed_title (str): The title of the feed
+        router_path (str): The url path to current router that is access by RSS client.
+        feed_title (str): The title of the feed.
         original_link (str): The link to the original site (not the link to each post).
-        articles_link (str): The link to the page of getting articles (to get a list of articles)
+        articles_link (str): The link to the page of getting articles (to get a list of articles).
         description (str): A description of the feed.
         language (str): The language used in the feed.
-        period (str): The refresh period.
+        period (int): The refresh period, default value is 1000.
     """
 
     def __init__(self, router_path="", feed_title="", original_link="", articles_link="", description="", language="",
-                 period=""):
+                 period=1000):
         self.router_path = router_path
         self.feed_title = feed_title
         self.original_link = original_link

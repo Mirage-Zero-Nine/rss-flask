@@ -1,3 +1,4 @@
+reuters_news_name = "Reuters News"
 reuters_fetch_api_base_link = 'https://www.reuters.com/pf/api/v3/content/fetch/'
 reuters_site_link = "https://www.reuters.com/"
 reuters_description = "'Reuters.com is your online source for the latest world news stories and current events, ensuring our readers up to date with any breaking news developments'"
