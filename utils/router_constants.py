@@ -6,6 +6,7 @@ jandan_router_path = '/jandan'
 meta_engineering_blog_router = '/meta/blog'
 nbc_news_router_path = '/nbc/top'
 reuters_news_router_path = '/reuters'
+sar_router_path = "/sar"
 telegram_wechat_router_path = '/telegram/wechat'
 the_verge_router_path = '/theverge'
 twitter_engineering_blog_router_path = '/twitter/blog'
@@ -22,6 +23,7 @@ routers_to_call = [
     jandan_router_path,
     meta_engineering_blog_router,
     nbc_news_router_path,
+    sar_router_path,
     telegram_wechat_router_path,
     the_verge_router_path,
     twitter_engineering_blog_router_path,

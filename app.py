@@ -7,12 +7,12 @@ from router.reuters.reuters_constants import is_valid_reuters_parameter
 from router.zaobao.zaobao_realtime_router_constants import zaobao_region_parameter, title_filter
 from router_objects import meta_tech_blog, cnbeta, the_verge, usgs_earthquake_report, twitter_engineering_blog, \
     zaobao_realtime, day_one_blog, nbc_news, wsdot_news, zhihu_daily, chinese_embassy_news, \
-    jandan_news, reuters_news
+    jandan_news, reuters_news, sony_alpha_rumors
 from utils.router_constants import zhihu_router_path, wsdot_news_router_path, \
     twitter_engineering_blog_router_path, the_verge_router_path, meta_engineering_blog_router, \
     jandan_router_path, earthquake_router_path, embassy_router_path, \
     day_one_blog_router_path, cnbeta_router_path, zaobao_router_path_prefix, nbc_news_router_path, \
-    reuters_news_router_path
+    reuters_news_router_path, sar_router_path
 from utils.scheduler import router_refresh_job_scheduler
 from werkzeug.exceptions import abort
 
@@ -84,6 +84,11 @@ def reuters_news_router(category, topic=None, limit=20):
 
     logging.info(f"category: {category}, topic:{topic}")
     return reuters_news.get_rss_xml_response(parameter=parameters)
+
+
+@app.route(sar_router_path)
+def sony_alpha_rumors_router():
+    return sony_alpha_rumors.get_rss_xml_response()
 
 
 @app.route(the_verge_router_path)
