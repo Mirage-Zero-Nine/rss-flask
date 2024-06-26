@@ -115,7 +115,7 @@ class TheVergeRouter(BaseRouter):
                 if div_tag.has_attr('class'):
                     del div_tag['class']
 
-        entry.description = entry.description + str(content)
+        entry.description = entry.description + str(content[0])
         entry.save_to_json(self.router_path)
 
         return entry
