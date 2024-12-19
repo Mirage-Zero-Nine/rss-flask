@@ -1,6 +1,5 @@
 zaobao_region_general_title = "联合早报 - 即时新闻"
 zaobao_query_period = 10 * 60 * 1000  # 10 minutes
-zaobao_time_convert_pattern = "%Y年%m月%d日 %I:%M %p"
 zaobao_time_general_author = '联合早报'
 
 zaobao_link = "https://www.zaobao.com.sg"
