@@ -2,8 +2,8 @@ import logging
 from datetime import datetime
 
 from router.base_router import BaseRouter
-from router.zaobao.zaobao_realtime_router_constants import zaobao_realtime_page_suffix, zaobao_headers, unwanted_div_id, \
-    unwanted_div_class, feed_title_mapping, feed_description_mapping, feed_prefix_mapping, zaobao_time_general_author, \
+from router.zaobao.zaobao_realtime_router_constants import zaobao_realtime_page_suffix, zaobao_headers, \
+    feed_title_mapping, feed_description_mapping, feed_prefix_mapping, zaobao_time_general_author, \
     zaobao_link
 from utils.feed_item_object import Metadata, generate_json_name, convert_router_path_to_save_path_prefix, FeedItem
 from utils.get_link_content import get_link_content_with_header_and_empty_cookie, load_json_response
@@ -69,23 +69,8 @@ class ZaobaoRealtimeRouter(BaseRouter):
         for div in irrelevant:
             div.extract()
 
-        for script_tag in soup.find_all('script'):
-            script_tag.extract()
-
-        for h1_element in soup.find_all('h1'):
-            h1_element.extract()
-
-        for id_name in unwanted_div_id:
-            for element in soup.find_all('div', id=id_name):
-                element.extract()
-
-        for class_name in unwanted_div_class:
-            for element in soup.find_all('div', class_=class_name):
-                element.extract()
-
         img_tags = soup.find_all('img', {'data-src': True})
         for img_tag in img_tags:
-            # Replace data-src with src and remove all other attributes
             img_tag.attrs = {'src': img_tag['data-src']}
 
         entry.description += str(soup)
