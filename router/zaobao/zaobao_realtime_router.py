@@ -2,13 +2,12 @@ import logging
 from datetime import datetime
 
 from router.base_router import BaseRouter
-from router.zaobao.zaobao_realtime_router_constants import zaobao_realtime_page_suffix, zaobao_headers, \
-    zaobao_time_convert_pattern, unwanted_div_id, unwanted_div_class, feed_title_mapping, \
-    feed_description_mapping, feed_prefix_mapping, zaobao_time_general_author, zaobao_link
-from utils.feed_item_object import Metadata, generate_json_name, convert_router_path_to_save_path_prefix
+from router.zaobao.zaobao_realtime_router_constants import zaobao_realtime_page_suffix, zaobao_headers, unwanted_div_id, \
+    unwanted_div_class, feed_title_mapping, feed_description_mapping, feed_prefix_mapping, zaobao_time_general_author, \
+    zaobao_link
+from utils.feed_item_object import Metadata, generate_json_name, convert_router_path_to_save_path_prefix, FeedItem
 from utils.get_link_content import get_link_content_with_header_and_empty_cookie, load_json_response
 from utils.router_constants import language_chinese
-from utils.time_converter import convert_time_with_pattern
 from utils.tools import check_need_to_filter
 from utils.xml_utilities import generate_feed_object_for_new_router
 
@@ -28,35 +27,47 @@ class ZaobaoRealtimeRouter(BaseRouter):
             for article in articles:
                 title = article['title']
                 article_link = zaobao_link + article['href']
+                timestamp = article['timestamp']
 
                 if check_need_to_filter(link, title, link_filter, title_filter) is False:
                     # example: https://www.zaobao.com.sg/realtime/china/story20240612-3918781
                     save_json_path_prefix = convert_router_path_to_save_path_prefix(self.router_path)
                     metadata = Metadata(title=title,
                                         link=article_link,
-                                        json_name=generate_json_name(prefix=save_json_path_prefix, name=article_link))
+                                        json_name=generate_json_name(prefix=save_json_path_prefix, name=article_link),
+                                        created_time=timestamp)
                     metadata_list.append(metadata)
 
         return metadata_list
 
-    def _get_article_content(self, article_metadata, entry):
-        soup = get_link_content_with_header_and_empty_cookie(
-            article_metadata.link,
-            zaobao_headers).find('article', class_='article')
+    def _get_article_content(self, article_metadata: Metadata, entry: FeedItem):
+        soup = get_link_content_with_header_and_empty_cookie(article_metadata.link, zaobao_headers)
+        meta_image = soup.find('meta', property='og:image')
+
+        if entry.description is None:
+            entry.description = ""
+
+        if meta_image and meta_image.get('content'):
+            image_url = meta_image['content']
+            if image_url != "https://www.zaobao.com.sg/_web2/assets/social-share.png":
+                img_tag = soup.new_tag('img', src=image_url)
+                entry.description += str(img_tag)
+
+        soup = soup.find('article', class_='max-w-full').find('div', class_='articleBody')
 
         if soup is None:
             logging.error(
                 f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Getting empty page: {article_metadata.link}")
             return entry
 
-        # Find the element containing the publication date and time
-        timestamp_text = soup.find('div', class_='story-postdate').text.strip().replace('发布 / ', '')
-        entry.created_time = convert_time_with_pattern(timestamp_text,
-                                                       zaobao_time_convert_pattern,
-                                                       8)
-        sections = soup.find_all('section')
-        for section in sections:
-            section.extract()
+        entry.created_time = datetime.fromtimestamp(article_metadata.created_time)
+        ads = soup.find_all('div', class_=['google-ad', 'bff-google-ad'])
+        for ad in ads:
+            ad.extract()
+
+        irrelevant = soup.find_all('div', class_='bff-recommend-article')
+        for div in irrelevant:
+            div.extract()
 
         for script_tag in soup.find_all('script'):
             script_tag.extract()
@@ -77,7 +88,7 @@ class ZaobaoRealtimeRouter(BaseRouter):
             # Replace data-src with src and remove all other attributes
             img_tag.attrs = {'src': img_tag['data-src']}
 
-        entry.description = soup
+        entry.description += str(soup)
         entry.author = zaobao_time_general_author
         entry.save_to_json(self.router_path)
 
