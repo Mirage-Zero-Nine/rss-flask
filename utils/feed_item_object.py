@@ -79,7 +79,7 @@ class FeedItem:
 
 
 class Metadata:
-    def __init__(self, title=None, link=None, author=None, guid=None, created_time=None, json_name=None):
+    def __init__(self, title=None, link=None, author=None, guid=None, created_time=None, json_name=None, flag=None):
         """
         Remember to update attribute in save_to_json
         :param title: title of the entry
@@ -87,6 +87,8 @@ class Metadata:
         :param author: author of the entry
         :param guid: guid of the entry (most likely should be the same as the link)
         :param created_time: create time for the entry
+        :param json_name: json name of the entry
+        :param flag: any mark required for later processing
         """
         self.title = title
         self.link = link
@@ -94,6 +96,7 @@ class Metadata:
         self.guid = guid
         self.created_time = created_time  # required to be a datatime object
         self.json_name = json_name
+        self.flag =flag
 
 
 def generate_json_name(prefix, name):
