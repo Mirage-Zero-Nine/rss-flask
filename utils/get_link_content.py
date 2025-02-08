@@ -24,7 +24,7 @@ def get_link_content_with_header_and_empty_cookie(link, header, parser=html_pars
 
 
 def get_link_content_with_urllib_request(link):
-    return BeautifulSoup(urllib.request.urlopen(link), 'lxml')
+    return BeautifulSoup(urllib.request.urlopen(link, timeout=15), 'lxml')
 
 
 def load_json_response(link, **kwargs):
