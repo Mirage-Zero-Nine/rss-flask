@@ -1,3 +1,5 @@
+import logging
+
 from utils.feed_item_object import Metadata, generate_json_name, convert_router_path_to_save_path_prefix
 from router.base_router import BaseRouter
 from router.dayone.day_one_blog_constants import day_one_blog_time_convert_pattern
@@ -13,7 +15,6 @@ class DayOneBlogRouter(BaseRouter):
         :return: list of articles
         """
         metadata_list = []
-
         soup = get_link_content_with_bs_no_params(self.articles_link, html_parser)
         entry_list = soup.find_all(
             "h3",
@@ -37,13 +38,15 @@ class DayOneBlogRouter(BaseRouter):
     def _get_article_content(self, article_metadata, entry):
         soup = get_link_content_with_bs_no_params(article_metadata.link, html_parser)
         entry.author = soup.find('meta', attrs={'name': 'author'})['content']
-
-        publish_date = soup.find_all(
+        metadata = soup.find_all(
             "ul",
             {'class': "entry-meta"}
-        )[0].find('li', text=True).get_text(strip=True)
-        entry.created_time = convert_time_with_pattern(publish_date, day_one_blog_time_convert_pattern)
-
+        )
+        if metadata[0]:
+            publish_date = metadata[0].find('li', text=True).get_text(strip=True)
+            entry.created_time = convert_time_with_pattern(publish_date, day_one_blog_time_convert_pattern)
+        else:
+            logging.warning("No publish date found for: " + article_metadata.link)
         entry_content = soup.find('div', class_='entry-content')
 
         for element in entry_content.find_all(style=True):

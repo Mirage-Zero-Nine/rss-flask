@@ -1,4 +1,5 @@
 import yaml
+import logging
 from router.cnbeta.cnbeta_router import CnbetaRouter
 from router.cnbeta.cnbeta_router_constants import cnbeta_news_router_title, cnbeta_news_site_link, \
     cnbeta_news_router_description, cnbeta_period, cnbeta_articles_link
@@ -25,7 +26,7 @@ from router.reuters.reuters_router import ReutersRouter
 from router.sony_alpha_rumor.sony_alpha_rumor_router import SonyAlphaRumorsRouter
 from router.sony_alpha_rumor.sony_alpha_rumor_router_constants import sar_name, sar_link, sar_rss_link, \
     sar_query_period, sar_description
-from router.the_verge.the_verge_constants import the_verge_title, the_verge_prefix, the_verge_tech_archive, \
+from router.the_verge.the_verge_constants import the_verge_title, the_verge_prefix, the_verge_archive, \
     the_verge_description
 from router.the_verge.the_verge_router import TheVergeRouter
 from router.twitter_engineering_blog.twitter_engineering_blog_router import TwitterEngineeringBlogRouter
@@ -47,10 +48,19 @@ from utils.router_constants import language_english, language_chinese, meta_engi
     wsdot_news_router_path, zhihu_router_path, embassy_router_path, jandan_router_path, reuters_news_router_path, \
     sar_router_path
 
-# file path started from app.py
-with open('config.yml') as f:
-    # use safe_load instead load
-    config = yaml.safe_load(f)
+logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.INFO)
+
+config = None
+
+try:
+    with open('config.yml') as f:
+        config = yaml.safe_load(f)
+except FileNotFoundError:
+    logging.warning("Warning: Config file not found.")
+except yaml.YAMLError as e:
+    logging.warning(f"Warning: Failed to parse YAML file. Details: {e}. ")
+except Exception as e:
+    logging.warning(f"Warning: An unexpected error occurred: {e}.")
 
 meta_tech_blog = MetaBlog(
     router_path=meta_engineering_blog_router,
@@ -76,7 +86,7 @@ the_verge = TheVergeRouter(
     router_path=the_verge_router_path,
     feed_title=the_verge_title,
     original_link=the_verge_prefix,
-    articles_link=the_verge_tech_archive,
+    articles_link=the_verge_archive,
     description=the_verge_description,
     language=language_english,
     period=cnbeta_period
