@@ -5,7 +5,7 @@ from datetime import datetime
 import requests
 from router.base_router import BaseRouter
 from router.reuters.reuters_constants import reuters_articles_list_api_link, reuters_article_content_api_link, \
-    reuters_site_link, reuters_description
+    reuters_site_link, reuters_description, headers
 from utils.feed_item_object import Metadata, generate_json_name, convert_router_path_to_save_path_prefix, FeedItem
 from utils.router_constants import language_english
 from utils.time_converter import convert_time_with_pattern
@@ -28,21 +28,32 @@ class ReutersRouter(BaseRouter):
             'website': 'reuters',
         }
         json_query = json.dumps(params)
-        response = requests.get(root_url + json_query)
+        response = requests.get(root_url + json_query, headers=headers)
         data = response.json()
         articles = data["result"]["articles"]
 
+
         for article in articles:
-            save_json_path_prefix = convert_router_path_to_save_path_prefix(self.router_path)
-            metadata = Metadata(
-                title=article["title"],
-                created_time=convert_time_with_pattern(article["published_time"], "%Y-%m-%dT%H:%M:%S.%fZ").isoformat(),
-                link=article["canonical_url"],
-                guid=article["id"],
-                author=", ".join(author["name"] for author in article["authors"]) if article["authors"] else "Reuters",
-                json_name=generate_json_name(prefix=save_json_path_prefix, name=article["id"])
-            )
-            metadata_list.append(metadata)
+            try:
+                created_time = convert_time_with_pattern(article["published_time"], "%Y-%m-%dT%H:%M:%S.%fZ").isoformat()
+            except ValueError:
+                try:
+                    created_time = convert_time_with_pattern(article["published_time"], "%Y-%m-%dT%H:%M:%SZ").isoformat()
+                except ValueError:
+                    created_time = None
+                    logging.error("Creat time converting failure: " + article["published_time"])
+
+            if created_time:
+                    save_json_path_prefix = convert_router_path_to_save_path_prefix(self.router_path)
+                    metadata = Metadata(
+                        title=article["title"],
+                        created_time=created_time,
+                        link=article["canonical_url"],
+                        guid=article["id"],
+                        author=", ".join(author["name"] for author in article["authors"]) if article["authors"] else "Reuters",
+                        json_name=generate_json_name(prefix=save_json_path_prefix, name=article["id"])
+                    )
+                    metadata_list.append(metadata)
 
         return metadata_list
 
@@ -53,7 +64,7 @@ class ReutersRouter(BaseRouter):
             'website': 'reuters',
         }
         json_query = json.dumps(params)
-        response = requests.get(root_url + json_query)
+        response = requests.get(root_url + json_query, headers=headers)
         data = response.json()
         entry.description = ''
         entry.guid = article_metadata.guid
@@ -104,11 +115,3 @@ class ReutersRouter(BaseRouter):
         )
 
         return feed
-
-
-if __name__ == '__main__':
-    li = handler('world', '', 3)
-    for l in li:
-        handler1(FeedItem(description=''), l.link)
-    # print(handler('world', '', 2))
-    # print(handler1())

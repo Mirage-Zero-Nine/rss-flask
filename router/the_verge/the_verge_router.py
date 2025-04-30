@@ -87,9 +87,10 @@ class TheVergeRouter(BaseRouter):
 
     def _processing_body(self, soup, entry: FeedItem):
         body = soup.find('div', class_='duet--layout--entry-body')
-        self._remove_empty_div(body)
         if body:
-            entry.description += str(body)
+            self._remove_empty_div(body)
+            if body:
+                entry.description += str(body)
 
     def _get_short_post_content(self, entry: FeedItem, soup):
         body_tag = soup.find('div', class_='duet--content-cards--quick-post')
