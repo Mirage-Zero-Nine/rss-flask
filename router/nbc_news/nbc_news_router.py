@@ -1,3 +1,5 @@
+import logging
+
 from router.router_for_rss_feed import RouterForRssFeed
 from utils.get_link_content import get_link_content_with_bs_no_params
 from utils.time_converter import convert_time_with_pattern
@@ -31,3 +33,5 @@ class NbcNewsRouter(RouterForRssFeed):
 
             entry.description = soup
             entry.save_to_json(self.router_path)
+        else:
+            logging.error("Soup is empty: " + str(soup))
