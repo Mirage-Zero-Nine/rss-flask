@@ -40,5 +40,3 @@ html_parser = 'html.parser'
 
 language_chinese = "zh-cn"
 language_english = "en-us"
-
-data_path_prefix = "./data/"

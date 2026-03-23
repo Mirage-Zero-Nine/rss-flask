@@ -1,10 +1,8 @@
 import base64
-import json
 import logging
-import os
 from datetime import datetime
 
-from utils.router_constants import data_path_prefix
+from utils.cache_store import write_feed_item_to_cache
 
 
 class FeedItem:
@@ -56,26 +54,22 @@ class FeedItem:
 
     def save_to_json(self, router_path):
         """
-        File name: /data/{router_path}/{encoded_link}.json
-        Example: /data/meta-blog/{encoded_link}.json
+        Store the feed item in redis under the router-specific cache prefix.
         :param router_path: name of the router path
         """
         save_path_prefix = convert_router_path_to_save_path_prefix(router_path)
-
-        # create a directory to save json
-        os.makedirs(save_path_prefix, exist_ok=True)
-
-        self.json_name = generate_json_name(save_path_prefix, self.guid)
-        with open(self.json_name, 'w') as json_file:
-            json.dump({
-                "title": self.title,
-                "link": self.link,
-                "description": str(self.description),
-                "author": self.author,
-                "created_time": str(self.created_time),
-                "guid": self.guid,
-                "with_content": self.with_content
-            }, json_file)
+        identifier = self.guid or self.link or self.title or datetime.utcnow().isoformat()
+        self.json_name = generate_json_name(save_path_prefix, identifier)
+        payload = {
+            "title": self.title,
+            "link": self.link,
+            "description": str(self.description),
+            "author": self.author,
+            "created_time": str(self.created_time) if self.created_time else None,
+            "guid": self.guid,
+            "with_content": self.with_content
+        }
+        write_feed_item_to_cache(self.json_name, payload)
 
 
 class Metadata:
@@ -96,19 +90,20 @@ class Metadata:
         self.guid = guid
         self.created_time = created_time  # required to be a datatime object
         self.json_name = json_name
-        self.flag =flag
+        self.flag = flag
 
 
 def generate_json_name(prefix, name):
     json_name = base64.urlsafe_b64encode(name.encode('utf-8')).decode('utf-8').rstrip('=')
     if len(json_name) > 100:
         json_name = json_name[-100:]
-    return f"{prefix}/{json_name}.json"
+    return f"{prefix}:{json_name}"
 
 
 def convert_router_path_to_save_path_prefix(router_path):
     if router_path.startswith('/') is False:
-        logging.error(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Invalid path, it's not started with a '/': {router_path}")
+        logging.error(f"{datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Invalid path, it's not started with a '/': {router_path}")
         raise Exception("Invalid path, it's not started with a '/'")
 
-    return f"{data_path_prefix}{router_path[1:].replace('/', '-')}"
+    sanitized = router_path[1:].replace('/', '-')
+    return f"router_cache:{sanitized}"

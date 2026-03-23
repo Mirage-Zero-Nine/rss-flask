@@ -17,6 +17,7 @@ PyYAML==6.0.2
 requests==2.32.0
 rfeed==1.1.1
 sgmllib3k==1.0.0
+redis==5.3.1
 six==1.17.0
 soupsieve==2.6
 typing_extensions==4.12.2

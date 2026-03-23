@@ -3,17 +3,18 @@ FROM python:3.9-slim-buster
 
 WORKDIR /python-docker
 
-SHELL ["/bin/bash", "-c"]
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
 COPY requirements.txt requirements.txt
-RUN pip3 install --upgrade pip
-RUN pip3 install -r requirements.txt
-RUN python3 -m venv venv
-RUN source venv/bin/activate
-
-EXPOSE 5000
+RUN pip3 install --upgrade pip && \
+    pip3 install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-#CMD ["python3", "app.py"]
-CMD ["flask", "run", "--host=0.0.0.0"]
+EXPOSE 5000
+
+ENV FLASK_APP=app.py
+ENV FLASK_RUN_HOST=0.0.0.0
+
+CMD ["flask", "run"]
