@@ -1,4 +1,20 @@
 import logging
+import os
+import sys
+
+LOG_DIR = os.path.join(os.path.dirname(__file__), 'logs')
+os.makedirs(LOG_DIR, exist_ok=True)
+
+LOG_FORMAT = '%(asctime)s %(levelname)s %(name)s: %(message)s'
+logging.basicConfig(
+    level=logging.INFO,
+    format=LOG_FORMAT,
+    datefmt='%Y-%m-%d %H:%M:%S',
+    handlers=[
+        logging.FileHandler(os.path.join(LOG_DIR, 'application.log'), encoding='utf-8'),
+        logging.StreamHandler(sys.stdout),
+    ]
+)
 
 from flask import Flask
 from router.embassy.china_embassy_news_constants import china_embassy_news_filter
@@ -18,7 +34,6 @@ from werkzeug.exceptions import abort
 
 app = Flask(__name__)
 app.logger.setLevel(logging.INFO)
-logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.INFO)
 
 
 @app.route('/')
@@ -92,15 +107,18 @@ def wsdot_router():
     return wsdot_news.get_rss_xml_response()
 
 
+@app.route(zaobao_router_path_prefix)
 @app.route(zaobao_router_path_prefix + '/<region>')
-def zaobao_router(region):
+def zaobao_router(region=None):
     """
-    Currently support two regions: `china` and `world`.
-    :param region: region to query
+    Support a general realtime feed and region-specific feeds.
+    :param region: optional region to query
     :return: realtime news xml based on region
     """
 
-    # region is a required argument
+    if region is None:
+        return zaobao_realtime.get_rss_xml_response(parameter=None, title_filter=title_filter)
+
     if region not in zaobao_region_parameter:
         abort(404)
 

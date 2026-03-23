@@ -55,6 +55,11 @@ class BaseRouter:
         cached_entry = self.__load_article_from_cache(article_metadata.json_name)
         if cached_entry:
             logging.info(f"Getting {article_metadata.link} from cache: {article_metadata.json_name}")
+            if self.router_path == '/zaobao/realtime':
+                description = cached_entry.description or ""
+                logging.info("Zaobao cached article loaded for %s (content length=%s)", article_metadata.link, len(description))
+                logging.debug("Zaobao cached article preview for %s: %s", article_metadata.link, description[:500])
+                logging.debug("Zaobao cached article full content for %s: %s", article_metadata.link, description)
             return cached_entry
 
         logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Getting content for: {article_metadata.link}")

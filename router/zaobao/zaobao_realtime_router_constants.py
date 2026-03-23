@@ -7,9 +7,12 @@ zaobao_link = "https://www.zaobao.com.sg"
 zaobao_realtime_news_api_prefix = 'https://www.zaobao.com.sg/_plat/api/v2/page-content'
 zaobao_realtime_page_prefix = zaobao_realtime_news_api_prefix + "/realtime/"
 zaobao_realtime_page_suffix = "?page="
+zaobao_news_china_page_prefix = zaobao_realtime_news_api_prefix + "/news/china"
+zaobao_news_world_page_prefix = zaobao_realtime_news_api_prefix + "/news/world"
 
 zaobao_realtime_china_frontpage_prefix = zaobao_link + "/realtime/china"
 zaobao_realtime_world_frontpage_prefix = zaobao_link + "/realtime/world"
+zaobao_realtime_frontpage_prefix = zaobao_link + "/realtime"
 
 zaobao_headers = {
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',

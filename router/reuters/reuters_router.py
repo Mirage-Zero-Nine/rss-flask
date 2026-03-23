@@ -1,15 +1,18 @@
 import json
 import logging
+import re
 from datetime import datetime
+from urllib.parse import urljoin
 
 import requests
 from router.base_router import BaseRouter
 from router.reuters.reuters_constants import reuters_articles_list_api_link, reuters_article_content_api_link, \
     reuters_site_link, reuters_description, headers
 from utils.feed_item_object import Metadata, generate_json_name, convert_router_path_to_save_path_prefix, FeedItem
-from utils.router_constants import language_english
+from utils.router_constants import html_parser, language_english
 from utils.time_converter import convert_time_with_pattern
 from utils.xml_utilities import generate_feed_object_for_new_router
+from utils.get_link_content import get_link_content_with_bs_no_params
 
 
 class ReutersRouter(BaseRouter):
@@ -32,7 +35,15 @@ class ReutersRouter(BaseRouter):
         try:
             data = response.json()
         except ValueError as exc:
-            logging.error("Failed to decode Reuters article list JSON (%s): %s", json_query, exc)
+            snippet = response.text.replace('\n', ' ')[:200]
+            logging.error(
+                "Failed to decode Reuters article list JSON (%s). status=%s url=%s. Error: %s. Payload snippet: %s",
+                json_query,
+                response.status_code,
+                response.url,
+                exc,
+                snippet
+            )
             return metadata_list
         articles = data["result"]["articles"]
 
@@ -48,16 +59,21 @@ class ReutersRouter(BaseRouter):
                     logging.error("Creat time converting failure: " + article["published_time"])
 
             if created_time:
-                    save_json_path_prefix = convert_router_path_to_save_path_prefix(self.router_path)
-                    metadata = Metadata(
-                        title=article["title"],
-                        created_time=created_time,
-                        link=article["canonical_url"],
-                        guid=article["id"],
-                        author=", ".join(author["name"] for author in article["authors"]) if article["authors"] else "Reuters",
-                        json_name=generate_json_name(prefix=save_json_path_prefix, name=article["id"])
-                    )
-                    metadata_list.append(metadata)
+                canonical_url = article.get("canonical_url")
+                if not canonical_url:
+                    logging.warning("Skipping Reuters article %s because canonical_url is missing", article["id"])
+                    continue
+                full_link = urljoin(self.original_link, canonical_url)
+                save_json_path_prefix = convert_router_path_to_save_path_prefix(self.router_path)
+                metadata = Metadata(
+                    title=article["title"],
+                    created_time=created_time,
+                    link=full_link,
+                    guid=article["id"],
+                    author=", ".join(author["name"] for author in article["authors"]) if article["authors"] else "Reuters",
+                    json_name=generate_json_name(prefix=save_json_path_prefix, name=article["id"])
+                )
+                metadata_list.append(metadata)
 
         return metadata_list
 
@@ -72,7 +88,16 @@ class ReutersRouter(BaseRouter):
         try:
             data = response.json()
         except ValueError as exc:
-            logging.error("Failed to decode Reuters article content JSON for %s: %s", article_metadata.guid, exc)
+            snippet = response.text.replace('\n', ' ')[:200]
+            logging.error(
+                "Failed to decode Reuters article content JSON for %s (status=%s url=%s). Error: %s. Payload snippet: %s",
+                article_metadata.guid,
+                response.status_code,
+                response.url,
+                exc,
+                snippet
+            )
+            self.__fetch_article_via_html(article_metadata, entry)
             return
         entry.description = ''
         entry.guid = article_metadata.guid
@@ -107,6 +132,23 @@ class ReutersRouter(BaseRouter):
             if p["type"] == "paragraph":
                 entry.description += "<p>" + p["content"] + "</p>"
 
+        entry.save_to_json(self.router_path)
+
+    def __fetch_article_via_html(self, article_metadata: Metadata, entry: FeedItem):
+        soup = get_link_content_with_bs_no_params(article_metadata.link, html_parser)
+        body_candidates = [
+            soup.find('article'),
+            soup.find('section', {'data-testid': 'article-body'}),
+            soup.find('div', class_=re.compile('ArticleBody|ArticleContent|article__body'), recursive=True),
+            soup.find('div', {'id': 'articleText'}),
+            soup.find('div', role='main')
+        ]
+        body = next((candidate for candidate in body_candidates if candidate), None)
+        if body is None:
+            logging.warning("Reuters fallback HTML parser failed for %s, saving full page", article_metadata.link)
+            entry.description = soup.body or soup
+        else:
+            entry.description = body
         entry.save_to_json(self.router_path)
 
     def _generate_response(self, last_build_time, feed_entries_list, parameter=None):

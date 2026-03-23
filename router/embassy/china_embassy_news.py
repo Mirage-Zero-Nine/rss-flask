@@ -1,4 +1,5 @@
 import logging
+import re
 
 from router.base_router import BaseRouter
 from router.embassy.china_embassy_news_constants import china_embassy_news_prefix, china_embassy_news_filter, \
@@ -46,7 +47,13 @@ class ChinaEmbassyNewsRouter(BaseRouter):
         if time_div and time_div.get_text():
             entry.created_time = convert_time_with_pattern(time_div.get_text(), "%Y-%m-%d %H:%M")
         else:
-            logging.warning("Failed to find publish time for %s", article_metadata.link)
+            match = re.search(r"/(20\d{2})(\d{2})(\d{2})_", article_metadata.link)
+            if match:
+                fallback = match.group(1) + match.group(2) + match.group(3)
+                entry.created_time = convert_time_with_pattern(fallback, "%Y%m%d", 0)
+                logging.info("Fallback to URL date %s for %s", fallback, article_metadata.link)
+            else:
+                logging.warning("Failed to find publish time for %s", article_metadata.link)
         for tag in soup.find_all(True):
             tag.attrs = {key: val for key, val in tag.attrs.items() if key != 'style'}
         entry.description = soup.find('div', id='News_Body_Txt_A')

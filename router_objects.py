@@ -1,5 +1,5 @@
-import yaml
 import logging
+import yaml
 from router.cnbeta.cnbeta_router import CnbetaRouter
 from router.cnbeta.cnbeta_router_constants import cnbeta_news_router_title, cnbeta_news_site_link, \
     cnbeta_news_router_description, cnbeta_period, cnbeta_articles_link
@@ -33,8 +33,6 @@ from utils.router_constants import language_english, language_chinese, meta_engi
     cnbeta_router_path, zaobao_router_path_prefix, day_one_blog_router_path, earthquake_router_path, \
     wsdot_news_router_path, embassy_router_path, \
     jandan_router_path, reuters_news_router_path, sar_router_path
-
-logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.INFO)
 
 config = None
 

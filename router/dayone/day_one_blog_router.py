@@ -37,17 +37,29 @@ class DayOneBlogRouter(BaseRouter):
 
     def _get_article_content(self, article_metadata, entry):
         soup = get_link_content_with_bs_no_params(article_metadata.link, html_parser)
-        entry.author = soup.find('meta', attrs={'name': 'author'})['content']
+        author_meta = soup.find('meta', attrs={'name': 'author'})
+        if author_meta and author_meta.get('content'):
+            entry.author = author_meta['content']
+        else:
+            logging.warning("No author metadata found for: " + article_metadata.link)
+
         metadata = soup.find_all(
             "ul",
             {'class': "entry-meta"}
         )
-        if metadata[0]:
-            publish_date = metadata[0].find('li', text=True).get_text(strip=True)
-            entry.created_time = convert_time_with_pattern(publish_date, day_one_blog_time_convert_pattern)
+        if metadata:
+            publish_item = metadata[0].find('li', text=True)
+            if publish_item:
+                publish_date = publish_item.get_text(strip=True)
+                entry.created_time = convert_time_with_pattern(publish_date, day_one_blog_time_convert_pattern)
+            else:
+                logging.warning("No publish date item found for: " + article_metadata.link)
         else:
             logging.warning("No publish date found for: " + article_metadata.link)
         entry_content = soup.find('div', class_='entry-content')
+        if entry_content is None:
+            logging.warning("No entry content found for: " + article_metadata.link)
+            return entry
 
         for element in entry_content.find_all(style=True):
             del element['style']
