@@ -1,3 +1,5 @@
+import logging
+
 from router.base_router import BaseRouter
 from router.embassy.china_embassy_news_constants import china_embassy_news_prefix, china_embassy_news_filter, \
     china_embassy_news_author
@@ -40,8 +42,11 @@ class ChinaEmbassyNewsRouter(BaseRouter):
         :param entry: object stores all the metadata and the content
         """
         soup = get_link_content_with_urllib_request(article_metadata.link)
-        entry.created_time = convert_time_with_pattern(soup.find("div", id="News_Body_Time").get_text(),
-                                                       "%Y-%m-%d %H:%M")
+        time_div = soup.find("div", id="News_Body_Time")
+        if time_div and time_div.get_text():
+            entry.created_time = convert_time_with_pattern(time_div.get_text(), "%Y-%m-%d %H:%M")
+        else:
+            logging.warning("Failed to find publish time for %s", article_metadata.link)
         for tag in soup.find_all(True):
             tag.attrs = {key: val for key, val in tag.attrs.items() if key != 'style'}
         entry.description = soup.find('div', id='News_Body_Txt_A')

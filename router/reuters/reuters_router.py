@@ -29,7 +29,11 @@ class ReutersRouter(BaseRouter):
         }
         json_query = json.dumps(params)
         response = requests.get(root_url + json_query, headers=headers)
-        data = response.json()
+        try:
+            data = response.json()
+        except ValueError as exc:
+            logging.error("Failed to decode Reuters article list JSON (%s): %s", json_query, exc)
+            return metadata_list
         articles = data["result"]["articles"]
 
 
@@ -65,7 +69,11 @@ class ReutersRouter(BaseRouter):
         }
         json_query = json.dumps(params)
         response = requests.get(root_url + json_query, headers=headers)
-        data = response.json()
+        try:
+            data = response.json()
+        except ValueError as exc:
+            logging.error("Failed to decode Reuters article content JSON for %s: %s", article_metadata.guid, exc)
+            return
         entry.description = ''
         entry.guid = article_metadata.guid
         entry.created_time = datetime.fromisoformat(article_metadata.created_time)
