@@ -24,7 +24,11 @@ def convert_time_with_pattern(created_time_string, pattern, shift_hours=0):
 
 def convert_wsdot_news_time(time_string, format_string):
     time_object = datetime.strptime(str(time_string), format_string)
-    return time_object.astimezone(pytz.timezone('US/Pacific'))
+    if '%z' in format_string:
+        return time_object.astimezone(pytz.timezone('US/Pacific'))
+
+    utc_time = pytz.UTC.localize(time_object)
+    return utc_time.astimezone(pytz.timezone('US/Pacific'))
 
 
 def convert_millisecond_to_datetime(millisecond_string, shift_hours=0):

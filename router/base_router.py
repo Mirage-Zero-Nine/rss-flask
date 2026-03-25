@@ -1,15 +1,13 @@
 import datetime as dt
-import json
 import logging
-import os
 import time
 import pytz
 
 from flask import make_response
 from datetime import datetime
 
+from utils.cache_store import read_feed_item_from_cache, read_metadata_list, write_metadata_list
 from utils.feed_item_object import Metadata, FeedItem, generate_json_name, convert_router_path_to_save_path_prefix
-from utils.json_parser import read_feed_item_from_json
 from utils.rss_cache import last_build_time_cache
 from utils.xml_utilities import generate_feed_object_for_new_router
 
@@ -54,16 +52,22 @@ class BaseRouter:
         :param article_metadata: metadata of articles
         :return: entry that contains all the metadata and the content
         """
-        if os.path.exists(article_metadata.json_name):
-            logging.info(f"Getting {article_metadata.link} from saved json: {article_metadata.json_name}")
-            return read_feed_item_from_json(article_metadata.json_name)
-        else:
-            logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Getting content for: {article_metadata.link}")
-            entry = FeedItem(title=article_metadata.title,
-                             link=article_metadata.link,
-                             guid=article_metadata.link)
-            self._get_article_content(article_metadata, entry)
-            return entry
+        cached_entry = self.__load_article_from_cache(article_metadata.json_name)
+        if cached_entry:
+            logging.info(f"Getting {article_metadata.link} from cache: {article_metadata.json_name}")
+            if self.router_path == '/zaobao/realtime':
+                description = cached_entry.description or ""
+                logging.info("Zaobao cached article loaded for %s (content length=%s)", article_metadata.link, len(description))
+                logging.debug("Zaobao cached article preview for %s: %s", article_metadata.link, description[:500])
+                logging.debug("Zaobao cached article full content for %s: %s", article_metadata.link, description)
+            return cached_entry
+
+        logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Getting content for: {article_metadata.link}")
+        entry = FeedItem(title=article_metadata.title,
+                         link=article_metadata.link,
+                         guid=article_metadata.link)
+        self._get_article_content(article_metadata, entry)
+        return entry
 
     def _get_article_content(self, article_metadata, entry):
         """
@@ -86,15 +90,13 @@ class BaseRouter:
 
         save_path_prefix = convert_router_path_to_save_path_prefix(cache_key)
         # logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} prefix: {save_path_prefix}")
-        # create a directory to save json
-        os.makedirs(save_path_prefix, exist_ok=True)
-
-        article_list_file_name = generate_json_name(save_path_prefix, self.feed_title)
+        article_list_key = generate_json_name(save_path_prefix, self.feed_title)
 
         # get metadata of the articles
-        if cache_key in last_build_time_cache.keys() and self.__check_if_meet_refresh_time(datetime.timestamp(last_build_time_cache[cache_key])) is False and os.path.exists(article_list_file_name):
+        cached_metadata = read_metadata_list(article_list_key)
+        if cache_key in last_build_time_cache.keys() and self.__check_if_meet_refresh_time(datetime.timestamp(last_build_time_cache[cache_key])) is False and cached_metadata:
             logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Reading saved content for {cache_key}...")
-            article_metadata_list = self.__read_article_list_from_file(article_list_file_name)
+            article_metadata_list = self.__build_metadata_list(cached_metadata)
             last_build_time = last_build_time_cache[cache_key]
         else:
             logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Query latest content for {cache_key}...")
@@ -102,7 +104,7 @@ class BaseRouter:
             article_metadata_list = self._get_articles_list(parameter=parameter,
                                                             link_filter=link_filter,
                                                             title_filter=title_filter)
-            self.__write_article_list_to_file(article_list_file_name, article_metadata_list)
+            self.__write_article_list_to_cache(article_list_key, article_metadata_list)
 
             last_build_time = dt.datetime.now(pytz.timezone('GMT'))
             last_build_time_cache[cache_key] = last_build_time
@@ -154,22 +156,44 @@ class BaseRouter:
 
         return False
 
-    @staticmethod
-    def __read_article_list_from_file(file_path):
-        with open(file_path, 'r') as json_file:
-            metadata_dicts = json.load(json_file)
+    def __load_article_from_cache(self, cache_key):
+        article_data = read_feed_item_from_cache(cache_key)
+        if not article_data:
+            return None
 
-        # Convert the dictionaries back to Metadata objects
+        entry = FeedItem(
+            title=article_data.get("title"),
+            link=article_data.get("link"),
+            description=article_data.get("description"),
+            author=article_data.get("author"),
+            guid=article_data.get("guid"),
+            created_time=self.__parse_created_time(article_data.get("created_time")),
+            with_content=article_data.get("with_content", False)
+        )
+        entry.json_name = cache_key
+        return entry
+
+    @staticmethod
+    def __parse_created_time(value):
+        if not value:
+            return None
+
+        try:
+            return datetime.fromisoformat(value)
+        except ValueError:
+            logging.warning(f"Unable to parse created_time from cache: {value}")
+            return None
+
+    @staticmethod
+    def __build_metadata_list(metadata_dicts):
+        if not metadata_dicts:
+            return []
+
         metadata_objects = []
         for metadata_dict in metadata_dicts:
             metadata_objects.append(Metadata(**metadata_dict))
         return metadata_objects
 
     @staticmethod
-    def __write_article_list_to_file(file_name, article_metadata_list):
-        metadata_dicts = []
-        for metadata in article_metadata_list:
-            metadata_dicts.append(metadata.__dict__)
-
-        with open(file_name, 'w') as json_file:
-            json.dump(metadata_dicts, json_file)
+    def __write_article_list_to_cache(cache_key, article_metadata_list):
+        write_metadata_list(cache_key, article_metadata_list)
