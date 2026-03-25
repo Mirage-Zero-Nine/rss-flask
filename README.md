@@ -2,7 +2,7 @@
 
 `rss-flask` is a Flask service that turns several websites and feeds into RSS endpoints. Each endpoint fetches content from an upstream source, converts it into RSS XML, and returns it from a stable route that you can subscribe to in an RSS reader.
 
-The project utlize Redis to cache feed metadata and article content.
+The project uses Redis to cache feed metadata and article content.
 
 ## Runtime Requirements
 
@@ -143,18 +143,17 @@ http://127.0.0.1:5000
 
 ## Cache Behavior
 
-- Router metadata lists and article payloads are stored in Redis.
-- If Redis is unavailable, cache reads and writes are skipped.
-- The app also keeps an in-memory `last_build_time_cache` for per-process refresh timing.
-- Restarting the process clears only the in-memory build-time cache, not the Redis data.
+- Router metadata lists, article payloads, and build-time refresh timestamps are stored in Redis.
+- Redis is required for the application to start.
+- Restarting the process does not clear Redis-backed cache data.
 
 ## Project Structure
 
-- [app.py](/Users/oliverzh/IdeaProjects/rss-flask/app.py): Flask app entrypoint and route registration.
+- [app.py](/Users/oliverzh/IdeaProjects/rss-flask/app.py): Thin Flask app entrypoint.
+- [rss_flask/](/Users/oliverzh/IdeaProjects/rss-flask/rss_flask): App factory, route registration, and feed registry.
 - [router/](/Users/oliverzh/IdeaProjects/rss-flask/router): Source-specific router implementations.
-- [router_objects.py](/Users/oliverzh/IdeaProjects/rss-flask/router_objects.py): Instantiates router objects and shared feed metadata.
-- [utils/cache_store.py](/Users/oliverzh/IdeaProjects/rss-flask/utils/cache_store.py): Redis cache integration.
+- [router_objects.py](/Users/oliverzh/IdeaProjects/rss-flask/router_objects.py): Compatibility re-exports for router objects.
+- [utils/cache_store.py](/Users/oliverzh/IdeaProjects/rss-flask/utils/cache_store.py): Redis cache service plus compatibility helpers.
+- [utils/http_client.py](/Users/oliverzh/IdeaProjects/rss-flask/utils/http_client.py): Shared HTTP client and default request behavior.
 - [utils/scheduler.py](/Users/oliverzh/IdeaProjects/rss-flask/utils/scheduler.py): Background refresh scheduler.
 - [logs/](/Users/oliverzh/IdeaProjects/rss-flask/logs): File-based application logs.
-
-

@@ -8,7 +8,7 @@ from datetime import datetime
 
 from utils.cache_store import read_feed_item_from_cache, read_metadata_list, write_metadata_list
 from utils.feed_item_object import Metadata, FeedItem, generate_json_name, convert_router_path_to_save_path_prefix
-from utils.rss_cache import last_build_time_cache
+from utils.rss_cache import build_time_cache
 from utils.xml_utilities import generate_feed_object_for_new_router
 
 
@@ -94,10 +94,11 @@ class BaseRouter:
 
         # get metadata of the articles
         cached_metadata = read_metadata_list(article_list_key)
-        if cache_key in last_build_time_cache.keys() and self.__check_if_meet_refresh_time(datetime.timestamp(last_build_time_cache[cache_key])) is False and cached_metadata:
+        cached_build_time = build_time_cache.get(cache_key)
+        if cached_build_time and self.__check_if_meet_refresh_time(datetime.timestamp(cached_build_time)) is False and cached_metadata:
             logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Reading saved content for {cache_key}...")
             article_metadata_list = self.__build_metadata_list(cached_metadata)
-            last_build_time = last_build_time_cache[cache_key]
+            last_build_time = cached_build_time
         else:
             logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Query latest content for {cache_key}...")
 
@@ -107,7 +108,7 @@ class BaseRouter:
             self.__write_article_list_to_cache(article_list_key, article_metadata_list)
 
             last_build_time = dt.datetime.now(pytz.timezone('GMT'))
-            last_build_time_cache[cache_key] = last_build_time
+            build_time_cache.set(cache_key, last_build_time)
 
         for article_metadata in article_metadata_list:
             entry = self._get_article(article_metadata)

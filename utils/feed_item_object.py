@@ -102,8 +102,8 @@ def generate_json_name(prefix, name):
 
 def convert_router_path_to_save_path_prefix(router_path):
     if router_path.startswith('/') is False:
-        logging.error(f"{datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Invalid path, it's not started with a '/': {router_path}")
-        raise Exception("Invalid path, it's not started with a '/'")
+        logging.error(f"{datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Invalid path, it does not start with '/': {router_path}")
+        raise Exception("Invalid path, it does not start with '/'")
 
     sanitized = router_path[1:].replace('/', '-')
     return f"router_cache:{sanitized}"

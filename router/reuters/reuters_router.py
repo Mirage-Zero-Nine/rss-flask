@@ -4,11 +4,11 @@ import re
 from datetime import datetime
 from urllib.parse import urljoin
 
-import requests
 from router.base_router import BaseRouter
 from router.reuters.reuters_constants import reuters_articles_list_api_link, reuters_article_content_api_link, \
     reuters_site_link, reuters_description, headers
 from utils.feed_item_object import Metadata, generate_json_name, convert_router_path_to_save_path_prefix, FeedItem
+from utils.http_client import get_response, log_json_decode_error
 from utils.router_constants import html_parser, language_english
 from utils.time_converter import convert_time_with_pattern
 from utils.xml_utilities import generate_feed_object_for_new_router
@@ -31,18 +31,14 @@ class ReutersRouter(BaseRouter):
             'website': 'reuters',
         }
         json_query = json.dumps(params)
-        response = requests.get(root_url + json_query, headers=headers)
+        response = get_response(root_url + json_query, headers=headers)
         try:
             data = response.json()
         except ValueError as exc:
-            snippet = response.text.replace('\n', ' ')[:200]
-            logging.error(
-                "Failed to decode Reuters article list JSON (%s). status=%s url=%s. Error: %s. Payload snippet: %s",
-                json_query,
-                response.status_code,
-                response.url,
+            log_json_decode_error(
+                f"Failed to decode Reuters article list JSON ({json_query})",
+                response,
                 exc,
-                snippet
             )
             return metadata_list
         articles = data["result"]["articles"]
@@ -56,7 +52,7 @@ class ReutersRouter(BaseRouter):
                     created_time = convert_time_with_pattern(article["published_time"], "%Y-%m-%dT%H:%M:%SZ").isoformat()
                 except ValueError:
                     created_time = None
-                    logging.error("Creat time converting failure: " + article["published_time"])
+                    logging.error("Created time conversion failed: %s", article["published_time"])
 
             if created_time:
                 canonical_url = article.get("canonical_url")
@@ -84,18 +80,14 @@ class ReutersRouter(BaseRouter):
             'website': 'reuters',
         }
         json_query = json.dumps(params)
-        response = requests.get(root_url + json_query, headers=headers)
+        response = get_response(root_url + json_query, headers=headers)
         try:
             data = response.json()
         except ValueError as exc:
-            snippet = response.text.replace('\n', ' ')[:200]
-            logging.error(
-                "Failed to decode Reuters article content JSON for %s (status=%s url=%s). Error: %s. Payload snippet: %s",
-                article_metadata.guid,
-                response.status_code,
-                response.url,
+            log_json_decode_error(
+                f"Failed to decode Reuters article content JSON for {article_metadata.guid}",
+                response,
                 exc,
-                snippet
             )
             self.__fetch_article_via_html(article_metadata, entry)
             return
