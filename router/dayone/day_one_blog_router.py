@@ -1,11 +1,9 @@
-import logging
-
 from utils.feed_item_object import Metadata, generate_json_name, convert_router_path_to_save_path_prefix
 from router.base_router import BaseRouter
 from router.dayone.day_one_blog_constants import day_one_blog_time_convert_pattern
-from utils.get_link_content import get_link_content_with_bs_no_params
-from utils.router_constants import html_parser
-from utils.time_converter import convert_time_with_pattern
+from rss_flask.settings import HTML_PARSER
+from utils.helpers import convert_time_with_pattern
+from utils.http_client import get_link_content_with_bs_no_params
 
 
 class DayOneBlogRouter(BaseRouter):
@@ -15,7 +13,7 @@ class DayOneBlogRouter(BaseRouter):
         :return: list of articles
         """
         metadata_list = []
-        soup = get_link_content_with_bs_no_params(self.articles_link, html_parser)
+        soup = get_link_content_with_bs_no_params(self.articles_link, HTML_PARSER)
         entry_list = soup.find_all(
             "h3",
             {"class": "entry-title"}
@@ -36,7 +34,7 @@ class DayOneBlogRouter(BaseRouter):
         return metadata_list
 
     def _get_article_content(self, article_metadata, entry):
-        soup = get_link_content_with_bs_no_params(article_metadata.link, html_parser)
+        soup = get_link_content_with_bs_no_params(article_metadata.link, HTML_PARSER)
         entry.author = soup.find('meta', attrs={'name': 'author'})['content']
         metadata = soup.find_all(
             "ul",
@@ -46,7 +44,7 @@ class DayOneBlogRouter(BaseRouter):
             publish_date = metadata[0].find('li', text=True).get_text(strip=True)
             entry.created_time = convert_time_with_pattern(publish_date, day_one_blog_time_convert_pattern)
         else:
-            logging.warning("No publish date found for: " + article_metadata.link)
+            self._log_warning(f"missing publish date article_url={article_metadata.link}")
         entry_content = soup.find('div', class_='entry-content')
 
         for element in entry_content.find_all(style=True):
@@ -73,4 +71,4 @@ class DayOneBlogRouter(BaseRouter):
             div.extract()
 
         entry.description = entry_content
-        entry.save_to_json(self.router_path)
+        entry.save_to_cache(self.router_path)

@@ -1,44 +1,72 @@
-from flask import make_response
+import datetime as dt
+
+import pytz
 
 from router.base_router import BaseRouter
-from utils.feed_item_object import FeedItem
 from router.earthquake.usgs_earthquake_router_constants import usgs_earthquake_name
-
-from utils.get_link_content import load_json_response
-from utils.router_constants import language_english
-from utils.time_converter import convert_millisecond_to_datetime_with_format, convert_millisecond_to_datetime
-from utils.xml_utilities import generate_feed_object
+from utils.cache_store import write_build_time
+from utils.feed_item_object import (
+    FeedItem,
+    Metadata,
+    convert_router_path_to_save_path_prefix,
+    generate_json_name,
+)
+from utils.helpers import convert_millisecond_to_datetime, convert_millisecond_to_datetime_with_format
+from utils.http_client import load_json_response
 
 
 class UsgsEarthquakeRouter(BaseRouter):
-    def get_rss_xml_response(self, parameter=None, link_filter=None, title_filter=None):
+    def refresh_cache(self, parameter=None, link_filter=None, title_filter=None):
+        cache_key = self._generate_cache_key_for_router(parameter)
+        self._log_info(f"refresh earthquake cache cache_key={cache_key}")
         json_response = load_json_response(self.articles_link)
-        feed_item_list = []
+        metadata_list = []
+        content_count = 0
+
         for feature in json_response["features"]:
-            loc = "<p>Location: " + feature["properties"]['place'] + '</p>'
-            occurred_time = "<p>Time: " + \
-                            str(convert_millisecond_to_datetime_with_format(feature["properties"]['time'], 7)) + \
-                            '</p>'
-            depth = '<p>Depth: ' + str(feature['geometry']['coordinates'][2]) + ' KM</p>'
-            url = '<p>Details: <a href="%s">Click to see details...</a> ' % feature["properties"]['url']
-            feed_item_object = FeedItem(
-                title=feature["properties"]['title'],
-                link=feature["properties"]['url'],
-                author=usgs_earthquake_name,  # they don't have a specific author
-                created_time=convert_millisecond_to_datetime(feature["properties"]['time']),
-                guid=feature["properties"]['ids'],
-                description=loc + occurred_time + depth + url
+            guid = feature["properties"]["ids"]
+            link = feature["properties"]["url"]
+            article_cache_key = generate_json_name(
+                convert_router_path_to_save_path_prefix(self.router_path),
+                guid,
             )
-            feed_item_list.append(feed_item_object)
+            metadata_list.append(
+                Metadata(
+                    title=feature["properties"]["title"],
+                    link=link,
+                    guid=guid,
+                    created_time=convert_millisecond_to_datetime(feature["properties"]["time"]).isoformat(),
+                    json_name=article_cache_key,
+                )
+            )
 
-        feed = generate_feed_object(
-            title=self.feed_title,
-            link=self.original_link,
-            description=self.description,
-            language=language_english,
-            feed_item_list=feed_item_list
+            loc = "<p>Location: " + feature["properties"]["place"] + "</p>"
+            occurred_time = "<p>Time: " + str(
+                convert_millisecond_to_datetime_with_format(feature["properties"]["time"], 7)
+            ) + "</p>"
+            depth = "<p>Depth: " + str(feature["geometry"]["coordinates"][2]) + " KM</p>"
+            url = '<p>Details: <a href="%s">Click to see details...</a> ' % link
+            feed_item = FeedItem(
+                title=feature["properties"]["title"],
+                link=link,
+                author=usgs_earthquake_name,
+                created_time=convert_millisecond_to_datetime(feature["properties"]["time"]),
+                guid=guid,
+                description=loc + occurred_time + depth + url,
+            )
+            feed_item.save_to_cache(self.router_path)
+            content_count += 1
+
+        self._write_article_list_to_cache(self._build_article_list_key(cache_key), metadata_list)
+        last_build_time = dt.datetime.now(pytz.timezone("GMT"))
+        write_build_time(cache_key, last_build_time)
+        self._log_info(
+            f"refresh completed cache_key={cache_key} metadata_count={len(metadata_list)} "
+            f"content_count={content_count} last_build_time={last_build_time.isoformat()}"
         )
-
-        response = make_response(feed.rss())
-        response.headers.set('Content-Type', 'application/rss+xml')
-        return response
+        return {
+            "cache_key": cache_key,
+            "metadata_count": len(metadata_list),
+            "content_count": content_count,
+            "last_build_time": last_build_time,
+        }

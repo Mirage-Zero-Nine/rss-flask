@@ -1,14 +1,13 @@
 import json
-import logging
 from datetime import datetime
 
-import requests
 from router.base_router import BaseRouter
 from router.reuters.reuters_constants import reuters_articles_list_api_link, reuters_article_content_api_link, \
     reuters_site_link, reuters_description, headers
+from rss_flask.settings import LANGUAGE_ENGLISH
 from utils.feed_item_object import Metadata, generate_json_name, convert_router_path_to_save_path_prefix, FeedItem
-from utils.router_constants import language_english
-from utils.time_converter import convert_time_with_pattern
+from utils.helpers import convert_time_with_pattern
+from utils.http_client import load_json_response
 from utils.xml_utilities import generate_feed_object_for_new_router
 
 
@@ -17,7 +16,7 @@ class ReutersRouter(BaseRouter):
         metadata_list = []
         category, topic, limit = parameter['category'], parameter['topic'], parameter['limit']
 
-        logging.info(f"category: {category}, topic:{topic}, limit: {limit}")
+        self._log_info(f"reuters listing category={category} topic={topic} limit={limit}")
         section_id = f"/{category}/{topic + '/' if topic else ''}"
 
         root_url = self.articles_link + reuters_articles_list_api_link
@@ -28,8 +27,7 @@ class ReutersRouter(BaseRouter):
             'website': 'reuters',
         }
         json_query = json.dumps(params)
-        response = requests.get(root_url + json_query, headers=headers)
-        data = response.json()
+        data = load_json_response(root_url + json_query, headers=headers)
         articles = data["result"]["articles"]
 
 
@@ -41,7 +39,7 @@ class ReutersRouter(BaseRouter):
                     created_time = convert_time_with_pattern(article["published_time"], "%Y-%m-%dT%H:%M:%SZ").isoformat()
                 except ValueError:
                     created_time = None
-                    logging.error("Creat time converting failure: " + article["published_time"])
+                    self._log_error("create time converting failure: " + article["published_time"])
 
             if created_time:
                     save_json_path_prefix = convert_router_path_to_save_path_prefix(self.router_path)
@@ -64,8 +62,7 @@ class ReutersRouter(BaseRouter):
             'website': 'reuters',
         }
         json_query = json.dumps(params)
-        response = requests.get(root_url + json_query, headers=headers)
-        data = response.json()
+        data = load_json_response(root_url + json_query, headers=headers)
         entry.description = ''
         entry.guid = article_metadata.guid
         entry.created_time = datetime.fromisoformat(article_metadata.created_time)
@@ -99,7 +96,7 @@ class ReutersRouter(BaseRouter):
             if p["type"] == "paragraph":
                 entry.description += "<p>" + p["content"] + "</p>"
 
-        entry.save_to_json(self.router_path)
+        entry.save_to_cache(self.router_path)
 
     def _generate_response(self, last_build_time, feed_entries_list, parameter=None):
         feed_title = "Reuters News - " + f"{parameter['category']} - {parameter['topic'] + '' if parameter['topic'] else ''}"
@@ -109,7 +106,7 @@ class ReutersRouter(BaseRouter):
             title=feed_title,
             link=feed_original_link,
             description=feed_description,
-            language=language_english,
+            language=LANGUAGE_ENGLISH,
             last_build_time=last_build_time,
             feed_item_list=feed_entries_list
         )

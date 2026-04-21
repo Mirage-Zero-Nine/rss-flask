@@ -1,8 +1,7 @@
 from router.meta_blog.meta_tech_blog_router_constants import meta_ai_blog_prefix, meta_blog_prefix, meta_blog_link
 from router.router_for_rss_feed import RouterForRssFeed
-from utils.get_link_content import get_link_content_with_bs_no_params
-from utils.time_converter import convert_time_with_pattern
-from utils.tools import format_author_names
+from utils.helpers import convert_time_with_pattern, format_author_names
+from utils.http_client import get_link_content_with_bs_no_params
 
 
 class MetaBlog(RouterForRssFeed):
@@ -34,7 +33,7 @@ class MetaBlog(RouterForRssFeed):
             entry.description = entry_content_div
             entry.with_content = True
 
-            entry.save_to_json(self.router_path)
+            entry.save_to_cache(self.router_path)
 
     def __extract_engineering_blog(self, soup, entry):
         entry_content_div = soup.find("div", {"class": "entry-content"})
@@ -53,4 +52,4 @@ class MetaBlog(RouterForRssFeed):
             entry.created_time = convert_time_with_pattern(datetime_str, '%Y-%m-%d')
             entry.with_content = True
 
-            entry.save_to_json(self.router_path)
+            entry.save_to_cache(self.router_path)

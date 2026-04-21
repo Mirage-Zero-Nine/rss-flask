@@ -2,8 +2,8 @@ from router.base_router import BaseRouter
 from router.embassy.china_embassy_news_constants import china_embassy_news_prefix, china_embassy_news_filter, \
     china_embassy_news_author
 from utils.feed_item_object import Metadata, generate_json_name, convert_router_path_to_save_path_prefix
-from utils.get_link_content import get_link_content_with_urllib_request
-from utils.time_converter import convert_time_with_pattern
+from utils.helpers import convert_time_with_pattern
+from utils.http_client import get_link_content_with_urllib_request
 
 
 class ChinaEmbassyNewsRouter(BaseRouter):
@@ -45,4 +45,4 @@ class ChinaEmbassyNewsRouter(BaseRouter):
         for tag in soup.find_all(True):
             tag.attrs = {key: val for key, val in tag.attrs.items() if key != 'style'}
         entry.description = soup.find('div', id='News_Body_Txt_A')
-        entry.save_to_json(self.router_path)
+        entry.save_to_cache(self.router_path)

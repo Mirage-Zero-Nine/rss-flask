@@ -1,11 +1,10 @@
 from datetime import datetime
 
 from router.base_router import BaseRouter
+from rss_flask.settings import HTML_PARSER
 from utils.feed_item_object import Metadata, generate_json_name, convert_router_path_to_save_path_prefix
-from utils.get_link_content import get_link_content_with_bs_no_params
-from utils.router_constants import html_parser
-from utils.time_converter import convert_time_with_pattern
-from utils.tools import decompose_div, decompose_tag_by_class_name, remove_certain_tag
+from utils.helpers import convert_time_with_pattern, decompose_div, decompose_tag_by_class_name, remove_certain_tag
+from utils.http_client import get_link_content_with_bs_no_params
 
 
 class JandanRouter(BaseRouter):
@@ -15,7 +14,7 @@ class JandanRouter(BaseRouter):
         Override this method for each router.
         :return: list of articles
         """
-        soup = get_link_content_with_bs_no_params(self.articles_link, html_parser)
+        soup = get_link_content_with_bs_no_params(self.articles_link, HTML_PARSER)
         post_list = soup.find_all(
             "div",
             {"class": "post f list-post"}
@@ -44,7 +43,7 @@ class JandanRouter(BaseRouter):
         :param article_metadata: metadata of article
         :param entry: object stores all the metadata and the content
         """
-        soup = get_link_content_with_bs_no_params(article_metadata.link, html_parser)
+        soup = get_link_content_with_bs_no_params(article_metadata.link, HTML_PARSER)
 
         try:
             entry.author = soup.find("div", class_="time_s").find("a", class_="post-author").get_text()
@@ -76,4 +75,4 @@ class JandanRouter(BaseRouter):
             remove_css_link.extract()
 
         entry.description = content
-        entry.save_to_json(self.router_path)
+        entry.save_to_cache(self.router_path)

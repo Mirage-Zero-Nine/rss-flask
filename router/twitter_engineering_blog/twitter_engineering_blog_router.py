@@ -1,9 +1,8 @@
 from router.router_for_rss_feed import RouterForRssFeed
 from router.twitter_engineering_blog.twitter_engineering_blog_router_constants import \
     twitter_engineering_blog_date_format
-from utils.get_link_content import get_link_content_with_utf8_decode
-from utils.time_converter import convert_time_with_pattern
-from utils.tools import format_author_names
+from utils.helpers import convert_time_with_pattern, format_author_names
+from utils.http_client import get_link_content_with_utf8_decode
 
 
 class TwitterEngineeringBlogRouter(RouterForRssFeed):
@@ -26,7 +25,7 @@ class TwitterEngineeringBlogRouter(RouterForRssFeed):
         entry.description = entry_content_div
         entry.with_content = True
 
-        entry.save_to_json(self.router_path)
+        entry.save_to_cache(self.router_path)
 
     @staticmethod
     def __remove_unwanted_div(soup):

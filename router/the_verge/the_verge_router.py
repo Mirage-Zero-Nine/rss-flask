@@ -1,9 +1,8 @@
-import logging
 from datetime import datetime
 
 from router.base_router import BaseRouter
 from utils.feed_item_object import Metadata, generate_json_name, convert_router_path_to_save_path_prefix, FeedItem
-from utils.get_link_content import get_link_content_with_bs_no_params
+from utils.http_client import get_link_content_with_bs_no_params
 
 
 class TheVergeRouter(BaseRouter):
@@ -52,12 +51,12 @@ class TheVergeRouter(BaseRouter):
         elif article_metadata.flag == 'short':
             self._get_short_post_content(entry, soup)
 
-        entry.save_to_json(self.router_path)
+        entry.save_to_cache(self.router_path)
 
         return entry
 
     def _get_content_for_full_post(self, entry: FeedItem, soup):
-        logging.info("Getting content from article {}".format(entry.link))
+        self._log_info(f"parse full article article_url={entry.link}")
 
         self._process_metadata(soup, entry)
         self._process_title_image(soup, entry)

@@ -2,8 +2,8 @@ from router.base_router import BaseRouter
 from router.cnbeta.cnbeta_router_constants import cnbeta_query_page_count, cnbeta_articles_link, \
     cnbeta_news_router_author
 from utils.feed_item_object import Metadata, generate_json_name, convert_router_path_to_save_path_prefix
-from utils.get_link_content import get_link_content_with_utf8_decode
-from utils.time_converter import convert_time_with_pattern
+from utils.helpers import convert_time_with_pattern
+from utils.http_client import get_link_content_with_utf8_decode
 
 
 class CnbetaRouter(BaseRouter):
@@ -42,7 +42,7 @@ class CnbetaRouter(BaseRouter):
 
         entry.author = cnbeta_news_router_author  # they don't have a specific author
 
-        entry.save_to_json(self.router_path)
+        entry.save_to_cache(self.router_path)
         return entry
 
     @staticmethod

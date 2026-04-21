@@ -8,7 +8,7 @@ reuters_articles_list_api_link = 'articles-by-section-alias-or-id-v1?query='
 # fetch individual article content
 reuters_article_content_api_link = 'article-by-id-or-url-v1?query='
 
-reuters_period = 10 * 60 * 1000  # 10 minutes
+reuters_period = 15 * 60 * 1000  # 15 minutes
 
 reuters_category = {
     "world",

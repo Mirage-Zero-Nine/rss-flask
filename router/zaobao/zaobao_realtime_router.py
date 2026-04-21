@@ -1,14 +1,13 @@
-import logging
 from datetime import datetime
 
 from router.base_router import BaseRouter
+from rss_flask.settings import LANGUAGE_CHINESE
 from router.zaobao.zaobao_realtime_router_constants import zaobao_realtime_page_suffix, zaobao_headers, \
     feed_title_mapping, feed_description_mapping, feed_prefix_mapping, zaobao_time_general_author, \
     zaobao_link
 from utils.feed_item_object import Metadata, generate_json_name, convert_router_path_to_save_path_prefix, FeedItem
-from utils.get_link_content import get_link_content_with_header_and_empty_cookie, load_json_response
-from utils.router_constants import language_chinese
-from utils.tools import check_need_to_filter
+from utils.helpers import check_need_to_filter
+from utils.http_client import get_link_content_with_header_and_empty_cookie, load_json_response
 from utils.xml_utilities import generate_feed_object_for_new_router
 
 
@@ -53,11 +52,11 @@ class ZaobaoRealtimeRouter(BaseRouter):
                 img_tag = soup.new_tag('img', src=image_url)
                 entry.description += str(img_tag)
 
-        soup = soup.find('article', class_='max-w-full').find('div', class_='articleBody')
+        article_tag = soup.find("article", class_="max-w-full")
+        soup = article_tag.find("div", class_="articleBody") if article_tag is not None else None
 
         if soup is None:
-            logging.error(
-                f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Getting empty page: {article_metadata.link}")
+            self._log_warning(f"empty article body article_url={article_metadata.link}")
             return entry
 
         entry.created_time = datetime.fromtimestamp(article_metadata.created_time)
@@ -75,7 +74,7 @@ class ZaobaoRealtimeRouter(BaseRouter):
 
         entry.description += str(soup)
         entry.author = zaobao_time_general_author
-        entry.save_to_json(self.router_path)
+        entry.save_to_cache(self.router_path)
 
         return entry
 
@@ -88,7 +87,7 @@ class ZaobaoRealtimeRouter(BaseRouter):
             title=feed_title,
             link=feed_original_link,
             description=feed_description,
-            language=language_chinese,
+            language=LANGUAGE_CHINESE,
             last_build_time=last_build_time,
             feed_item_list=feed_entries_list
         )

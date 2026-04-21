@@ -1,8 +1,7 @@
 from router.router_for_rss_feed import RouterForRssFeed
 from router.sony_alpha_rumor.sony_alpha_rumor_router_constants import sar_time_convert_pattern, sar_name
-from utils.get_link_content import get_link_content_with_bs_no_params
-from utils.time_converter import convert_time_with_pattern
-from utils.tools import decompose_div
+from utils.helpers import convert_time_with_pattern, decompose_div
+from utils.http_client import get_link_content_with_bs_no_params
 
 
 class SonyAlphaRumorsRouter(RouterForRssFeed):
@@ -18,4 +17,4 @@ class SonyAlphaRumorsRouter(RouterForRssFeed):
             decompose_div(soup, 'addtoany_share_save_container addtoany_content addtoany_content_top')
 
             entry.description = soup
-            entry.save_to_json(self.router_path)
+            entry.save_to_cache(self.router_path)
