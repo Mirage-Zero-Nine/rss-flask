@@ -1,6 +1,6 @@
 from router.base_router import BaseRouter
 from router.wsdot.wsdot_news_router_constant import wsdot_news_prefix, wsdot_blog_blogspot
-from utils.feed_item_object import Metadata, generate_json_name, convert_router_path_to_save_path_prefix
+from utils.feed_item_object import Metadata, generate_cache_key, convert_router_path_to_cache_prefix
 from utils.get_link_content import get_link_content_with_bs_no_params
 from utils.time_converter import convert_wsdot_news_time
 
@@ -28,11 +28,11 @@ class WsdotNewsRouter(BaseRouter):
                     if link.endswith('htm'):
                         link += 'l'
 
-                    save_json_path_prefix = convert_router_path_to_save_path_prefix(self.router_path)
+                    cache_prefix = convert_router_path_to_cache_prefix(self.router_path)
                     metadata = Metadata(
                         title=title,
                         link=link,
-                        json_name=generate_json_name(prefix=save_json_path_prefix, name=link)
+                        cache_key=generate_cache_key(prefix=cache_prefix, name=link)
                     )
 
                     metadata_list.append(metadata)
@@ -56,7 +56,7 @@ class WsdotNewsRouter(BaseRouter):
 
             date_header = soup.find('h2', class_='date-header').span.text
             entry.created_time = convert_wsdot_news_time(str(date_header), "%A, %B %d, %Y")
-            entry.save_to_json(self.router_path)
+            entry.persist_to_cache(self.router_path)
 
     def __extract_other_news(self, soup, entry):
 
@@ -68,4 +68,4 @@ class WsdotNewsRouter(BaseRouter):
             datetime_div = soup.find('div', class_='field--name-field-date')
             datetime_string = datetime_div.find('time')['datetime']
             entry.created_time = convert_wsdot_news_time(str(datetime_string), "%Y-%m-%dT%H:%M:%SZ")
-            entry.save_to_json(self.router_path)
+            entry.persist_to_cache(self.router_path)

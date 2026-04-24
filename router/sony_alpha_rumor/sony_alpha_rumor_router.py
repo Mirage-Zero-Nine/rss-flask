@@ -18,4 +18,4 @@ class SonyAlphaRumorsRouter(RouterForRssFeed):
             decompose_div(soup, 'addtoany_share_save_container addtoany_content addtoany_content_top')
 
             entry.description = soup
-            entry.save_to_json(self.router_path)
+            entry.persist_to_cache(self.router_path)

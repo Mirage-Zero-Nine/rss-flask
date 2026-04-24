@@ -3,12 +3,10 @@ reuters_fetch_api_base_link = 'https://www.reuters.com/pf/api/v3/content/fetch/'
 reuters_site_link = "https://www.reuters.com/"
 reuters_description = "'Reuters.com is your online source for the latest world news stories and current events, ensuring our readers up to date with any breaking news developments'"
 
-# fetch a list of articles based on section
 reuters_articles_list_api_link = 'articles-by-section-alias-or-id-v1?query='
-# fetch individual article content
 reuters_article_content_api_link = 'article-by-id-or-url-v1?query='
 
-reuters_period = 10 * 60 * 1000  # 10 minutes
+reuters_period = 15 * 60 * 1000  # 15 minutes
 
 reuters_category = {
     "world",
@@ -17,7 +15,7 @@ reuters_category = {
     "markets",
     "breakingviews",
     "technology",
-    "graphics"
+    "graphics",
 }
 
 reuters_world_topic = {
@@ -31,7 +29,7 @@ reuters_world_topic = {
     "uk",
     "us",
     "the-great-reboot",
-    "reuters-next"
+    "reuters-next",
 }
 
 reuters_business_topic = {
@@ -48,14 +46,14 @@ reuters_business_topic = {
     "future-of-health",
     "future-of-money",
     "take-five",
-    "reuters-impact"
+    "reuters-impact",
 }
 
 reuters_legal_topic = {
     "government",
     "legalindustry",
     "litigation",
-    "transactional"
+    "transactional",
 }
 
 reuters_category_with_topic = {
@@ -65,20 +63,16 @@ reuters_category_with_topic = {
 }
 
 headers = {
-    'Host': 'www.reuters.com',
-    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:148.0) Gecko/20100101 Firefox/148.0',
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.4 Safari/605.1.15',
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     'Accept-Language': 'en-US,en;q=0.9',
     'Accept-Encoding': 'gzip, deflate, br, zstd',
-    'Connection': 'keep-alive',
-    'Upgrade-Insecure-Requests': '1',
-    'Sec-Fetch-Dest': 'document',
-    'Sec-Fetch-Mode': 'navigate',
     'Sec-Fetch-Site': 'none',
-    'Sec-Fetch-User': '?1',
+    'Sec-Fetch-Mode': 'navigate',
+    'Sec-Fetch-Dest': 'document',
     'Priority': 'u=0, i',
-    'Referer': 'https://www.reuters.com/'
 }
+
 
 def is_valid_reuters_parameter(category: str, topic=None):
     if category not in reuters_category:

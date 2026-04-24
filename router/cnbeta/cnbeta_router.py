@@ -1,7 +1,7 @@
 from router.base_router import BaseRouter
 from router.cnbeta.cnbeta_router_constants import cnbeta_query_page_count, cnbeta_articles_link, \
     cnbeta_news_router_author
-from utils.feed_item_object import Metadata, generate_json_name, convert_router_path_to_save_path_prefix
+from utils.feed_item_object import Metadata, generate_cache_key, convert_router_path_to_cache_prefix
 from utils.get_link_content import get_link_content_with_utf8_decode
 from utils.time_converter import convert_time_with_pattern
 
@@ -22,11 +22,11 @@ class CnbetaRouter(BaseRouter):
                 href = a_tag.get('href')
                 title = a_tag.find('p', class_='txt_detail').text if a_tag.find('p', class_='txt_detail') else None
                 link = cnbeta_articles_link + href
-                save_json_path_prefix = convert_router_path_to_save_path_prefix(self.router_path)
+                cache_prefix = convert_router_path_to_cache_prefix(self.router_path)
                 if link and title:
                     metadata = Metadata(title=title,
                                         link=link,
-                                        json_name=generate_json_name(prefix=save_json_path_prefix, name=link))
+                                        cache_key=generate_cache_key(prefix=cache_prefix, name=link))
                     articles_list.append(metadata)
 
         return articles_list
@@ -42,7 +42,7 @@ class CnbetaRouter(BaseRouter):
 
         entry.author = cnbeta_news_router_author  # they don't have a specific author
 
-        entry.save_to_json(self.router_path)
+        entry.persist_to_cache(self.router_path)
         return entry
 
     @staticmethod

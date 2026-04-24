@@ -1,14 +1,13 @@
 import datetime as dt
 import logging
-import time
 import pytz
 
 from flask import make_response
 from datetime import datetime
 
-from utils.cache_store import read_feed_item_from_cache, read_metadata_list, write_metadata_list
-from utils.feed_item_object import Metadata, FeedItem, generate_json_name, convert_router_path_to_save_path_prefix
-from utils.rss_cache import last_build_time_cache
+from utils.cache_store import read_feed_item_from_cache, read_last_build_time, read_metadata_list, write_last_build_time, write_metadata_list
+from utils.feed_item_object import Metadata, FeedItem, generate_cache_key, convert_router_path_to_cache_prefix
+from utils.log_context import reset_current_router, set_current_router
 from utils.xml_utilities import generate_feed_object_for_new_router
 
 
@@ -23,11 +22,11 @@ class BaseRouter:
         articles_link (str): The link to the page of getting articles (to get a list of articles).
         description (str): A description of the feed.
         language (str): The language used in the feed.
-        period (int): The refresh period, default value is 1000.
+        period (int): The refresh period in milliseconds, default value is 600000 (10 minutes).
     """
 
     def __init__(self, router_path="", feed_title="", original_link="", articles_link="", description="", language="",
-                 period=1000):
+                 period=600000):
         self.router_path = router_path
         self.feed_title = feed_title
         self.original_link = original_link
@@ -46,15 +45,15 @@ class BaseRouter:
     def _get_article(self, article_metadata):
         """
         Entry point to get content of each article.
-        It will try to read if it's stored in local first, then do the actual query.
-        Do not override this method in child router unless to modify the way of retrieving from local disk.
+        It will try to read if it's stored in Redis first, then do the actual query.
+        Do not override this method in child router unless to modify the cache retrieval logic.
         Override _get_article_content instead.
         :param article_metadata: metadata of articles
         :return: entry that contains all the metadata and the content
         """
-        cached_entry = self.__load_article_from_cache(article_metadata.json_name)
+        cached_entry = self.__load_article_from_cache(article_metadata.cache_key)
         if cached_entry:
-            logging.info(f"Getting {article_metadata.link} from cache: {article_metadata.json_name}")
+            logging.info("Router %s using cached article link=%s cache_key=%s", self.router_path, article_metadata.link, article_metadata.cache_key)
             if self.router_path == '/zaobao/realtime':
                 description = cached_entry.description or ""
                 logging.info("Zaobao cached article loaded for %s (content length=%s)", article_metadata.link, len(description))
@@ -62,11 +61,15 @@ class BaseRouter:
                 logging.debug("Zaobao cached article full content for %s: %s", article_metadata.link, description)
             return cached_entry
 
-        logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Getting content for: {article_metadata.link}")
+        logging.debug("Router %s retrieving article content link=%s", self.router_path, article_metadata.link)
         entry = FeedItem(title=article_metadata.title,
                          link=article_metadata.link,
                          guid=article_metadata.link)
-        self._get_article_content(article_metadata, entry)
+        token = set_current_router(self.router_path)
+        try:
+            self._get_article_content(article_metadata, entry)
+        finally:
+            reset_current_router(token)
         return entry
 
     def _get_article_content(self, article_metadata, entry):
@@ -79,42 +82,14 @@ class BaseRouter:
 
     def get_rss_xml_response(self, parameter=None, link_filter=None, title_filter=None):
         """
-        Entry point of the router.
+        Read-only entry point of the router.
         :return: XML feed
         """
-        logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Refreshing content: {self.router_path}")
-
-        cache_key = self.__generate_cache_key_for_router(parameter)
-        logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} cache key: {cache_key}")
-        feed_entries_list = []
-
-        save_path_prefix = convert_router_path_to_save_path_prefix(cache_key)
-        # logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} prefix: {save_path_prefix}")
-        article_list_key = generate_json_name(save_path_prefix, self.feed_title)
-
-        # get metadata of the articles
-        cached_metadata = read_metadata_list(article_list_key)
-        if cache_key in last_build_time_cache.keys() and self.__check_if_meet_refresh_time(datetime.timestamp(last_build_time_cache[cache_key])) is False and cached_metadata:
-            logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Reading saved content for {cache_key}...")
-            article_metadata_list = self.__build_metadata_list(cached_metadata)
-            last_build_time = last_build_time_cache[cache_key]
-        else:
-            logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Query latest content for {cache_key}...")
-
-            article_metadata_list = self._get_articles_list(parameter=parameter,
-                                                            link_filter=link_filter,
-                                                            title_filter=title_filter)
-            self.__write_article_list_to_cache(article_list_key, article_metadata_list)
-
-            last_build_time = dt.datetime.now(pytz.timezone('GMT'))
-            last_build_time_cache[cache_key] = last_build_time
-
-        for article_metadata in article_metadata_list:
-            entry = self._get_article(article_metadata)
-            if entry is not None and entry.description is not None:
-                feed_entries_list.append(entry)
-
-        feed = self._generate_response(last_build_time=last_build_time,
+        logging.info("Router %s reading cached content parameter=%s", self.router_path, parameter)
+        last_build_time, article_metadata_list = self._read_cached_article_metadata_list(parameter=parameter)
+        feed_entries_list = self._build_feed_entries_from_metadata(article_metadata_list)
+        feed_last_build_time = last_build_time or dt.datetime.now(pytz.timezone('GMT'))
+        feed = self._generate_response(last_build_time=feed_last_build_time,
                                        feed_entries_list=feed_entries_list,
                                        parameter=parameter)
         logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Last build date: {feed.lastBuildDate}")
@@ -122,6 +97,48 @@ class BaseRouter:
         response = make_response(feed.rss())
         response.headers.set('Content-Type', 'application/rss+xml')
         return response
+
+    def refresh_cache(self, parameter=None, link_filter=None, title_filter=None, force=False):
+        logging.info("Router %s refreshing cache parameter=%s force=%s", self.router_path, parameter, force)
+        cache_key = self.__generate_cache_key_for_router(parameter)
+        logging.debug("Router %s cache key=%s", self.router_path, cache_key)
+        last_build_time = read_last_build_time(cache_key)
+        cached_metadata = self._read_cached_metadata_dicts(parameter=parameter)
+        if force is False and last_build_time and self.__check_if_meet_refresh_time(datetime.timestamp(last_build_time)) is False and cached_metadata:
+            logging.info("Router %s cache still fresh for cache_key=%s, skipping refresh", self.router_path, cache_key)
+            return False
+
+        logging.debug("Router %s retrieving article list source=%s cache_key=%s", self.router_path, self.articles_link, cache_key)
+        token = set_current_router(self.router_path)
+        try:
+            article_metadata_list = self._get_articles_list(parameter=parameter,
+                                                            link_filter=link_filter,
+                                                            title_filter=title_filter)
+            logging.info("Router %s fetched %d articles from source", self.router_path, len(article_metadata_list))
+        finally:
+            reset_current_router(token)
+        article_list_key = self._build_article_list_cache_key(cache_key)
+        self.__write_article_list_to_cache(article_list_key, article_metadata_list)
+
+        for article_metadata in article_metadata_list:
+            try:
+                self._get_article(article_metadata)
+            except Exception as exc:
+                logging.exception("Router %s failed to retrieve article content link=%s cache_key=%s: %s",
+                                  self.router_path, article_metadata.link, article_metadata.cache_key, exc)
+
+        last_build_time = dt.datetime.now(pytz.timezone('GMT'))
+        write_last_build_time(cache_key, last_build_time)
+        return True
+
+    def warm_cache(self, parameter=None, link_filter=None, title_filter=None):
+        last_build_time, article_metadata_list = self._read_cached_article_metadata_list(parameter=parameter)
+        if article_metadata_list and last_build_time:
+            logging.info("Router %s cache warm-up skipped; Redis already populated for parameter=%s", self.router_path, parameter)
+            return False
+
+        logging.info("Router %s cache warm-up started for parameter=%s", self.router_path, parameter)
+        return self.refresh_cache(parameter=parameter, link_filter=link_filter, title_filter=title_filter, force=True)
 
     def _generate_response(self, last_build_time, feed_entries_list, parameter):
 
@@ -134,9 +151,34 @@ class BaseRouter:
             feed_item_list=feed_entries_list
         )
 
+    def _read_cached_article_metadata_list(self, parameter=None):
+        cache_key = self.__generate_cache_key_for_router(parameter)
+        article_list_key = self._build_article_list_cache_key(cache_key)
+        cached_metadata = read_metadata_list(article_list_key)
+        last_build_time = read_last_build_time(cache_key)
+        article_metadata_list = self.__build_metadata_list(cached_metadata)
+        return last_build_time, article_metadata_list
+
+    def _read_cached_metadata_dicts(self, parameter=None):
+        cache_key = self.__generate_cache_key_for_router(parameter)
+        article_list_key = self._build_article_list_cache_key(cache_key)
+        return read_metadata_list(article_list_key)
+
+    def _build_article_list_cache_key(self, router_cache_key):
+        cache_prefix = convert_router_path_to_cache_prefix(router_cache_key)
+        return generate_cache_key(cache_prefix, self.feed_title)
+
+    def _build_feed_entries_from_metadata(self, article_metadata_list):
+        feed_entries_list = []
+        for article_metadata in article_metadata_list:
+            entry = self.__load_article_from_cache(article_metadata.cache_key)
+            if entry is not None and entry.description is not None:
+                feed_entries_list.append(entry)
+        logging.info("Router %s built %d feed entries from cache", self.router_path, len(feed_entries_list))
+        return feed_entries_list
+
     def __generate_cache_key_for_router(self, parameter=None):
-        logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Router path: {self.router_path}")
-        logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Parameter: {parameter}")
+        logging.debug("Router %s generating cache key parameter=%s", self.router_path, parameter)
         if parameter is None:
             cache_key = self.router_path
         else:
@@ -148,10 +190,9 @@ class BaseRouter:
         return cache_key
 
     def __check_if_meet_refresh_time(self, last_query_time):
-        logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Last query time: " + str(round(last_query_time) * 1000))
-        logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Cooldown period: " + str(self.period))
+        logging.debug("Router %s last_query_time_ms=%s cooldown_period_ms=%s", self.router_path, round(last_query_time) * 1000, self.period)
 
-        if round(time.time() * 1000) - round(last_query_time * 1000) > int(self.period):
+        if round(dt.datetime.now().timestamp() * 1000) - round(last_query_time * 1000) > int(self.period):
             return True
 
         return False
@@ -170,7 +211,7 @@ class BaseRouter:
             created_time=self.__parse_created_time(article_data.get("created_time")),
             with_content=article_data.get("with_content", False)
         )
-        entry.json_name = cache_key
+        entry.cache_key = cache_key
         return entry
 
     @staticmethod
@@ -191,6 +232,8 @@ class BaseRouter:
 
         metadata_objects = []
         for metadata_dict in metadata_dicts:
+            if "json_name" in metadata_dict and "cache_key" not in metadata_dict:
+                metadata_dict["cache_key"] = metadata_dict.pop("json_name")
             metadata_objects.append(Metadata(**metadata_dict))
         return metadata_objects
 

@@ -47,6 +47,10 @@ def metadata_list_key(cache_key):
     return f"{cache_key}:metadata-list"
 
 
+def router_last_build_time_key(cache_key):
+    return f"{cache_key}:last-build-time"
+
+
 def read_metadata_list(cache_key):
     if not _has_client():
         return None
@@ -81,8 +85,35 @@ def _metadata_to_dict(metadata):
     return metadata_dict
 
 
+def read_last_build_time(cache_key):
+    if not _has_client():
+        return None
+
+    try:
+        raw = _redis_client.get(router_last_build_time_key(cache_key))
+        if raw is None:
+            return None
+
+        return datetime.fromisoformat(raw)
+    except (redis.RedisError, ValueError) as exc:
+        _log_error("read last build time", exc)
+        return None
+
+
+def write_last_build_time(cache_key, last_build_time):
+    if not _has_client():
+        return
+
+    try:
+        value = last_build_time.isoformat() if isinstance(last_build_time, datetime) else str(last_build_time)
+        _redis_client.set(router_last_build_time_key(cache_key), value)
+    except redis.RedisError as exc:
+        _log_error("write last build time", exc)
+
+
 def write_feed_item_to_cache(key, payload):
     if not _has_client():
+        logging.error("Redis client unavailable; feed item write skipped for key=%s", key)
         return
 
     try:

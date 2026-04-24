@@ -16,7 +16,7 @@ class FeedItem:
                  created_time=None,
                  with_content=False):
         """
-        Remember to update attribute in save_to_json
+        Remember to update attribute in persist_to_cache
         :param title: title of the entry
         :param link: link to the entry (also works as guid)
         :param description: content of the entry
@@ -32,7 +32,7 @@ class FeedItem:
         self.created_time = created_time  # required to be a datatime object
         self.guid = guid
         self.with_content = with_content  # if current item has query the source url and fill with content
-        self.json_name = ""
+        self.cache_key = ""
 
     def __repr__(self):
         # Handle None values by providing default values or converting to empty string
@@ -52,14 +52,14 @@ class FeedItem:
             "guid: " + guid + '\n' + \
             "with content? " + with_content
 
-    def save_to_json(self, router_path):
+    def persist_to_cache(self, router_path):
         """
-        Store the feed item in redis under the router-specific cache prefix.
+        Store the feed item in Redis under the router-specific cache prefix.
         :param router_path: name of the router path
         """
-        save_path_prefix = convert_router_path_to_save_path_prefix(router_path)
+        cache_prefix = convert_router_path_to_cache_prefix(router_path)
         identifier = self.guid or self.link or self.title or datetime.utcnow().isoformat()
-        self.json_name = generate_json_name(save_path_prefix, identifier)
+        self.cache_key = generate_cache_key(cache_prefix, identifier)
         payload = {
             "title": self.title,
             "link": self.link,
@@ -69,19 +69,19 @@ class FeedItem:
             "guid": self.guid,
             "with_content": self.with_content
         }
-        write_feed_item_to_cache(self.json_name, payload)
+        write_feed_item_to_cache(self.cache_key, payload)
 
 
 class Metadata:
-    def __init__(self, title=None, link=None, author=None, guid=None, created_time=None, json_name=None, flag=None):
+    def __init__(self, title=None, link=None, author=None, guid=None, created_time=None, cache_key=None, flag=None):
         """
-        Remember to update attribute in save_to_json
+        Remember to update attribute in persist_to_cache
         :param title: title of the entry
         :param link: link to the entry (also works as guid)
         :param author: author of the entry
         :param guid: guid of the entry (most likely should be the same as the link)
         :param created_time: create time for the entry
-        :param json_name: json name of the entry
+        :param cache_key: Redis key of the entry
         :param flag: any mark required for later processing
         """
         self.title = title
@@ -89,18 +89,18 @@ class Metadata:
         self.author = author
         self.guid = guid
         self.created_time = created_time  # required to be a datatime object
-        self.json_name = json_name
+        self.cache_key = cache_key
         self.flag = flag
 
 
-def generate_json_name(prefix, name):
-    json_name = base64.urlsafe_b64encode(name.encode('utf-8')).decode('utf-8').rstrip('=')
-    if len(json_name) > 100:
-        json_name = json_name[-100:]
-    return f"{prefix}:{json_name}"
+def generate_cache_key(prefix, name):
+    encoded_name = base64.urlsafe_b64encode(name.encode('utf-8')).decode('utf-8').rstrip('=')
+    if len(encoded_name) > 100:
+        encoded_name = encoded_name[-100:]
+    return f"{prefix}:{encoded_name}"
 
 
-def convert_router_path_to_save_path_prefix(router_path):
+def convert_router_path_to_cache_prefix(router_path):
     if router_path.startswith('/') is False:
         logging.error(f"{datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Invalid path, it's not started with a '/': {router_path}")
         raise Exception("Invalid path, it's not started with a '/'")

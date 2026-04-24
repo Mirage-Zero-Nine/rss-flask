@@ -1,6 +1,6 @@
 import logging
 
-from utils.feed_item_object import Metadata, generate_json_name, convert_router_path_to_save_path_prefix
+from utils.feed_item_object import Metadata, generate_cache_key, convert_router_path_to_cache_prefix
 from router.base_router import BaseRouter
 from router.dayone.day_one_blog_constants import day_one_blog_time_convert_pattern
 from utils.get_link_content import get_link_content_with_bs_no_params
@@ -25,11 +25,11 @@ class DayOneBlogRouter(BaseRouter):
             title = entry.find("a").text
             link = entry.find('a')['href']
             if link and title:
-                save_json_path_prefix = convert_router_path_to_save_path_prefix(self.router_path)
+                cache_prefix = convert_router_path_to_cache_prefix(self.router_path)
                 metadata = Metadata(
                     title=title,
                     link=link,
-                    json_name=generate_json_name(prefix=save_json_path_prefix, name=link)
+                    cache_key=generate_cache_key(prefix=cache_prefix, name=link)
                 )
                 metadata_list.append(metadata)
 
@@ -85,4 +85,4 @@ class DayOneBlogRouter(BaseRouter):
             div.extract()
 
         entry.description = entry_content
-        entry.save_to_json(self.router_path)
+        entry.persist_to_cache(self.router_path)

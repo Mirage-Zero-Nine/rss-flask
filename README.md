@@ -23,8 +23,14 @@ The app has a small configuration surface today.
 
 - `RSS_REDIS_URL`
   - Redis connection string used for cache storage.
-  - Default: `redis://localhost:6379/0`
+  - Local default outside Docker: `redis://localhost:6379/0`
+  - Docker default in the image: `redis://redis-cache:6379/0`
   - This takes precedence over `config.yml`.
+
+- `RSS_SCHEDULER_REFRESH_PERIOD_MINUTES`
+  - Global scheduler interval in minutes.
+  - Overrides `scheduler_refresh_period_in_minutes` in `config.yml`.
+  - Default: `10`
 
 - `FLASK_APP`
   - Set in the Docker image as `app.py`.
@@ -34,15 +40,17 @@ The app has a small configuration surface today.
 
 ### config.yml
 
-You may place a `config.yml` file in the project root. Right now the only config value used by the app is:
+You may place a `config.yml` file in the project root. Supported values:
 
 ```yaml
 rss_redis_url: redis://localhost:6379/0
+scheduler_refresh_period_in_minutes: 10
 ```
 
 Notes:
 
 - `RSS_REDIS_URL` overrides `config.yml` if both are set.
+- `RSS_SCHEDULER_REFRESH_PERIOD_MINUTES` overrides `config.yml` if both are set.
 - If neither is set, the app falls back to `redis://localhost:6379/0`.
 
 ### Scheduler Configuration
@@ -51,10 +59,12 @@ The app starts a background scheduler to update router content automatically:
 
 Global scheduler interval:
 
-- Defined in utils/router_constants
-- Current value: `10` minutes
+- Config key: `scheduler_refresh_period_in_minutes`
+- Env override: `RSS_SCHEDULER_REFRESH_PERIOD_MINUTES`
+- Default: `10` minutes
 
 Per-router cache refresh periods are defined in router constant files and are measured in milliseconds.
+Warm-up runs once at startup and populates Redis for scheduled routers only when their cache is empty.
 
 ## Start With Docker
 
@@ -81,11 +91,13 @@ docker run -d \
   --restart=always \
   --name rss-flask \
   -p 5000:5000 \
-  -e RSS_REDIS_URL=redis://host.docker.internal:6379/0 \
+  --network rss-net \
+  -e RSS_REDIS_URL=redis://redis-cache:6379/0 \
+  -e RSS_SCHEDULER_REFRESH_PERIOD_MINUTES=10 \
   rss-flask:latest
 ```
 
-If your Redis runs as another Docker container on the same custom Docker network, use that container name instead of `host.docker.internal`.
+This matches a Redis container named `redis-cache` on the `rss-net` network.
 
 ### 4. Open a feed
 
@@ -121,6 +133,7 @@ Example:
 
 ```bash
 export RSS_REDIS_URL=redis://localhost:6379/0
+export RSS_SCHEDULER_REFRESH_PERIOD_MINUTES=10
 ```
 
 ### 4. Run Flask
@@ -144,17 +157,15 @@ http://127.0.0.1:5000
 ## Cache Behavior
 
 - Router metadata lists and article payloads are stored in Redis.
+- Router last-build timestamps are also stored in Redis.
 - If Redis is unavailable, cache reads and writes are skipped.
-- The app also keeps an in-memory `last_build_time_cache` for per-process refresh timing.
-- Restarting the process clears only the in-memory build-time cache, not the Redis data.
+- Restarting the process does not clear cached router state as long as Redis keeps the data.
+- Client API requests read only from Redis and do not fetch upstream websites.
+- Scheduler jobs are responsible for upstream refreshes and startup warm-up.
 
-## Project Structure
+## Logging
 
-- [app.py](/Users/oliverzh/IdeaProjects/rss-flask/app.py): Flask app entrypoint and route registration.
-- [router/](/Users/oliverzh/IdeaProjects/rss-flask/router): Source-specific router implementations.
-- [router_objects.py](/Users/oliverzh/IdeaProjects/rss-flask/router_objects.py): Instantiates router objects and shared feed metadata.
-- [utils/cache_store.py](/Users/oliverzh/IdeaProjects/rss-flask/utils/cache_store.py): Redis cache integration.
-- [utils/scheduler.py](/Users/oliverzh/IdeaProjects/rss-flask/utils/scheduler.py): Background refresh scheduler.
-- [logs/](/Users/oliverzh/IdeaProjects/rss-flask/logs): File-based application logs.
-
+- The app logs at `DEBUG` level.
+- External fetch logs include the router path and target link to help trace scheduler refreshes and article retrieval failures.
+- Scheduler logs include job registration, warm-up, refresh, and exception details.
 

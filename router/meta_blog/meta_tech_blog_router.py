@@ -34,7 +34,7 @@ class MetaBlog(RouterForRssFeed):
             entry.description = entry_content_div
             entry.with_content = True
 
-            entry.save_to_json(self.router_path)
+            entry.persist_to_cache(self.router_path)
 
     def __extract_engineering_blog(self, soup, entry):
         entry_content_div = soup.find("div", {"class": "entry-content"})
@@ -53,4 +53,4 @@ class MetaBlog(RouterForRssFeed):
             entry.created_time = convert_time_with_pattern(datetime_str, '%Y-%m-%d')
             entry.with_content = True
 
-            entry.save_to_json(self.router_path)
+            entry.persist_to_cache(self.router_path)

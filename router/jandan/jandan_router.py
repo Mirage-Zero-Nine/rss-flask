@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from router.base_router import BaseRouter
-from utils.feed_item_object import Metadata, generate_json_name, convert_router_path_to_save_path_prefix
+from utils.feed_item_object import Metadata, generate_cache_key, convert_router_path_to_cache_prefix
 from utils.get_link_content import get_link_content_with_bs_no_params
 from utils.router_constants import html_parser
 from utils.time_converter import convert_time_with_pattern
@@ -28,12 +28,12 @@ class JandanRouter(BaseRouter):
             link = post.find('h2').find('a')['href']
 
             if "日好价" not in title:
-                save_json_path_prefix = convert_router_path_to_save_path_prefix(self.router_path)
+                cache_prefix = convert_router_path_to_cache_prefix(self.router_path)
                 metadata_list.append(Metadata(
                     title=title,
                     link=link,
                     guid=link,
-                    json_name=generate_json_name(prefix=save_json_path_prefix, name=link)
+                    cache_key=generate_cache_key(prefix=cache_prefix, name=link)
                 ))
 
         return metadata_list
@@ -76,4 +76,4 @@ class JandanRouter(BaseRouter):
             remove_css_link.extract()
 
         entry.description = content
-        entry.save_to_json(self.router_path)
+        entry.persist_to_cache(self.router_path)

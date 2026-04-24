@@ -7,7 +7,7 @@ from router.zaobao.zaobao_realtime_router_constants import zaobao_realtime_page_
     feed_title_mapping, feed_description_mapping, feed_prefix_mapping, zaobao_time_general_author, \
     zaobao_link, zaobao_region_general_title, zaobao_realtime_frontpage_prefix, zaobao_news_china_page_prefix, \
     zaobao_news_world_page_prefix
-from utils.feed_item_object import Metadata, generate_json_name, convert_router_path_to_save_path_prefix, FeedItem
+from utils.feed_item_object import Metadata, generate_cache_key, convert_router_path_to_cache_prefix, FeedItem
 from utils.get_link_content import get_link_content_with_header_and_empty_cookie, load_json_response
 from utils.router_constants import language_chinese
 from utils.tools import check_need_to_filter
@@ -38,10 +38,10 @@ class ZaobaoRealtimeRouter(BaseRouter):
 
                 if check_need_to_filter(link, title, link_filter, title_filter) is False:
                     # example: https://www.zaobao.com.sg/realtime/china/story20240612-3918781
-                    save_json_path_prefix = convert_router_path_to_save_path_prefix(self.router_path)
+                    cache_prefix = convert_router_path_to_cache_prefix(self.router_path)
                     metadata = Metadata(title=title,
                                         link=article_link,
-                                        json_name=generate_json_name(prefix=save_json_path_prefix, name=article_link),
+                                        cache_key=generate_cache_key(prefix=cache_prefix, name=article_link),
                                         created_time=timestamp)
                     metadata_list.append(metadata)
 
@@ -107,6 +107,13 @@ class ZaobaoRealtimeRouter(BaseRouter):
         if soup is None:
             logging.error(
                 f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Getting empty page: {article_metadata.link}")
+            entry.created_time = datetime.fromtimestamp(article_metadata.created_time)
+            entry.author = zaobao_time_general_author
+            if not entry.description:
+                entry.description = "<p>Article content unavailable from upstream source.</p>"
+            else:
+                entry.description += "<p>Article content unavailable from upstream source.</p>"
+            entry.persist_to_cache(self.router_path)
             return entry
 
         entry.created_time = datetime.fromtimestamp(article_metadata.created_time)
@@ -154,7 +161,7 @@ class ZaobaoRealtimeRouter(BaseRouter):
         logging.info("Built Zaobao article content for %s", article_metadata.link)
         logging.debug("Zaobao article content for %s: %s", article_metadata.link, entry.description)
         entry.author = zaobao_time_general_author
-        entry.save_to_json(self.router_path)
+        entry.persist_to_cache(self.router_path)
 
         return entry
 
