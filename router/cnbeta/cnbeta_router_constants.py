@@ -6,4 +6,4 @@ cnbeta_news_router_cache_key = "cnbeta/news"
 cnbeta_news_router_author = "cnBeta"
 
 cnbeta_query_page_count = 3
-cnbeta_period = 15 * 60 * 1000  # 15 minutes
+cnbeta_period = 10 * 60 * 1000  # 10 minutes

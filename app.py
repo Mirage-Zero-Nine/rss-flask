@@ -2,8 +2,7 @@ import logging
 import os
 import sys
 
-LOG_DIR = os.path.join(os.path.dirname(__file__), 'logs')
-os.makedirs(LOG_DIR, exist_ok=True)
+os.makedirs("/logs", exist_ok=True)
 
 LOG_FORMAT = '%(asctime)s %(levelname)s %(name)s: %(message)s'
 logging.basicConfig(
@@ -11,8 +10,8 @@ logging.basicConfig(
     format=LOG_FORMAT,
     datefmt='%Y-%m-%d %H:%M:%S',
     handlers=[
-        logging.FileHandler(os.path.join(LOG_DIR, 'application.log'), encoding='utf-8'),
         logging.StreamHandler(sys.stdout),
+        logging.FileHandler("/logs/application.log", encoding="utf-8"),
     ]
 )
 

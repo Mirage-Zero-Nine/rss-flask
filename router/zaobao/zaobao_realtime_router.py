@@ -33,7 +33,7 @@ class ZaobaoRealtimeRouter(BaseRouter):
 
             for article in articles:
                 title = article['title']
-                article_link = zaobao_link + article['href']
+                article_link = article["href"] if article["href"].startswith("http") else zaobao_link + article["href"]
                 timestamp = article['timestamp']
 
                 if check_need_to_filter(link, title, link_filter, title_filter) is False:

@@ -3,37 +3,30 @@ import logging
 import os
 
 import redis
-import yaml
 from datetime import datetime
-from pathlib import Path
 
-_root_dir = Path(__file__).resolve().parents[1]
-config_data = {}
-config_path = _root_dir / "config.yml"
-if not config_path.exists():
-    fallback_path = Path.cwd() / "config.yml"
-    if fallback_path != config_path and fallback_path.exists():
-        config_path = fallback_path
+from utils.router_constants import (
+    metadata_list_ttl_seconds,
+    feed_item_ttl_seconds,
+    last_build_time_ttl_seconds,
+)
 
-if config_path.exists():
-    try:
-        with open(config_path) as config_file:
-            config_data = yaml.safe_load(config_file) or {}
-            logging.info(f"Loaded config.yml from {config_path}")
-    except yaml.YAMLError as exc:
-        logging.warning(f"Failed to parse config.yml at {config_path}: {exc}. Using defaults.")
-else:
-    logging.warning(f"config.yml not found at {_root_dir}/config.yml or {Path.cwd()}, using defaults.")
+from utils.config import load_config
+
+config_data = load_config()
 
 DEFAULT_REDIS_URL = os.environ.get("RSS_REDIS_URL") or config_data.get("rss_redis_url") or "redis://localhost:6379/0"
 
 try:
     logging.info(f"Connecting to Redis at {DEFAULT_REDIS_URL}")
     _redis_client = redis.from_url(DEFAULT_REDIS_URL, decode_responses=True)
+    _redis_client.ping()  # verify connectivity at import time
 except redis.RedisError as exc:
     logging.error(f"Unable to connect to redis at {DEFAULT_REDIS_URL}: {exc}")
-    _redis_client = None
-
+    raise RuntimeError(
+        f"Unable to connect to Redis at {DEFAULT_REDIS_URL}. "
+        "Ensure Redis is running and reachable, and that RSS_REDIS_URL or config.yml is set correctly."
+    ) from exc
 
 def _has_client():
     return _redis_client is not None
@@ -66,13 +59,16 @@ def read_metadata_list(cache_key):
         return None
 
 
-def write_metadata_list(cache_key, metadata_list):
+def write_metadata_list(cache_key, metadata_list, ttl_seconds=None):
+    if ttl_seconds is None:
+        ttl_seconds = metadata_list_ttl_seconds
+
     if not _has_client():
         return
 
     try:
         payload = json.dumps([_metadata_to_dict(metadata) for metadata in metadata_list])
-        _redis_client.set(metadata_list_key(cache_key), payload)
+        _redis_client.set(metadata_list_key(cache_key), payload, ex=ttl_seconds)
     except (redis.RedisError, TypeError) as exc:
         _log_error("write metadata list", exc)
 
@@ -100,24 +96,30 @@ def read_last_build_time(cache_key):
         return None
 
 
-def write_last_build_time(cache_key, last_build_time):
+def write_last_build_time(cache_key, last_build_time, ttl_seconds=None):
+    if ttl_seconds is None:
+        ttl_seconds = last_build_time_ttl_seconds
+
     if not _has_client():
         return
 
     try:
         value = last_build_time.isoformat() if isinstance(last_build_time, datetime) else str(last_build_time)
-        _redis_client.set(router_last_build_time_key(cache_key), value)
+        _redis_client.set(router_last_build_time_key(cache_key), value, ex=ttl_seconds)
     except redis.RedisError as exc:
         _log_error("write last build time", exc)
 
 
-def write_feed_item_to_cache(key, payload):
+def write_feed_item_to_cache(key, payload, ttl_seconds=None):
+    if ttl_seconds is None:
+        ttl_seconds = feed_item_ttl_seconds
+
     if not _has_client():
         logging.error("Redis client unavailable; feed item write skipped for key=%s", key)
         return
 
     try:
-        _redis_client.set(key, json.dumps(payload))
+        _redis_client.set(key, json.dumps(payload), ex=ttl_seconds)
     except (redis.RedisError, TypeError) as exc:
         _log_error("write feed item", exc)
 

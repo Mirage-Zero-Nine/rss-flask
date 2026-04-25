@@ -23,9 +23,17 @@ routers_to_call = [
     reuters_news_router_path + '/world'
 ]
 
-refresh_period_in_minutes = 10
+refresh_period_in_minutes = 15
 
 html_parser = 'html.parser'
 
 language_chinese = "zh-cn"
 language_english = "en-us"
+
+# Cache TTL defaults (in seconds)
+metadata_list_ttl_seconds = 3600        # 1 hour
+feed_item_ttl_seconds = 21600           # 6 hours
+last_build_time_ttl_seconds = 3600      # 1 hour
+
+# Distributed lock TTL for warm_cache (in seconds)
+warm_lock_ttl_seconds = 300             # 5 minutes
