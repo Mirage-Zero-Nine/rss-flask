@@ -45,15 +45,6 @@ def run_refresh_job(job):
         logging.exception("Scheduler refresh job failed for %s: %s", job["name"], exc)
 
 
-def run_warmup_jobs(jobs):
-    for job in jobs:
-        try:
-            logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Scheduler warm-up job: {job['name']}")
-            job["warmup"]()
-        except Exception as exc:
-            logging.exception("Scheduler warm-up job failed for %s: %s", job["name"], exc)
-
-
 def router_refresh_job_scheduler(jobs):
     global _scheduler_started
     if _scheduler_started:
@@ -65,15 +56,29 @@ def router_refresh_job_scheduler(jobs):
     scheduler.start()
     _scheduler_started = True
 
-    run_warmup_jobs(jobs)
-
     for job in jobs:
-        logging.info(
-            "%s Router %s added to scheduler job with interval_minutes=%s.",
-            datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
-            job['name'],
-            interval_minutes
-        )
+        # warm_cache() returns True if it refreshed (cache was empty), False if it skipped (cache was populated)
+        try:
+            cache_was_empty = job["warmup"]()
+        except Exception as exc:
+            logging.exception("Scheduler warm-up job failed for %s: %s", job['name'], exc)
+            cache_was_empty = False
+
+        if cache_was_empty:
+            logging.info(
+                "%s Router %s: cache was empty, warm-up refreshed content. Next scheduled run in %s minutes.",
+                datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
+                job['name'],
+                interval_minutes,
+            )
+        else:
+            logging.info(
+                "%s Router %s: cache was populated, skipping warm-up. Next scheduled run in %s minutes.",
+                datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
+                job['name'],
+                interval_minutes,
+            )
+
         scheduler.add_job(
             run_refresh_job,
             trigger='interval',
