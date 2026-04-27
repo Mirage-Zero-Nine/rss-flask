@@ -45,6 +45,11 @@ class ZaobaoRealtimeRouter(BaseRouter):
                                         created_time=timestamp)
                     metadata_list.append(metadata)
 
+        if not metadata_list:
+            logging.warning(
+                "Router %s extracted 0 articles from Zaobao for region=%s after 3 pages",
+                self.router_path, region,
+            )
         return metadata_list
 
     def __build_articles_list_link(self, region, page_index):
@@ -90,6 +95,11 @@ class ZaobaoRealtimeRouter(BaseRouter):
     def _get_article_content(self, article_metadata: Metadata, entry: FeedItem):
         logging.info("Fetching Zaobao article content for %s", article_metadata.link)
         soup = get_link_content_with_header_and_empty_cookie(article_metadata.link, zaobao_headers)
+        if soup is None:
+            logging.warning("Router %s failed to fetch Zaobao article page for %s", self.router_path, article_metadata.link)
+            entry.description = "<p>Article content unavailable from upstream source.</p>"
+            entry.persist_to_cache(self.router_path)
+            return entry
         meta_image = soup.find('meta', property='og:image')
 
         if entry.description is None:

@@ -1,16 +1,17 @@
 import logging
 
+import requests
+
 from router.base_router import BaseRouter
-from utils.feed_item_object import FeedItem, Metadata, generate_cache_key, convert_router_path_to_cache_prefix
 from router.earthquake.usgs_earthquake_router_constants import usgs_earthquake_name
-from utils.get_link_content import load_json_response
+from utils.feed_item_object import FeedItem, Metadata, generate_cache_key, convert_router_path_to_cache_prefix
 from utils.time_converter import convert_millisecond_to_datetime_with_format, convert_millisecond_to_datetime
 
 
 class UsgsEarthquakeRouter(BaseRouter):
 
-    @staticmethod
-    def _build_entry_from_feature(feature: dict) -> dict:
+
+    def _build_entry_from_feature(self, feature: dict) -> dict | None:
         """Parse a single GeoJSON feature into a flat payload dict.
 
         Single source of truth for all earthquake fields — called once per
@@ -19,25 +20,49 @@ class UsgsEarthquakeRouter(BaseRouter):
         """
         properties = feature["properties"]
 
-        loc = f"<p>Location: {properties['place']}</p>"
+        place = properties.get("place") or "Unknown location"
+        loc = f"<p>Location: {place}</p>"
+        time_val = properties.get("time")
         occurred_time = (
-            f"<p>Time: {str(convert_millisecond_to_datetime_with_format(properties['time']))}</p>"
+            f"<p>Time: {str(convert_millisecond_to_datetime_with_format(time_val))}</p>"
+            if time_val else "<p>Time: Unknown</p>"
         )
-        depth = f"<p>Depth: {str(feature['geometry']['coordinates'][2])} KM</p>"
+        coords = feature["geometry"]["coordinates"]
+        depth_val = coords[2] if coords and len(coords) > 2 else None
+        depth = f"<p>Depth: {str(depth_val) if depth_val else 'Unknown'} KM</p>"
+        url_val = properties.get("url") or ""
         url = (
-            f"<p>Details: <a href=\"{properties['url']}\">Click to see details...</a></p>"
+            f'<p>Details: <a href="{url_val}">Click to see details...</a></p>'
+            if url_val else "<p>Details: N/A</p>"
         )
 
+        title = properties.get("title") or ""
+        link = properties.get("url") or ""
+        if not title:
+            logging.warning(
+                "Router %s GeoJSON feature has no title, skipping ids=%s",
+                self.router_path,
+                properties.get("ids"),
+            )
+            return None
+        if not link:
+            logging.warning(
+                "Router %s GeoJSON feature has no url, skipping ids=%s",
+                self.router_path,
+                properties.get("ids"),
+            )
+            return None
+
         return {
-            "title": properties["title"],
-            "link": properties["url"],
+            "title": title,
+            "link": link,
             "author": usgs_earthquake_name,
-            "created_time": convert_millisecond_to_datetime(properties["time"]),
-            "guid": properties["ids"],
+            "created_time": convert_millisecond_to_datetime(time_val) if time_val else None,
+            "guid": properties.get("ids", {}).get("ce", link),
             "description": loc + occurred_time + depth + url,
         }
 
-    def get_articles_list(
+    def _get_articles_list(
             self, parameter=None, link_filter=None, title_filter=None
     ) -> list:
         """Fetch the USGS GeoJSON feed ONCE and build the Metadata list.
@@ -47,12 +72,33 @@ class UsgsEarthquakeRouter(BaseRouter):
         load_json_response() handles logging internally.
         """
         logging.info("Router %s fetching USGS GeoJSON feed from %s", self.router_path, self.articles_link)
-        json_response = load_json_response(self.articles_link)
+        try:
+            raw_response = requests.get(self.articles_link, timeout=30)
+            logging.info(
+                "Router %s USGS API response: status=%d content_length=%d",
+                self.router_path,
+                raw_response.status_code,
+                len(raw_response.content),
+            )
+            if raw_response.status_code != 200:
+                logging.warning(
+                    "Router %s USGS API returned non-200 status=%d, body preview: %s",
+                    self.router_path,
+                    raw_response.status_code,
+                    raw_response.text[:500],
+                )
+                return []
+            json_response = raw_response.json()
+        except requests.RequestException as e:
+            logging.error("Router %s USGS API request failed: %s", self.router_path, e)
+            return []
         cache_prefix = convert_router_path_to_cache_prefix(self.router_path)
 
         metadata_list = []
         for feature in json_response["features"]:
             payload = self._build_entry_from_feature(feature)
+            if payload is None:
+                continue
             cache_key = generate_cache_key(
                 cache_prefix, payload["guid"] or payload["link"]
             )
@@ -67,10 +113,16 @@ class UsgsEarthquakeRouter(BaseRouter):
                 flag=payload["description"],
             )
             metadata_list.append(metadata)
+        if not metadata_list:
+            logging.warning(
+                "Router %s USGS API returned 0 features, response keys=%s",
+                self.router_path,
+                sorted(json_response.keys()) if isinstance(json_response, dict) else type(json_response).__name__,
+            )
         logging.info("Router %s built %d article metadata entries from USGS feed", self.router_path, len(metadata_list))
         return metadata_list
 
-    def get_article_content(self, article_metadata: Metadata, entry: FeedItem):
+    def _get_article_content(self, article_metadata: Metadata, entry: FeedItem):
         """Populate entry from data already parsed in get_articles_list().
 
         No network call is made here. The USGS API is called exactly once

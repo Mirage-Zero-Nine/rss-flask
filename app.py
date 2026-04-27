@@ -1,17 +1,23 @@
 import logging
 import os
 import sys
-
-os.makedirs("/logs", exist_ok=True)
+from datetime import datetime
 
 LOG_FORMAT = '%(asctime)s %(levelname)s %(name)s: %(message)s'
+LOG_TIMESTAMP = datetime.now().strftime('%Y%m%d%H%M%S')
+LOG_DIR = '/logs'
+LOG_FILENAME_PREFIX = 'application'
+
+os.makedirs(LOG_DIR, exist_ok=True)
+_log_file = os.path.join(LOG_DIR, f'{LOG_FILENAME_PREFIX}-{LOG_TIMESTAMP}.log')
+
 logging.basicConfig(
     level=logging.DEBUG,
     format=LOG_FORMAT,
     datefmt='%Y-%m-%d %H:%M:%S',
     handlers=[
         logging.StreamHandler(sys.stdout),
-        logging.FileHandler("/logs/application.log", encoding="utf-8"),
+        logging.FileHandler(_log_file, encoding='utf-8'),
     ]
 )
 

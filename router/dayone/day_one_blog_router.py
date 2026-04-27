@@ -16,10 +16,15 @@ class DayOneBlogRouter(BaseRouter):
         """
         metadata_list = []
         soup = get_link_content_with_bs_no_params(self.articles_link, html_parser)
+        if soup is None:
+            logging.warning("Router %s failed to fetch Day One Blog page %s", self.router_path, self.articles_link)
+            return []
         entry_list = soup.find_all(
             "h3",
             {"class": "entry-title"}
         )
+        if not entry_list:
+            logging.warning("Router %s found 0 entry-title h3 elements on %s", self.router_path, self.articles_link)
 
         for entry in entry_list:
             title = entry.find("a").text
@@ -84,5 +89,7 @@ class DayOneBlogRouter(BaseRouter):
         for div in entry_content.find_all('div', class_='sharedaddy sd-sharing-enabled'):
             div.extract()
 
+        if entry.description is None:
+            logging.warning("Router %s extracted empty description for %s", self.router_path, article_metadata.link)
         entry.description = entry_content
         entry.persist_to_cache(self.router_path)

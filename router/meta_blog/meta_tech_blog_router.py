@@ -1,3 +1,4 @@
+import logging
 from router.meta_blog.meta_tech_blog_router_constants import meta_ai_blog_prefix, meta_blog_prefix, meta_blog_link
 from router.router_for_rss_feed import RouterForRssFeed
 from utils.get_link_content import get_link_content_with_bs_no_params
@@ -8,23 +9,28 @@ from utils.tools import format_author_names
 class MetaBlog(RouterForRssFeed):
 
     def _get_article_content(self, article_metadata, entry):
-
+        logging.info("Router %s fetching article content link=%s", self.router_path, article_metadata.link)
         soup = get_link_content_with_bs_no_params(article_metadata.link)
+        if soup is None:
+            logging.warning("Router %s failed to fetch page for %s", self.router_path, article_metadata.link)
+            return entry
 
         if article_metadata.link.startswith(meta_ai_blog_prefix):
             self.__extract_ai_blog(soup, entry)
         elif article_metadata.link.startswith(meta_blog_prefix):
             # unable to extract normal meta blog now
-            pass
+            logging.warning("Router %s normal Meta blog path not yet supported for %s", self.router_path, article_metadata.link)
         elif article_metadata.link.startswith(meta_blog_link):
             self.__extract_engineering_blog(soup, entry)
         else:
-            pass
+            logging.warning("Router %s unrecognized Meta link prefix for %s", self.router_path, article_metadata.link)
         return entry
 
     def __extract_ai_blog(self, soup, entry):
-
         entry_content_div = soup.find("div", {"class": "_amgj"})
+        if entry_content_div is None:
+            logging.warning("Router %s could not find AI blog content div (_amgj) for %s", self.router_path, entry.link)
+            return
         if entry_content_div:
             entry.author = soup.find('div', class_='_amgc').text
 
@@ -38,6 +44,9 @@ class MetaBlog(RouterForRssFeed):
 
     def __extract_engineering_blog(self, soup, entry):
         entry_content_div = soup.find("div", {"class": "entry-content"})
+        if entry_content_div is None:
+            logging.warning("Router %s could not find engineering blog content div (entry-content) for %s", self.router_path, entry.link)
+            return
         if entry_content_div:
             for tag in entry_content_div.find_all(True):
                 if tag.has_attr('style'):

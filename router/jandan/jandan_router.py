@@ -33,7 +33,9 @@ class JandanRouter(BaseRouter):
         for i, post in enumerate(post_list):
             h2 = post.find('h2')
             if h2 is None:
-                logging.warning("JandanRouter post item %d has no h2 tag, skipping", i)
+                link_tag = post.find('a')
+                link = link_tag['href'] if link_tag else '<no link>'
+                logging.warning('JandanRouter post item %d has no h2 tag, skipping link=%s', i, link)
                 continue
             title = h2.text.strip()
             link_tag = h2.find('a')
@@ -120,5 +122,7 @@ class JandanRouter(BaseRouter):
                     a.extract()
                     logging.debug("JandanRouter removed money.php promo link: %s", href)
 
+        if content is None:
+            logging.warning("Router %s extracted empty content for %s", self.router_path, article_metadata.link)
         entry.description = content
         entry.persist_to_cache(self.router_path)

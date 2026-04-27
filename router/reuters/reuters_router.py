@@ -277,9 +277,18 @@ class ReutersRouter(BaseRouter):
             if isinstance(p, dict) and p.get("type") == "paragraph" and p.get("content"):
                 entry.description += "<p>" + p["content"] + "</p>"
 
+        if not entry.description:
+            logging.warning(
+                "Reuters built empty description for article id=%s link=%s",
+                article_id, article_metadata.link,
+            )
+            self.__fetch_article_via_html(article_metadata, entry)
+            return
+
         entry.persist_to_cache(self.router_path)
 
     def __fetch_article_via_html(self, article_metadata: Metadata, entry: FeedItem):
+        logging.warning("Reuters falling back to HTML parsing for article %s", article_metadata.link)
         soup = get_link_content_with_bs_no_params(article_metadata.link, html_parser)
         body_candidates = [
             soup.find('article'),

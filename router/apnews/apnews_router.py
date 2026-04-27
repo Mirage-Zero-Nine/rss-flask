@@ -90,10 +90,16 @@ class ApnewsRouter(BaseRouter):
             )
             metadata_list.append(metadata)
 
-        logging.info(
-            "Router %s built %d article metadata entries from AP News topic '%s' (out of %d promo cards)",
-            self.router_path, len(metadata_list), topic, len(promo_contents),
-        )
+        if not metadata_list:
+            logging.warning(
+                "Router %s built 0 article metadata entries from AP News topic '%s' (0 valid out of %d promo cards)",
+                self.router_path, topic, len(promo_contents),
+            )
+        else:
+            logging.info(
+                "Router %s built %d article metadata entries from AP News topic '%s' (out of %d promo cards)",
+                self.router_path, len(metadata_list), topic, len(promo_contents),
+            )
         return metadata_list
 
     def _get_article_content(self, article_metadata: Metadata, entry: FeedItem):
@@ -206,6 +212,12 @@ class ApnewsRouter(BaseRouter):
             entry.description = article_metadata.flag or ""
         else:
             entry.description = "".join(body_parts)
+
+        if not entry.description:
+            logging.warning(
+                "Router %s final description is empty for %s",
+                self.router_path, article_metadata.link,
+            )
 
         # Append images to description
         if img_tags:

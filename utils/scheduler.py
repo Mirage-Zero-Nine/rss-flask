@@ -71,7 +71,7 @@ def router_refresh_job_scheduler(jobs):
 
     interval_minutes = _load_scheduler_interval_minutes()
     scheduler = BackgroundScheduler(
-        executors={"default": APSchedulerExecutor(max_workers=1)}
+        executors={"default": APSchedulerExecutor(max_workers=16)}
     )
     scheduler.start()
     _scheduler_started = True

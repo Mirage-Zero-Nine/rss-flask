@@ -11,7 +11,13 @@ from utils.time_converter import convert_time_with_pattern
 class ChinaEmbassyNewsRouter(BaseRouter):
     def _get_articles_list(self, parameter=None, link_filter=None, title_filter=None):
         soup = get_link_content_with_urllib_request(self.articles_link)
+        if soup is None:
+            logging.warning("Router %s failed to fetch embassy page %s", self.router_path, self.articles_link)
+            return []
         page = soup.find("ul", {"class": "tt"})
+        if page is None:
+            logging.warning("Router %s could not find 'ul.tt' on embassy page %s", self.router_path, self.articles_link)
+            return []
 
         metadata_list = []
         for item in page:
@@ -33,6 +39,8 @@ class ChinaEmbassyNewsRouter(BaseRouter):
             except AttributeError:
                 continue
 
+        if not metadata_list:
+            logging.warning("Router %s extracted 0 articles from embassy page", self.router_path)
         return metadata_list
 
     def _get_article_content(self, article_metadata, entry):
@@ -55,5 +63,10 @@ class ChinaEmbassyNewsRouter(BaseRouter):
                 logging.warning("Failed to find publish time for %s", article_metadata.link)
         for tag in soup.find_all(True):
             tag.attrs = {key: val for key, val in tag.attrs.items() if key != 'style'}
-        entry.description = soup.find('div', id='News_Body_Txt_A')
+        desc_div = soup.find('div', id='News_Body_Txt_A')
+        if desc_div is None:
+            logging.warning("Router %s could not find News_Body_Txt_A div for %s", self.router_path, article_metadata.link)
+        entry.description = desc_div
+        if entry.description is None:
+            logging.warning("Router %s description is None for %s", self.router_path, article_metadata.link)
         entry.persist_to_cache(self.router_path)
