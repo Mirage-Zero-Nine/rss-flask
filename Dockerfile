@@ -20,6 +20,4 @@ ENV RSS_REDIS_URL=redis://redis-cache:6379/0
 
 RUN mkdir -p /logs
 
-RUN playwright install chromium && \
-    playwright install-deps chromium
 CMD ["flask", "run"]

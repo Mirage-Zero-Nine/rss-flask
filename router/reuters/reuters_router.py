@@ -1,11 +1,10 @@
-import atexit
 import json
 import logging
 import re
 from datetime import datetime
 from urllib.parse import quote, urljoin
 
-from playwright.sync_api import sync_playwright
+import requests
 from router.base_router import BaseRouter
 from router.reuters.reuters_constants import (
     reuters_site_link,
@@ -20,72 +19,28 @@ from utils.xml_utilities import generate_feed_object_for_new_router
 from utils.get_link_content import get_link_content_with_bs_no_params
 
 
-# Module-level singleton: one Playwright + Chromium shared across all instances.
-# This avoids spawning a new browser per request and prevents resource leaks.
-_playwright_instance = None
-_browser_instance = None
-
-
-def _ensure_browser():
-    global _playwright_instance, _browser_instance
-    if _browser_instance is None or not _browser_instance.is_connected():
-        _playwright_instance = sync_playwright().start()
-        _browser_instance = _playwright_instance.chromium.launch(headless=True)
-    return _playwright_instance, _browser_instance
-
-
-def _cleanup():
-    global _playwright_instance, _browser_instance
-    if _browser_instance:
-        _browser_instance.close()
-    if _playwright_instance:
-        _playwright_instance.stop()
-    _playwright_instance = None
-    _browser_instance = None
-
-
-atexit.register(_cleanup)
-
-
 class ReutersRouter(BaseRouter):
-    """Reuters router using playwright to bypass Cloudflare protection."""
+    """Reuters router."""
 
-    def _fetch_with_playwright(self, url, timeout=30000):
-        """Fetch URL using playwright to bypass Cloudflare."""
-        _, browser = _ensure_browser()
-
-        context = browser.new_context(
-            user_agent='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.4 Safari/605.1.15',
-            locale='en-US',
-            timezone_id='America/New_York',
-        )
-        context.set_extra_http_headers({
+    @staticmethod
+    def _fetch_with_requests(url: str, timeout: int = 30) -> dict:
+        """Fetch URL using requests (standard HTTP)."""
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.4 Safari/605.1.15',
             'Accept': 'application/json, text/plain, */*',
             'Accept-Language': 'en-US,en;q=0.9',
-        })
-
-        page = context.new_page()
-        response_data = {'status': None, 'json': None, 'error': None}
-
-        def handle_response(response):
-            if 'api/v3/content/fetch' in response.url:
-                try:
-                    response_data['json'] = response.json()
-                    response_data['status'] = response.status
-                except Exception:
-                    response_data['json'] = None
-                    response_data['status'] = response.status
-
-        page.on('response', handle_response)
-
+        }
         try:
-            page.goto(url, wait_until='networkidle', timeout=timeout)
-        except Exception as e:
-            logging.warning("Playwright timeout/error for %s: %s", url, e)
-            response_data['error'] = str(e)
-
-        context.close()
-        return response_data
+            response = requests.get(url, headers=headers, timeout=timeout)
+            status = response.status_code
+            try:
+                json_data = response.json()
+            except ValueError:
+                json_data = None
+            return {'status': status, 'json': json_data, 'error': None}
+        except requests.RequestException as e:
+            logging.warning("Request error for %s: %s", url, e)
+            return {'status': None, 'json': None, 'error': str(e)}
 
     @staticmethod
     def __resolve_created_time(article, cache_key):
@@ -128,7 +83,7 @@ class ReutersRouter(BaseRouter):
         return isinstance(data, dict) and "url" in data and "captcha" in str(data.get("url", "")).lower()
 
     @staticmethod
-    def __extract_reuters_result(data, context, response, json_query, resource_link=None):
+    def __extract_reuters_result(data, context, response, json_query, resource_link=None) -> dict | None:
         if not isinstance(data, dict):
             logging.error(
                 "Unexpected Reuters %s payload type. resource_link=%s status=%s url=%s query=%s payload_type=%s",
@@ -189,15 +144,15 @@ class ReutersRouter(BaseRouter):
         request_link = self.__build_api_request_link(self.articles_link, json_query)
 
         log_external_fetch(
-            "playwright",
+            "requests",
             request_link,
             resource="reuters_articles_list",
         )
 
-        response_data = self._fetch_with_playwright(request_link)
+        response_data = self._fetch_with_requests(request_link)
 
         if response_data.get('error'):
-            logging.error("Playwright error fetching articles list: %s", response_data['error'])
+            logging.error("Request error fetching articles list: %s", response_data['error'])
             return []
 
         if response_data.get('status') != 200:
@@ -216,10 +171,9 @@ class ReutersRouter(BaseRouter):
             json_query=json_query,
             resource_link=request_link,
         )
-        if not result:
+        if result is None:
             return []
-
-        articles = result.get('articles', [])
+        articles = result.get("articles", [])
         if not articles:
             logging.warning("Reuters returned 0 articles for category=%s topic=%s", category, topic)
             return []
@@ -227,12 +181,8 @@ class ReutersRouter(BaseRouter):
         for article in articles:
             article_id = article.get('id', '')
             canonical_url = article.get('canonical_url', '')
-            published_time = article.get('published_time')
-            cache_key = generate_cache_key(
-                self.router_path,
-                article_id,
-                convert_router_path_to_cache_prefix(self.router_path),
-            )
+            cache_prefix = convert_router_path_to_cache_prefix(self.router_path)
+            cache_key = generate_cache_key(prefix=cache_prefix, name=article_id)
             created_time = self.__resolve_created_time(article, cache_key)
 
             metadata_list.append(Metadata(
@@ -254,16 +204,16 @@ class ReutersRouter(BaseRouter):
         request_link = self.__build_api_request_link(self.articles_link, json_query)
 
         log_external_fetch(
-            "playwright",
+            "requests",
             request_link,
             resource="reuters_article_content",
             article_link=article_metadata.link,
         )
 
-        response_data = self._fetch_with_playwright(request_link)
+        response_data = self._fetch_with_requests(request_link)
 
         if response_data.get('error'):
-            logging.error("Playwright error fetching article content: %s", response_data['error'])
+            logging.error("Request error fetching article content: %s", response_data['error'])
             self.__fetch_article_via_html(article_metadata, entry)
             return
 

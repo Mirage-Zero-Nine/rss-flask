@@ -1,3 +1,4 @@
+import re
 import logging
 from datetime import datetime
 
@@ -77,8 +78,26 @@ class JandanRouter(BaseRouter):
                 logging.warning("JandanRouter could not find post-meta div for %s", article_metadata.link)
                 raise AttributeError("no post-meta")
             create_time_string = post_meta.get_text(strip=True)
-            create_time_string = create_time_string.replace("发布于 ", "").strip()
-            entry.created_time = convert_time_with_pattern(create_time_string, "%Y.%m.%d , %H:%M", 8)
+            create_time_string = re.sub(r"^[^0-9]*", "", create_time_string).strip()
+            # Try multiple time formats since the site format can vary
+            _time_patterns = [
+                "%Y.%m.%d , %H:%M",
+                "%Y.%m.%d @ %H:%M",
+                "%Y.%m.%d %H:%M",
+                "%Y-%m-%d , %H:%M",
+                "%Y-%m-%d @ %H:%M",
+                "%Y-%m-%d %H:%M",
+            ]
+            _parsed = None
+            for _pat in _time_patterns:
+                try:
+                    _parsed = convert_time_with_pattern(create_time_string, _pat, 8)
+                    break
+                except ValueError:
+                    continue
+            if _parsed is None:
+                raise ValueError(f"Unrecognized time format: {create_time_string!r}")
+            entry.created_time = _parsed
         except (AttributeError, Exception) as e:
             logging.warning("JandanRouter time parsing failed for %s: %s, using now", article_metadata.link, e)
             entry.created_time = datetime.now()

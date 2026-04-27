@@ -1,6 +1,7 @@
 import logging
 import os
 
+from apscheduler.executors.pool import ThreadPoolExecutor as APSchedulerExecutor
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime, timedelta
 
@@ -69,7 +70,9 @@ def router_refresh_job_scheduler(jobs):
         return None
 
     interval_minutes = _load_scheduler_interval_minutes()
-    scheduler = BackgroundScheduler()
+    scheduler = BackgroundScheduler(
+        executors={"default": APSchedulerExecutor(max_workers=1)}
+    )
     scheduler.start()
     _scheduler_started = True
 

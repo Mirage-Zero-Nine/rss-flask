@@ -9,6 +9,11 @@ from router.apnews.apnews_router_constants import (
     apnews_articles_link,
     apnews_description,
     apnews_period,
+    apnews_business_feed_title,
+    apnews_business_original_link,
+    apnews_business_articles_link,
+    apnews_business_description,
+    apnews_business_period,
 )
 from router.cnbeta.cnbeta_router import CnbetaRouter
 from router.cnbeta.cnbeta_router_constants import cnbeta_news_router_title, cnbeta_news_site_link, \
@@ -162,4 +167,14 @@ apnews_top_news = ApnewsRouter(
     description=apnews_description,
     language=language_english,
     period=apnews_period
+)
+
+apnews_business = ApnewsRouter(
+    router_path=apnews_router_path,
+    feed_title=apnews_business_feed_title,
+    original_link=apnews_business_original_link,
+    articles_link=apnews_business_articles_link,
+    description=apnews_business_description,
+    language=language_english,
+    period=apnews_business_period
 )

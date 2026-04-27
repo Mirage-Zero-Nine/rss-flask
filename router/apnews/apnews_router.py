@@ -1,8 +1,5 @@
 import logging
 
-from router.apnews.apnews_router_constants import (
-    apnews_articles_link,
-)
 from router.base_router import BaseRouter
 from utils.feed_item_object import FeedItem, Metadata, generate_cache_key, convert_router_path_to_cache_prefix
 from utils.get_link_content import get_link_content_with_bs_no_params
@@ -11,15 +8,28 @@ from utils.time_converter import convert_millisecond_to_datetime
 
 
 class ApnewsRouter(BaseRouter):
-    """Router for AP News top news page."""
+    """Router for AP News pages, supporting multiple topics via parameter."""
+
+    TOPIC_URLS = {
+        "top": "https://apnews.com/tag/apf-topnews",
+        "business": "https://apnews.com/business",
+    }
 
     def _get_articles_list(self, parameter=None, link_filter=None, title_filter=None):
-        """Fetch the AP News top news page and extract article metadata."""
-        logging.info("Router %s fetching AP News page from %s", self.router_path, apnews_articles_link)
-        soup = get_link_content_with_bs_no_params(apnews_articles_link, html_parser)
+        """Fetch the AP News page and extract article metadata.
+
+        Args:
+            parameter: dict with optional 'topic' key (e.g. {"topic": "business"}).
+                       Defaults to "top" if not specified.
+        """
+        topic = (parameter or {}).get("topic", "top")
+        url = self.TOPIC_URLS.get(topic, self.TOPIC_URLS["top"])
+        logging.info("Router %s fetching AP News page for topic '%s' from %s", self.router_path, topic, url)
+
+        soup = get_link_content_with_bs_no_params(url, html_parser)
 
         if soup is None:
-            logging.error("Router %s failed to fetch AP News page from %s", self.router_path, apnews_articles_link)
+            logging.error("Router %s failed to fetch AP News page for topic '%s' from %s", self.router_path, topic, url)
             return []
         cache_prefix = convert_router_path_to_cache_prefix(self.router_path)
         metadata_list = []
@@ -81,8 +91,8 @@ class ApnewsRouter(BaseRouter):
             metadata_list.append(metadata)
 
         logging.info(
-            "Router %s built %d article metadata entries from AP News (out of %d promo cards)",
-            self.router_path, len(metadata_list), len(promo_contents),
+            "Router %s built %d article metadata entries from AP News topic '%s' (out of %d promo cards)",
+            self.router_path, len(metadata_list), topic, len(promo_contents),
         )
         return metadata_list
 

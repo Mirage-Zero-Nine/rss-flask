@@ -22,7 +22,7 @@ from router.reuters.reuters_constants import is_valid_reuters_parameter
 from router.zaobao.zaobao_realtime_router_constants import zaobao_region_parameter, title_filter
 from router_objects import meta_tech_blog, cnbeta, usgs_earthquake_report, \
     zaobao_realtime, day_one_blog, wsdot_news, chinese_embassy_news, \
-    jandan_news, reuters_news, sony_alpha_rumors, apnews_top_news
+    jandan_news, reuters_news, sony_alpha_rumors, apnews_top_news, apnews_business
 from utils.router_constants import wsdot_news_router_path, \
     meta_engineering_blog_router, \
     jandan_router_path, earthquake_router_path, embassy_router_path, \
@@ -79,21 +79,6 @@ def build_scheduler_jobs():
             "refresh": lambda: meta_tech_blog.refresh_cache(link_filter=meta_blog_prefix),
         },
         {
-            "name": reuters_news_router_path + "/world",
-            "warmup": lambda: reuters_news.warm_cache(parameter={"category": "world", "topic": None, "limit": 20}),
-            "refresh": lambda: reuters_news.refresh_cache(parameter={"category": "world", "topic": None, "limit": 20}),
-        },
-        {
-            "name": reuters_news_router_path + "/breakingviews",
-            "warmup": lambda: reuters_news.warm_cache(parameter={"category": "breakingviews", "topic": None, "limit": 20}),
-            "refresh": lambda: reuters_news.refresh_cache(parameter={"category": "breakingviews", "topic": None, "limit": 20}),
-        },
-        {
-            "name": reuters_news_router_path + "/business",
-            "warmup": lambda: reuters_news.warm_cache(parameter={"category": "business", "topic": None, "limit": 20}),
-            "refresh": lambda: reuters_news.refresh_cache(parameter={"category": "business", "topic": None, "limit": 20}),
-        },
-        {
             "name": sar_router_path,
             "warmup": lambda: sony_alpha_rumors.warm_cache(),
             "refresh": lambda: sony_alpha_rumors.refresh_cache(),
@@ -122,6 +107,11 @@ def build_scheduler_jobs():
             "name": apnews_router_path,
             "warmup": lambda: apnews_top_news.warm_cache(),
             "refresh": lambda: apnews_top_news.refresh_cache(),
+        },
+        {
+            "name": "/apnews/business",
+            "warmup": lambda: apnews_business.warm_cache(parameter={"topic": "business"}),
+            "refresh": lambda: apnews_business.refresh_cache(parameter={"topic": "business"}),
         },
     ]
 
@@ -221,6 +211,11 @@ def zaobao_router(region=None):
 @app.route(apnews_router_path)
 def apnews_router():
     return apnews_top_news.get_rss_xml_response()
+
+
+@app.route('/apnews/business')
+def apnews_business_router():
+    return apnews_business.get_rss_xml_response(parameter={"topic": "business"})
 
 
 if should_start_scheduler():
