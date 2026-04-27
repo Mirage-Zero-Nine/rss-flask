@@ -5,7 +5,7 @@ from bs4 import NavigableString
 from router.base_router import BaseRouter
 from router.zaobao.zaobao_realtime_router_constants import zaobao_realtime_page_suffix, zaobao_headers, \
     feed_title_mapping, feed_description_mapping, feed_prefix_mapping, zaobao_time_general_author, \
-    zaobao_link, zaobao_region_general_title, zaobao_realtime_frontpage_prefix, zaobao_news_china_page_prefix, \
+    zaobao_link, zaobao_region_general_title, zaobao_news_china_page_prefix, zaobao_realtime_frontpage_prefix, \
     zaobao_news_world_page_prefix
 from utils.feed_item_object import Metadata, generate_cache_key, convert_router_path_to_cache_prefix, FeedItem
 from utils.get_link_content import get_link_content_with_header_and_empty_cookie, load_json_response
@@ -139,10 +139,27 @@ class ZaobaoRealtimeRouter(BaseRouter):
         for section in related_sections:
             section.extract()
 
-        unwanted_phrases = ('延伸阅读', '购买此文章', '上一篇', '下一篇', '热门', '更多消息', '最新')
+        # Only remove elements where these phrases are the primary content (UI labels, nav items).
+        # '热门' and '最新' are too broad to match as substrings — they appear in normal article
+        # text (e.g., "最新报告显示"). We only remove them when they appear as standalone short text.
+        unwanted_phrases = ('延伸阅读', '购买此文章', '上一篇', '下一篇', '更多消息')
         for element in soup.find_all(['section', 'div', 'aside', 'nav', 'h2', 'h3', 'p', 'a']):
             text = element.get_text(" ", strip=True)
+            if not text:
+                continue
+            # Skip long text — likely article content, not a UI element
+            if len(text) > 50:
+                continue
             if any(phrase in text for phrase in unwanted_phrases):
+                element.extract()
+
+        # Handle '热门' / '最新' only as standalone short labels (navigation buttons, etc.)
+        for element in soup.find_all(['section', 'div', 'aside', 'nav', 'h2', 'h3', 'p', 'a']):
+            text = element.get_text(" ", strip=True)
+            if not text:
+                continue
+            # Only remove if the entire text is exactly the phrase (very short standalone label)
+            if text in ('热门', '最新'):
                 element.extract()
 
         img_tags = soup.find_all('img', {'data-src': True})
@@ -156,16 +173,27 @@ class ZaobaoRealtimeRouter(BaseRouter):
                 continue
 
             if child.name in allowed_tags:
-                if child.get_text(" ", strip=True) in unwanted_phrases:
+                text = child.get_text(" ", strip=True)
+                if text and any(phrase in text for phrase in unwanted_phrases):
                     continue
                 main_content_parts.append(str(child))
                 continue
 
+            # For non-allowed tags (e.g., anonymous div wrappers):
+            # First try to find allowed descendants
             nested_allowed = child.find_all(allowed_tags, recursive=True)
-            for nested in nested_allowed:
-                if nested.get_text(" ", strip=True) in unwanted_phrases:
-                    continue
-                main_content_parts.append(str(nested))
+            if nested_allowed:
+                for nested in nested_allowed:
+                    text = nested.get_text(" ", strip=True)
+                    if text and any(phrase in text for phrase in unwanted_phrases):
+                        continue
+                    main_content_parts.append(str(nested))
+            elif child.get_text(" ", strip=True):
+                # No allowed descendants but has meaningful text — wrap in <p> tags
+                # This handles anonymous div wrappers that contain the article text directly
+                text = child.get_text(" ", strip=True)
+                if text and len(text) > 5:
+                    main_content_parts.append(f"<p>{text}</p>")
 
         entry.description += "".join(main_content_parts)
         logging.info("Built Zaobao article content for %s", article_metadata.link)
