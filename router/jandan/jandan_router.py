@@ -3,7 +3,7 @@ from datetime import datetime
 
 from router.base_router import BaseRouter
 from router.jandan.jandan_constant import jandan_headers
-from utils.feed_item_object import Metadata, generate_cache_key, convert_router_path_to_cache_prefix, FeedItem
+from utils.feed_item_object import Metadata, generate_cache_key, convert_router_path_to_cache_prefix
 from utils.get_link_content import get_link_content_with_header_and_empty_cookie
 from utils.router_constants import html_parser
 from utils.time_converter import convert_time_with_pattern

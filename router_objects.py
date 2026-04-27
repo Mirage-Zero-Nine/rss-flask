@@ -1,5 +1,15 @@
 import logging
+
 import yaml
+
+from router.apnews.apnews_router import ApnewsRouter
+from router.apnews.apnews_router_constants import (
+    apnews_feed_title,
+    apnews_original_link,
+    apnews_articles_link,
+    apnews_description,
+    apnews_period,
+)
 from router.cnbeta.cnbeta_router import CnbetaRouter
 from router.cnbeta.cnbeta_router_constants import cnbeta_news_router_title, cnbeta_news_site_link, \
     cnbeta_news_router_description, cnbeta_period, cnbeta_articles_link
@@ -32,7 +42,7 @@ from router.zaobao.zaobao_realtime_router_constants import zaobao_realtime_page_
 from utils.router_constants import language_english, language_chinese, meta_engineering_blog_router, \
     cnbeta_router_path, zaobao_router_path_prefix, day_one_blog_router_path, earthquake_router_path, \
     wsdot_news_router_path, embassy_router_path, \
-    jandan_router_path, reuters_news_router_path, sar_router_path
+    jandan_router_path, reuters_news_router_path, sar_router_path, apnews_router_path
 
 config = None
 
@@ -142,4 +152,14 @@ sony_alpha_rumors = SonyAlphaRumorsRouter(
     description=sar_description,
     language=language_english,
     period=sar_query_period
+)
+
+apnews_top_news = ApnewsRouter(
+    router_path=apnews_router_path,
+    feed_title=apnews_feed_title,
+    original_link=apnews_original_link,
+    articles_link=apnews_articles_link,
+    description=apnews_description,
+    language=language_english,
+    period=apnews_period
 )

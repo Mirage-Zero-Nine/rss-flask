@@ -22,12 +22,12 @@ from router.reuters.reuters_constants import is_valid_reuters_parameter
 from router.zaobao.zaobao_realtime_router_constants import zaobao_region_parameter, title_filter
 from router_objects import meta_tech_blog, cnbeta, usgs_earthquake_report, \
     zaobao_realtime, day_one_blog, wsdot_news, chinese_embassy_news, \
-    jandan_news, reuters_news, sony_alpha_rumors
+    jandan_news, reuters_news, sony_alpha_rumors, apnews_top_news
 from utils.router_constants import wsdot_news_router_path, \
     meta_engineering_blog_router, \
     jandan_router_path, earthquake_router_path, embassy_router_path, \
     day_one_blog_router_path, cnbeta_router_path, zaobao_router_path_prefix, \
-    reuters_news_router_path, sar_router_path
+    reuters_news_router_path, sar_router_path, apnews_router_path
 from utils.scheduler import router_refresh_job_scheduler
 from werkzeug.exceptions import abort
 
@@ -117,6 +117,11 @@ def build_scheduler_jobs():
             "name": zaobao_router_path_prefix + "/world",
             "warmup": lambda: zaobao_realtime.warm_cache(parameter={"region": "world"}, title_filter=title_filter),
             "refresh": lambda: zaobao_realtime.refresh_cache(parameter={"region": "world"}, title_filter=title_filter),
+        },
+        {
+            "name": apnews_router_path,
+            "warmup": lambda: apnews_top_news.warm_cache(),
+            "refresh": lambda: apnews_top_news.refresh_cache(),
         },
     ]
 
@@ -211,6 +216,11 @@ def zaobao_router(region=None):
         "region": region
     }
     return zaobao_realtime.get_rss_xml_response(parameter=parameters, title_filter=title_filter)
+
+
+@app.route(apnews_router_path)
+def apnews_router():
+    return apnews_top_news.get_rss_xml_response()
 
 
 if should_start_scheduler():

@@ -8,6 +8,7 @@ reuters_news_router_path = '/reuters'
 sar_router_path = "/sar"
 wsdot_news_router_path = '/wsdot/news'
 zaobao_router_path_prefix = "/zaobao/realtime"
+apnews_router_path = "/apnews"
 # List of routers to refresh periodically
 routers_to_call = [
     cnbeta_router_path,
@@ -20,7 +21,8 @@ routers_to_call = [
     wsdot_news_router_path,
     zaobao_router_path_prefix + '/china',
     zaobao_router_path_prefix + '/world',
-    reuters_news_router_path + '/world'
+    reuters_news_router_path + '/world',
+    apnews_router_path,
 ]
 
 refresh_period_in_minutes = 15

@@ -21,12 +21,11 @@ try:
     logging.info(f"Connecting to Redis at {DEFAULT_REDIS_URL}")
     _redis_client = redis.from_url(DEFAULT_REDIS_URL, decode_responses=True)
     _redis_client.ping()  # verify connectivity at import time
+    logging.info("Redis connected successfully")
 except redis.RedisError as exc:
-    logging.error(f"Unable to connect to redis at {DEFAULT_REDIS_URL}: {exc}")
-    raise RuntimeError(
-        f"Unable to connect to Redis at {DEFAULT_REDIS_URL}. "
-        "Ensure Redis is running and reachable, and that RSS_REDIS_URL or config.yml is set correctly."
-    ) from exc
+    logging.warning(f"Unable to connect to redis at {DEFAULT_REDIS_URL}: {exc}")
+    logging.warning("Redis is unavailable; cache functions will be no-ops.")
+    _redis_client = None
 
 def _has_client():
     return _redis_client is not None

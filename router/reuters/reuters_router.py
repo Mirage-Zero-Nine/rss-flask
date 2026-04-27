@@ -1,17 +1,15 @@
+import atexit
 import json
 import logging
 import re
 from datetime import datetime
 from urllib.parse import quote, urljoin
 
-import requests
+from playwright.sync_api import sync_playwright
 from router.base_router import BaseRouter
 from router.reuters.reuters_constants import (
-    reuters_articles_list_api_link,
-    reuters_article_content_api_link,
     reuters_site_link,
     reuters_description,
-    headers,
 )
 from utils.cache_store import read_feed_item_from_cache
 from utils.feed_item_object import Metadata, generate_cache_key, convert_router_path_to_cache_prefix, FeedItem
@@ -22,11 +20,72 @@ from utils.xml_utilities import generate_feed_object_for_new_router
 from utils.get_link_content import get_link_content_with_bs_no_params
 
 
-class ReutersRouter(BaseRouter):
+# Module-level singleton: one Playwright + Chromium shared across all instances.
+# This avoids spawning a new browser per request and prevents resource leaks.
+_playwright_instance = None
+_browser_instance = None
 
-    @staticmethod
-    def __create_reuters_session():
-        return requests.Session()
+
+def _ensure_browser():
+    global _playwright_instance, _browser_instance
+    if _browser_instance is None or not _browser_instance.is_connected():
+        _playwright_instance = sync_playwright().start()
+        _browser_instance = _playwright_instance.chromium.launch(headless=True)
+    return _playwright_instance, _browser_instance
+
+
+def _cleanup():
+    global _playwright_instance, _browser_instance
+    if _browser_instance:
+        _browser_instance.close()
+    if _playwright_instance:
+        _playwright_instance.stop()
+    _playwright_instance = None
+    _browser_instance = None
+
+
+atexit.register(_cleanup)
+
+
+class ReutersRouter(BaseRouter):
+    """Reuters router using playwright to bypass Cloudflare protection."""
+
+    def _fetch_with_playwright(self, url, timeout=30000):
+        """Fetch URL using playwright to bypass Cloudflare."""
+        _, browser = _ensure_browser()
+
+        context = browser.new_context(
+            user_agent='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.4 Safari/605.1.15',
+            locale='en-US',
+            timezone_id='America/New_York',
+        )
+        context.set_extra_http_headers({
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Language': 'en-US,en;q=0.9',
+        })
+
+        page = context.new_page()
+        response_data = {'status': None, 'json': None, 'error': None}
+
+        def handle_response(response):
+            if 'api/v3/content/fetch' in response.url:
+                try:
+                    response_data['json'] = response.json()
+                    response_data['status'] = response.status
+                except Exception:
+                    response_data['json'] = None
+                    response_data['status'] = response.status
+
+        page.on('response', handle_response)
+
+        try:
+            page.goto(url, wait_until='networkidle', timeout=timeout)
+        except Exception as e:
+            logging.warning("Playwright timeout/error for %s: %s", url, e)
+            response_data['error'] = str(e)
+
+        context.close()
+        return response_data
 
     @staticmethod
     def __resolve_created_time(article, cache_key):
@@ -75,8 +134,8 @@ class ReutersRouter(BaseRouter):
                 "Unexpected Reuters %s payload type. resource_link=%s status=%s url=%s query=%s payload_type=%s",
                 context,
                 resource_link,
-                response.status_code,
-                response.url,
+                response.get('status'),
+                resource_link,
                 json_query,
                 type(data).__name__,
             )
@@ -84,12 +143,10 @@ class ReutersRouter(BaseRouter):
 
         if ReutersRouter.__is_captcha_challenge(data):
             logging.error(
-                "Reuters %s blocked by captcha. resource_link=%s status=%s url=%s query=%s challenge_url=%s",
+                "Reuters %s blocked by captcha. resource_link=%s status=%s challenge_url=%s",
                 context,
                 resource_link,
-                response.status_code,
-                response.url,
-                json_query,
+                response.get('status'),
                 data.get("url"),
             )
             return None
@@ -99,14 +156,12 @@ class ReutersRouter(BaseRouter):
             return result
 
         logging.error(
-            "Reuters %s payload missing result object. resource_link=%s status=%s url=%s query=%s top_level_keys=%s payload_snippet=%s",
+            "Reuters %s payload missing result object. resource_link=%s status=%s query=%s top_level_keys=%s",
             context,
             resource_link,
-            response.status_code,
-            response.url,
+            response.get('status'),
             json_query,
             sorted(data.keys()),
-            response.text.replace('\n', ' ')[:200],
         )
         return None
 
@@ -115,9 +170,7 @@ class ReutersRouter(BaseRouter):
         return root_url + quote(json_query, safe="")
 
     def __build_section_link(self, category, topic=None):
-        path = f"/{category}/"
-        if topic:
-            path += f"{topic}/"
+        path = f"/{category}/{topic + '/' if topic else ''}"
         return urljoin(self.original_link, path)
 
     def _get_articles_list(self, parameter=None, link_filter=None, title_filter=None):
@@ -127,126 +180,108 @@ class ReutersRouter(BaseRouter):
         logging.info(f"category: {category}, topic: {topic}, limit: {limit}")
         section_id = f"/{category}/{topic + '/' if topic else ''}"
 
-        root_url = self.articles_link + reuters_articles_list_api_link
-        params = {
+        json_query = json.dumps({
             'offset': 0,
             'size': limit,
             'section_id': section_id,
             'website': 'reuters',
-        }
-        json_query = json.dumps(params)
-        request_link = self.__build_api_request_link(root_url, json_query)
+        })
+        request_link = self.__build_api_request_link(self.articles_link, json_query)
 
-        session = self.__create_reuters_session()
-        log_external_fetch("requests.Session.get", request_link, resource="reuters_article_list")
-        response = session.get(request_link, headers=headers)
+        log_external_fetch(
+            "playwright",
+            request_link,
+            resource="reuters_articles_list",
+        )
 
-        try:
-            data = response.json()
-        except ValueError as exc:
-            snippet = response.text.replace('\n', ' ')[:200]
-            logging.error(
-                "Failed to decode Reuters article list JSON (%s). status=%s url=%s. Error: %s. Payload snippet: %s",
-                json_query,
-                response.status_code,
-                response.url,
-                exc,
-                snippet,
-            )
-            return metadata_list
+        response_data = self._fetch_with_playwright(request_link)
+
+        if response_data.get('error'):
+            logging.error("Playwright error fetching articles list: %s", response_data['error'])
+            return []
+
+        if response_data.get('status') != 200:
+            logging.error("Reuters API returned status=%s for articles list", response_data.get('status'))
+            return []
+
+        data = response_data.get('json')
+        if not data:
+            logging.error("Reuters articles list response is empty")
+            return []
 
         result = self.__extract_reuters_result(
             data=data,
-            context="article list",
-            response=response,
+            context="articles list",
+            response=response_data,
             json_query=json_query,
             resource_link=request_link,
         )
-        if result is None:
-            return metadata_list
+        if not result:
+            return []
 
-        articles = result.get("articles")
-        if not isinstance(articles, list):
-            logging.warning(
-                "Reuters article list payload missing articles array. request_link=%s response_url=%s query=%s top_level_keys=%s result_keys=%s",
-                request_link,
-                response.url,
-                json_query,
-                sorted(data.keys()) if isinstance(data, dict) else type(data).__name__,
-                sorted(result.keys()) if isinstance(result, dict) else type(result).__name__,
-            )
-            return metadata_list
+        articles = result.get('articles', [])
+        if not articles:
+            logging.warning("Reuters returned 0 articles for category=%s topic=%s", category, topic)
+            return []
 
         for article in articles:
-            if not isinstance(article, dict):
-                logging.warning("Skipping Reuters article with unexpected type: %s", type(article).__name__)
-                continue
-            canonical_url = article.get("canonical_url")
-            if not canonical_url:
-                logging.warning(
-                    "Skipping Reuters article %s because canonical_url is missing",
-                    article.get("id", "<unknown>"),
-                )
-                continue
-            full_link = urljoin(self.original_link, canonical_url)
-            cache_prefix = convert_router_path_to_cache_prefix(self.router_path)
-            cache_key = generate_cache_key(prefix=cache_prefix, name=article.get("id", full_link))
-            created_time = self.__resolve_created_time(article, cache_key)
-            authors = article.get("authors") or []
-            metadata = Metadata(
-                title=article.get("title", "Reuters"),
-                created_time=created_time,
-                link=full_link,
-                guid=article.get("id", full_link),
-                author=", ".join(
-                    author["name"] for author in authors
-                    if isinstance(author, dict) and author.get("name")
-                ) if authors else "Reuters",
-                cache_key=cache_key,
+            article_id = article.get('id', '')
+            canonical_url = article.get('canonical_url', '')
+            published_time = article.get('published_time')
+            cache_key = generate_cache_key(
+                self.router_path,
+                article_id,
+                convert_router_path_to_cache_prefix(self.router_path),
             )
-            metadata_list.append(metadata)
+            created_time = self.__resolve_created_time(article, cache_key)
+
+            metadata_list.append(Metadata(
+                title=article.get('title', ''),
+                link=canonical_url,
+                guid=article_id,
+                created_time=created_time,
+                cache_key=cache_key,
+            ))
 
         return metadata_list
 
     def _get_article_content(self, article_metadata: Metadata, entry: FeedItem):
-        root_url = self.articles_link + reuters_article_content_api_link
-        params = {
-            'id': article_metadata.guid,
+        article_id = article_metadata.guid
+        json_query = json.dumps({
+            'article_ids': [article_id],
             'website': 'reuters',
-        }
-        json_query = json.dumps(params)
-        request_link = self.__build_api_request_link(root_url, json_query)
+        })
+        request_link = self.__build_api_request_link(self.articles_link, json_query)
 
-        session = self.__create_reuters_session()
         log_external_fetch(
-            "requests.Session.get",
+            "playwright",
             request_link,
             resource="reuters_article_content",
             article_link=article_metadata.link,
         )
-        response = session.get(request_link, headers=headers)
 
-        try:
-            data = response.json()
-        except ValueError as exc:
-            snippet = response.text.replace('\n', ' ')[:200]
-            logging.error(
-                "Failed to decode Reuters article content JSON for %s link=%s request_link=%s (status=%s url=%s). Error: %s. Payload snippet: %s",
-                article_metadata.guid,
-                article_metadata.link,
-                request_link,
-                response.status_code,
-                response.url,
-                exc,
-                snippet,
-            )
+        response_data = self._fetch_with_playwright(request_link)
+
+        if response_data.get('error'):
+            logging.error("Playwright error fetching article content: %s", response_data['error'])
+            self.__fetch_article_via_html(article_metadata, entry)
+            return
+
+        if response_data.get('status') != 200:
+            logging.error("Reuters API returned status=%s for article %s", response_data.get('status'), article_id)
+            self.__fetch_article_via_html(article_metadata, entry)
+            return
+
+        data = response_data.get('json')
+        if not data:
+            logging.error("Reuters article content response is empty for %s", article_id)
             self.__fetch_article_via_html(article_metadata, entry)
             return
 
         result = self.__extract_reuters_result(
             data=data,
-            context=f"article content {article_metadata.guid}",
-            response=response,
+            context=f"article content {article_id}",
+            response=response_data,
             json_query=json_query,
             resource_link=request_link,
         )
@@ -269,7 +304,7 @@ class ReutersRouter(BaseRouter):
                             entry.description += f"<figcaption>{image['caption']}</figcaption>"
                         entry.description += "</figure>"
             elif "galleries" in related_content:
-                for gallery in related_content["galleries"]:
+                for gallery in related_content.get("galleries", []):
                     for element in gallery.get("content_elements", []):
                         if element.get("type") == "image" and "url" in element:
                             entry.description += "<figure>"
@@ -281,12 +316,9 @@ class ReutersRouter(BaseRouter):
         content = result.get('content_elements')
         if not isinstance(content, list):
             logging.warning(
-                "Reuters article content payload missing content_elements list for %s link=%s request_link=%s. url=%s query=%s",
+                "Reuters article content payload missing content_elements list for %s link=%s",
                 article_metadata.guid,
                 article_metadata.link,
-                request_link,
-                response.url,
-                json_query,
             )
             self.__fetch_article_via_html(article_metadata, entry)
             return
@@ -302,7 +334,7 @@ class ReutersRouter(BaseRouter):
         body_candidates = [
             soup.find('article'),
             soup.find('section', {'data-testid': 'article-body'}),
-            soup.find('div', class_=re.compile('ArticleBody|ArticleContent|article__body'), recursive=True),
+            soup.find('div', class_=re.compile('ArticleBody|ArticleContent|article__body', re.IGNORECASE), recursive=True),
             soup.find('div', {'id': 'articleText'}),
             soup.find('div', role='main'),
         ]
