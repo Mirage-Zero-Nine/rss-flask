@@ -1,18 +1,15 @@
 import json
 import logging
 import os
+from collections import OrderedDict
 
 import redis
 from datetime import datetime
 
+from utils.config import load_config
 from utils.router_constants import (
-    metadata_list_ttl_seconds,
-    feed_item_ttl_seconds,
     last_build_time_ttl_seconds,
 )
-
-from utils.config import load_config
-
 config_data = load_config()
 
 DEFAULT_REDIS_URL = os.environ.get("RSS_REDIS_URL") or config_data.get("rss_redis_url") or "redis://localhost:6379/0"
@@ -58,16 +55,44 @@ def read_metadata_list(cache_key):
         return None
 
 
-def write_metadata_list(cache_key, metadata_list, ttl_seconds=None):
-    if ttl_seconds is None:
-        ttl_seconds = metadata_list_ttl_seconds
+def _metadata_identity(metadata_dict):
+    return (
+        metadata_dict.get("cache_key")
+        or metadata_dict.get("guid")
+        or metadata_dict.get("link")
+        or metadata_dict.get("title")
+    )
 
+
+def _merge_metadata_dicts(existing_metadata, incoming_metadata):
+    merged = OrderedDict()
+
+    for metadata_dict in incoming_metadata:
+        identity = _metadata_identity(metadata_dict)
+        if identity is None:
+            identity = json.dumps(metadata_dict, sort_keys=True, ensure_ascii=False)
+        merged[identity] = metadata_dict
+
+    for metadata_dict in existing_metadata:
+        identity = _metadata_identity(metadata_dict)
+        if identity is None:
+            identity = json.dumps(metadata_dict, sort_keys=True, ensure_ascii=False)
+        if identity not in merged:
+            merged[identity] = metadata_dict
+
+    return list(merged.values())
+
+
+def write_metadata_list(cache_key, metadata_list, ttl_seconds=None):
     if not _has_client():
         return
 
     try:
-        payload = json.dumps([_metadata_to_dict(metadata) for metadata in metadata_list])
-        _redis_client.set(metadata_list_key(cache_key), payload, ex=ttl_seconds)
+        incoming_metadata = [_metadata_to_dict(metadata) for metadata in metadata_list]
+        existing_metadata = read_metadata_list(cache_key) or []
+        merged_metadata = _merge_metadata_dicts(existing_metadata, incoming_metadata)
+        payload = json.dumps(merged_metadata)
+        _redis_client.set(metadata_list_key(cache_key), payload)
     except (redis.RedisError, TypeError) as exc:
         _log_error("write metadata list", exc)
 
@@ -110,15 +135,12 @@ def write_last_build_time(cache_key, last_build_time, ttl_seconds=None):
 
 
 def write_feed_item_to_cache(key, payload, ttl_seconds=None):
-    if ttl_seconds is None:
-        ttl_seconds = feed_item_ttl_seconds
-
     if not _has_client():
         logging.error("Redis client unavailable; feed item write skipped for key=%s", key)
         return
 
     try:
-        _redis_client.set(key, json.dumps(payload), ex=ttl_seconds)
+        _redis_client.set(key, json.dumps(payload))
     except (redis.RedisError, TypeError) as exc:
         _log_error("write feed item", exc)
 

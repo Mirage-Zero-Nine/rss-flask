@@ -63,7 +63,11 @@ class CnbetaRouter(BaseRouter):
 
         time_object = self.__extract_time(soup)
         logging.debug("Extracted time: %s", time_object)
-        entry.created_time = convert_time_with_pattern(time_object, '%Y-%m-%d %H:%M:%S', 8)
+        if time_object:
+            entry.created_time = convert_time_with_pattern(time_object, '%Y-%m-%d %H:%M:%S', 8)
+        else:
+            logging.warning("Router %s missing publish time for %s; leaving created_time unset",
+                            self.router_path, article_metadata.link)
 
         summary = self.__extract_summary(soup)
         content = self.__extract_content(soup)
@@ -73,7 +77,8 @@ class CnbetaRouter(BaseRouter):
             logging.warning("Router %s extracted empty description for %s (summary=%d, content=%d)",
                             self.router_path, article_metadata.link, len(summary), len(content))
 
-        entry.author = cnbeta_news_router_author  # they don'don't have a specific author
+        author = self.__extract_author(soup)
+        entry.author = author if author else cnbeta_news_router_author
 
         entry.persist_to_cache(self.router_path)
         logging.info("Successfully processed content for: %s", article_metadata.link)
@@ -95,3 +100,18 @@ class CnbetaRouter(BaseRouter):
     def __extract_content(soup):
         article_cont_div = soup.find('div', class_='articleCont')
         return article_cont_div.decode_contents() if article_cont_div else ""
+
+    @staticmethod
+    def __extract_author(soup):
+        byline = soup.find('p', class_='article-byline')
+        if not byline:
+            return None
+        spans = byline.find_all('span')
+        for span in spans:
+            inner = span.find('span')
+            if inner and inner.get_text(strip=True):
+                return inner.get_text(strip=True)
+            text = span.get_text(strip=True)
+            if text and not text.isdigit():
+                return text
+        return None

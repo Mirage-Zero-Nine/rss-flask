@@ -1,10 +1,9 @@
-from datetime import datetime
 import datetime as dt
 import pytz
 
 
 def convert_time_with_pattern(created_time_string, pattern, shift_hours=0):
-    converted_time = datetime.strptime(created_time_string, pattern)
+    converted_time = dt.datetime.strptime(created_time_string, pattern)
     if shift_hours >= 0:
         # convert it to UTC, for instance, UTC +1 -> shift_hour=1
         converted_time = converted_time - dt.timedelta(hours=shift_hours)
@@ -23,7 +22,7 @@ def convert_time_with_pattern(created_time_string, pattern, shift_hours=0):
 
 
 def convert_wsdot_news_time(time_string, format_string):
-    time_object = datetime.strptime(str(time_string), format_string)
+    time_object = dt.datetime.strptime(str(time_string), format_string)
     if '%z' in format_string:
         return time_object.astimezone(pytz.timezone('US/Pacific'))
 
@@ -32,7 +31,7 @@ def convert_wsdot_news_time(time_string, format_string):
 
 
 def convert_millisecond_to_datetime(millisecond_string, shift_hours=0):
-    converted_time = datetime.fromtimestamp(int(millisecond_string) / 1000)
+    converted_time = dt.datetime.fromtimestamp(int(millisecond_string) / 1000)
     converted_time = converted_time - dt.timedelta(hours=shift_hours)
     converted_time_with_timezone = dt.datetime(converted_time.year,
                                                converted_time.month,
@@ -47,6 +46,6 @@ def convert_millisecond_to_datetime(millisecond_string, shift_hours=0):
 
 def convert_millisecond_to_datetime_with_format(millisecond_string, shift_hours=0):
     # converted_time_with_timezone = convert_millisecond_to_datetime(millisecond_string, shift_hours)
-    converted_time = datetime.fromtimestamp(round(int(millisecond_string) / 1000))
+    converted_time = dt.datetime.fromtimestamp(round(int(millisecond_string) / 1000))
     converted_time = converted_time - dt.timedelta(hours=shift_hours)
     return converted_time

@@ -89,7 +89,7 @@ class DayOneBlogRouter(BaseRouter):
         for div in entry_content.find_all('div', class_='sharedaddy sd-sharing-enabled'):
             div.extract()
 
-        if entry.description is None:
-            logging.warning("Router %s extracted empty description for %s", self.router_path, article_metadata.link)
         entry.description = entry_content
+        if not entry.description:
+            logging.warning("Router %s extracted empty description for %s", self.router_path, article_metadata.link)
         entry.persist_to_cache(self.router_path)

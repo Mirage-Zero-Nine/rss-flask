@@ -24,7 +24,7 @@ class SonyAlphaRumorsRouter(RouterForRssFeed):
             decompose_div(soup, 'addtoany_share_save_container addtoany_content addtoany_content_top')
 
             entry.description = soup
-            if entry.description is None:
+            if not entry.description:
                 logging.warning("Router %s extracted empty description for %s", self.router_path, article_metadata.link)
             entry.persist_to_cache(self.router_path)
         else:

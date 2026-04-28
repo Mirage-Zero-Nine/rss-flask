@@ -1,7 +1,3 @@
-import logging
-
-import yaml
-
 from router.apnews.apnews_router import ApnewsRouter
 from router.apnews.apnews_router_constants import (
     apnews_feed_title,
@@ -48,18 +44,6 @@ from utils.router_constants import language_english, language_chinese, meta_engi
     cnbeta_router_path, zaobao_router_path_prefix, day_one_blog_router_path, earthquake_router_path, \
     wsdot_news_router_path, embassy_router_path, \
     jandan_router_path, reuters_news_router_path, sar_router_path, apnews_router_path
-
-config = None
-
-try:
-    with open('config.yml') as f:
-        config = yaml.safe_load(f)
-except FileNotFoundError:
-    logging.warning("Warning: Config file not found.")
-except yaml.YAMLError as e:
-    logging.warning(f"Warning: Failed to parse YAML file. Details: {e}. ")
-except Exception as e:
-    logging.warning(f"Warning: An unexpected error occurred: {e}.")
 
 meta_tech_blog = MetaBlog(
     router_path=meta_engineering_blog_router,

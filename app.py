@@ -2,10 +2,11 @@ import logging
 import os
 import sys
 from datetime import datetime
+from pathlib import Path
 
 LOG_FORMAT = '%(asctime)s %(levelname)s %(name)s: %(message)s'
 LOG_TIMESTAMP = datetime.now().strftime('%Y%m%d%H%M%S')
-LOG_DIR = '/logs'
+LOG_DIR = Path(os.environ.get('RSS_LOG_DIR', Path(__file__).resolve().parent / 'logs'))
 LOG_FILENAME_PREFIX = 'application'
 
 os.makedirs(LOG_DIR, exist_ok=True)

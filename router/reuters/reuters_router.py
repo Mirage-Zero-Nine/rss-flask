@@ -1,8 +1,8 @@
 import json
 import logging
 import re
+from urllib.parse import quote
 from datetime import datetime
-from urllib.parse import quote, urljoin
 
 import requests
 from router.base_router import BaseRouter
@@ -26,31 +26,10 @@ class ReutersRouter(BaseRouter):
     """Reuters router."""
 
     @staticmethod
-    def __create_reuters_session():
-        session = requests.Session()
-        session.headers.update(headers)
-        return session
-
-    @staticmethod
-    def __warm_session(session, warmup_link, context):
+    def _fetch_with_requests(url: str, timeout: int = 30) -> dict:
+        """Fetch URL via plain requests and return structured result."""
         try:
-            response = session.get(warmup_link, timeout=30)
-            logging.info(
-                "Reuters warmup request for %s returned status=%s url=%s cookies=%s",
-                context,
-                response.status_code,
-                response.url,
-                list(session.cookies.keys()),
-            )
-        except requests.RequestException as exc:
-            logging.warning("Reuters warmup request failed for %s: %s", context, exc)
-
-    @staticmethod
-    def _fetch_with_requests(url: str, session: requests.Session | None = None, timeout: int = 30) -> dict:
-        """Fetch URL using requests and keep enough response detail for logging."""
-        client = session or ReutersRouter.__create_reuters_session()
-        try:
-            response = client.get(url, timeout=timeout)
+            response = requests.get(url, headers=headers, timeout=timeout)
             status = response.status_code
             try:
                 json_data = response.json()
@@ -62,7 +41,6 @@ class ReutersRouter(BaseRouter):
                 'error': None,
                 'url': response.url,
                 'text': response.text,
-                'cookies': list(client.cookies.keys()),
             }
         except requests.RequestException as e:
             logging.warning("Request error for %s: %s", url, e)
@@ -72,7 +50,6 @@ class ReutersRouter(BaseRouter):
                 'error': str(e),
                 'url': url,
                 'text': '',
-                'cookies': list(client.cookies.keys()),
             }
 
     @staticmethod
@@ -159,10 +136,6 @@ class ReutersRouter(BaseRouter):
     def __build_api_request_link(root_url, json_query):
         return root_url + quote(json_query, safe="")
 
-    def __build_section_link(self, category, topic=None):
-        path = f"/{category}/{topic + '/' if topic else ''}"
-        return urljoin(self.original_link, path)
-
     def _get_articles_list(self, parameter=None, link_filter=None, title_filter=None):
         metadata_list = []
         category, topic, limit = parameter['category'], parameter['topic'], parameter['limit']
@@ -170,7 +143,6 @@ class ReutersRouter(BaseRouter):
         logging.info("Reuters list request category=%s topic=%s limit=%s", category, topic, limit)
         section_id = f"/{category}/{topic + '/' if topic else ''}"
         root_url = self.articles_link + reuters_articles_list_api_link
-        section_link = self.__build_section_link(category=category, topic=topic)
 
         json_query = json.dumps({
             'offset': 0,
@@ -185,9 +157,7 @@ class ReutersRouter(BaseRouter):
             request_link,
             resource="reuters_articles_list",
         )
-        session = self.__create_reuters_session()
-        self.__warm_session(session=session, warmup_link=section_link, context=f"section {section_link}")
-        response_data = self._fetch_with_requests(request_link, session=session)
+        response_data = self._fetch_with_requests(request_link)
 
         if response_data.get('error'):
             logging.error(
@@ -201,13 +171,12 @@ class ReutersRouter(BaseRouter):
 
         if response_data.get('status') != 200:
             logging.error(
-                "Reuters API returned status=%s for articles list category=%s topic=%s request_link=%s response_url=%s cookies=%s",
+                "Reuters API returned status=%s for articles list category=%s topic=%s request_link=%s response_url=%s",
                 response_data.get('status'),
                 category,
                 topic,
                 request_link,
                 response_data.get('url'),
-                response_data.get('cookies'),
             )
             return []
 
@@ -231,33 +200,34 @@ class ReutersRouter(BaseRouter):
             resource_link=request_link,
         )
         if result is None:
-            return []
-        articles = result.get("articles", [])
-        if not articles:
-            logging.warning(
-                "Reuters returned 0 articles for category=%s topic=%s request_link=%s response_url=%s",
+            logging.error(
+                "Reuters articles list extract failed category=%s topic=%s request_link=%s",
                 category,
                 topic,
                 request_link,
-                response_data.get('url'),
             )
             return []
 
+        articles = result.get("articles", [])
         for article in articles:
-            article_id = article.get('id', '')
-            canonical_url = article.get('canonical_url', '')
-            if not canonical_url:
-                logging.warning("Skipping Reuters article with missing canonical_url id=%s title=%s", article_id, article.get('title'))
+            if not article.get("title"):
                 continue
-            full_link = urljoin(self.original_link, canonical_url)
+            if not article.get("canonical_url"):
+                continue
+            if link_filter and link_filter not in article.get("canonical_url", ""):
+                continue
+            if title_filter and title_filter in article.get("title", ""):
+                continue
+            canonical_url = article.get("canonical_url")
+            full_link = "https://www.reuters.com" + canonical_url
             cache_prefix = convert_router_path_to_cache_prefix(self.router_path)
-            cache_key = generate_cache_key(prefix=cache_prefix, name=article_id)
+            cache_key = generate_cache_key(prefix=cache_prefix, name=article.get("id", ""))
             created_time = self.__resolve_created_time(article, cache_key)
 
             metadata_list.append(Metadata(
                 title=article.get('title', ''),
                 link=full_link,
-                guid=article_id,
+                guid=article.get("id", ""),
                 created_time=created_time,
                 cache_key=cache_key,
             ))
@@ -280,9 +250,7 @@ class ReutersRouter(BaseRouter):
             resource="reuters_article_content",
             article_link=article_metadata.link,
         )
-        session = self.__create_reuters_session()
-        self.__warm_session(session=session, warmup_link=article_metadata.link, context=f"article {article_metadata.link}")
-        response_data = self._fetch_with_requests(request_link, session=session)
+        response_data = self._fetch_with_requests(request_link)
 
         if response_data.get('error'):
             logging.error(
@@ -297,13 +265,12 @@ class ReutersRouter(BaseRouter):
 
         if response_data.get('status') != 200:
             logging.error(
-                "Reuters API returned status=%s for article_id=%s link=%s request_link=%s response_url=%s cookies=%s",
+                "Reuters API returned status=%s for article_id=%s link=%s request_link=%s response_url=%s",
                 response_data.get('status'),
                 article_id,
                 article_metadata.link,
                 request_link,
                 response_data.get('url'),
-                response_data.get('cookies'),
             )
             self.__fetch_article_via_html(article_metadata, entry)
             return

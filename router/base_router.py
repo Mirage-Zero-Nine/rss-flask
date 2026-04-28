@@ -102,7 +102,7 @@ class BaseRouter:
         feed = self._generate_response(last_build_time=feed_last_build_time,
                                        feed_entries_list=feed_entries_list,
                                        parameter=parameter)
-        logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Last build date: {feed.lastBuildDate}")
+        logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Cache last-build: {feed.lastBuildDate}")
 
         response = make_response(feed.rss())
         response.headers.set('Content-Type', 'application/rss+xml')
@@ -152,6 +152,7 @@ class BaseRouter:
 
         last_build_time = dt.datetime.now(pytz.timezone('GMT'))
         write_last_build_time(cache_key, last_build_time)
+        logging.info('Router %s scheduler refresh completed at: %s', self.router_path, last_build_time.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3])
         return True
 
     def warm_cache(self, parameter=None, link_filter=None, title_filter=None):

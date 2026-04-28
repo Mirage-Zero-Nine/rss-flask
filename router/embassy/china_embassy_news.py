@@ -67,6 +67,6 @@ class ChinaEmbassyNewsRouter(BaseRouter):
         if desc_div is None:
             logging.warning("Router %s could not find News_Body_Txt_A div for %s", self.router_path, article_metadata.link)
         entry.description = desc_div
-        if entry.description is None:
+        if not entry.description:
             logging.warning("Router %s description is None for %s", self.router_path, article_metadata.link)
         entry.persist_to_cache(self.router_path)

@@ -100,7 +100,7 @@ class JandanRouter(BaseRouter):
             if _parsed is None:
                 raise ValueError(f"Unrecognized time format: {create_time_string!r}")
             entry.created_time = _parsed
-        except (AttributeError, Exception) as e:
+        except Exception as e:
             logging.warning("JandanRouter time parsing failed for %s: %s, using now", article_metadata.link, e)
             entry.created_time = datetime.now()
 
@@ -124,5 +124,7 @@ class JandanRouter(BaseRouter):
 
         if content is None:
             logging.warning("Router %s extracted empty content for %s", self.router_path, article_metadata.link)
-        entry.description = content
+            entry.description = ""
+        else:
+            entry.description = content
         entry.persist_to_cache(self.router_path)

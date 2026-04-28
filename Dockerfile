@@ -17,6 +17,7 @@ EXPOSE 5000
 ENV FLASK_APP=app.py
 ENV FLASK_RUN_HOST=0.0.0.0
 ENV RSS_REDIS_URL=redis://redis-cache:6379/0
+ENV RSS_LOG_DIR=/logs
 
 RUN mkdir -p /logs
 
