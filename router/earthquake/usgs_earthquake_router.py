@@ -58,7 +58,7 @@ class UsgsEarthquakeRouter(BaseRouter):
             "link": link,
             "author": usgs_earthquake_name,
             "created_time": convert_millisecond_to_datetime(time_val) if time_val else None,
-            "guid": properties.get("ids", {}).get("ce", link),
+            "guid": (properties.get("ids") or {}).get("ce", link) if isinstance(properties.get("ids"), dict) else link,
             "description": loc + occurred_time + depth + url,
         }
 
