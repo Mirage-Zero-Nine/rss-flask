@@ -110,6 +110,16 @@ def build_scheduler_jobs():
             "refresh": lambda: zaobao_realtime.refresh_cache(parameter={"region": "world"}, title_filter=title_filter),
         },
         {
+            "name": reuters_news_router_path + "/world",
+            "warmup": lambda: reuters_news.warm_cache(parameter={"category": "world", "topic": None, "limit": 20}),
+            "refresh": lambda: reuters_news.refresh_cache(parameter={"category": "world", "topic": None, "limit": 20}),
+        },
+        {
+            "name": reuters_news_router_path + "/business",
+            "warmup": lambda: reuters_news.warm_cache(parameter={"category": "business", "topic": None, "limit": 20}),
+            "refresh": lambda: reuters_news.refresh_cache(parameter={"category": "business", "topic": None, "limit": 20}),
+        },
+        {
             "name": apnews_router_path,
             "warmup": lambda: apnews_top_news.warm_cache(),
             "refresh": lambda: apnews_top_news.refresh_cache(),

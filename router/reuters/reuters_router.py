@@ -7,8 +7,11 @@ from urllib.parse import quote, urljoin
 import requests
 from router.base_router import BaseRouter
 from router.reuters.reuters_constants import (
+    reuters_articles_list_api_link,
+    reuters_article_content_api_link,
     reuters_site_link,
     reuters_description,
+    headers,
 )
 from utils.cache_store import read_feed_item_from_cache
 from utils.feed_item_object import Metadata, generate_cache_key, convert_router_path_to_cache_prefix, FeedItem
@@ -23,24 +26,54 @@ class ReutersRouter(BaseRouter):
     """Reuters router."""
 
     @staticmethod
-    def _fetch_with_requests(url: str, timeout: int = 30) -> dict:
-        """Fetch URL using requests (standard HTTP)."""
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.4 Safari/605.1.15',
-            'Accept': 'application/json, text/plain, */*',
-            'Accept-Language': 'en-US,en;q=0.9',
-        }
+    def __create_reuters_session():
+        session = requests.Session()
+        session.headers.update(headers)
+        return session
+
+    @staticmethod
+    def __warm_session(session, warmup_link, context):
         try:
-            response = requests.get(url, headers=headers, timeout=timeout)
+            response = session.get(warmup_link, timeout=30)
+            logging.info(
+                "Reuters warmup request for %s returned status=%s url=%s cookies=%s",
+                context,
+                response.status_code,
+                response.url,
+                list(session.cookies.keys()),
+            )
+        except requests.RequestException as exc:
+            logging.warning("Reuters warmup request failed for %s: %s", context, exc)
+
+    @staticmethod
+    def _fetch_with_requests(url: str, session: requests.Session | None = None, timeout: int = 30) -> dict:
+        """Fetch URL using requests and keep enough response detail for logging."""
+        client = session or ReutersRouter.__create_reuters_session()
+        try:
+            response = client.get(url, timeout=timeout)
             status = response.status_code
             try:
                 json_data = response.json()
             except ValueError:
                 json_data = None
-            return {'status': status, 'json': json_data, 'error': None}
+            return {
+                'status': status,
+                'json': json_data,
+                'error': None,
+                'url': response.url,
+                'text': response.text,
+                'cookies': list(client.cookies.keys()),
+            }
         except requests.RequestException as e:
             logging.warning("Request error for %s: %s", url, e)
-            return {'status': None, 'json': None, 'error': str(e)}
+            return {
+                'status': None,
+                'json': None,
+                'error': str(e),
+                'url': url,
+                'text': '',
+                'cookies': list(client.cookies.keys()),
+            }
 
     @staticmethod
     def __resolve_created_time(article, cache_key):
@@ -90,7 +123,7 @@ class ReutersRouter(BaseRouter):
                 context,
                 resource_link,
                 response.get('status'),
-                resource_link,
+                response.get('url'),
                 json_query,
                 type(data).__name__,
             )
@@ -111,12 +144,14 @@ class ReutersRouter(BaseRouter):
             return result
 
         logging.error(
-            "Reuters %s payload missing result object. resource_link=%s status=%s query=%s top_level_keys=%s",
+            "Reuters %s payload missing result object. resource_link=%s status=%s url=%s query=%s top_level_keys=%s payload_snippet=%s",
             context,
             resource_link,
             response.get('status'),
+            response.get('url'),
             json_query,
             sorted(data.keys()),
+            (response.get('text') or '').replace('\n', ' ')[:200],
         )
         return None
 
@@ -132,8 +167,10 @@ class ReutersRouter(BaseRouter):
         metadata_list = []
         category, topic, limit = parameter['category'], parameter['topic'], parameter['limit']
 
-        logging.info(f"category: {category}, topic: {topic}, limit: {limit}")
+        logging.info("Reuters list request category=%s topic=%s limit=%s", category, topic, limit)
         section_id = f"/{category}/{topic + '/' if topic else ''}"
+        root_url = self.articles_link + reuters_articles_list_api_link
+        section_link = self.__build_section_link(category=category, topic=topic)
 
         json_query = json.dumps({
             'offset': 0,
@@ -141,27 +178,49 @@ class ReutersRouter(BaseRouter):
             'section_id': section_id,
             'website': 'reuters',
         })
-        request_link = self.__build_api_request_link(self.articles_link, json_query)
+        request_link = self.__build_api_request_link(root_url, json_query)
 
         log_external_fetch(
             "requests",
             request_link,
             resource="reuters_articles_list",
         )
-
-        response_data = self._fetch_with_requests(request_link)
+        session = self.__create_reuters_session()
+        self.__warm_session(session=session, warmup_link=section_link, context=f"section {section_link}")
+        response_data = self._fetch_with_requests(request_link, session=session)
 
         if response_data.get('error'):
-            logging.error("Request error fetching articles list: %s", response_data['error'])
+            logging.error(
+                "Request error fetching Reuters articles list category=%s topic=%s request_link=%s: %s",
+                category,
+                topic,
+                request_link,
+                response_data['error'],
+            )
             return []
 
         if response_data.get('status') != 200:
-            logging.error("Reuters API returned status=%s for articles list", response_data.get('status'))
+            logging.error(
+                "Reuters API returned status=%s for articles list category=%s topic=%s request_link=%s response_url=%s cookies=%s",
+                response_data.get('status'),
+                category,
+                topic,
+                request_link,
+                response_data.get('url'),
+                response_data.get('cookies'),
+            )
             return []
 
         data = response_data.get('json')
         if not data:
-            logging.error("Reuters articles list response is empty")
+            logging.error(
+                "Reuters articles list response is empty category=%s topic=%s request_link=%s response_url=%s snippet=%s",
+                category,
+                topic,
+                request_link,
+                response_data.get('url'),
+                (response_data.get('text') or '').replace('\n', ' ')[:200],
+            )
             return []
 
         result = self.__extract_reuters_result(
@@ -175,33 +234,45 @@ class ReutersRouter(BaseRouter):
             return []
         articles = result.get("articles", [])
         if not articles:
-            logging.warning("Reuters returned 0 articles for category=%s topic=%s", category, topic)
+            logging.warning(
+                "Reuters returned 0 articles for category=%s topic=%s request_link=%s response_url=%s",
+                category,
+                topic,
+                request_link,
+                response_data.get('url'),
+            )
             return []
 
         for article in articles:
             article_id = article.get('id', '')
             canonical_url = article.get('canonical_url', '')
+            if not canonical_url:
+                logging.warning("Skipping Reuters article with missing canonical_url id=%s title=%s", article_id, article.get('title'))
+                continue
+            full_link = urljoin(self.original_link, canonical_url)
             cache_prefix = convert_router_path_to_cache_prefix(self.router_path)
             cache_key = generate_cache_key(prefix=cache_prefix, name=article_id)
             created_time = self.__resolve_created_time(article, cache_key)
 
             metadata_list.append(Metadata(
                 title=article.get('title', ''),
-                link=canonical_url,
+                link=full_link,
                 guid=article_id,
                 created_time=created_time,
                 cache_key=cache_key,
             ))
 
+        logging.info("Reuters built %d metadata entries for category=%s topic=%s", len(metadata_list), category, topic)
         return metadata_list
 
     def _get_article_content(self, article_metadata: Metadata, entry: FeedItem):
         article_id = article_metadata.guid
+        root_url = self.articles_link + reuters_article_content_api_link
         json_query = json.dumps({
-            'article_ids': [article_id],
+            'id': article_id,
             'website': 'reuters',
         })
-        request_link = self.__build_api_request_link(self.articles_link, json_query)
+        request_link = self.__build_api_request_link(root_url, json_query)
 
         log_external_fetch(
             "requests",
@@ -209,22 +280,44 @@ class ReutersRouter(BaseRouter):
             resource="reuters_article_content",
             article_link=article_metadata.link,
         )
-
-        response_data = self._fetch_with_requests(request_link)
+        session = self.__create_reuters_session()
+        self.__warm_session(session=session, warmup_link=article_metadata.link, context=f"article {article_metadata.link}")
+        response_data = self._fetch_with_requests(request_link, session=session)
 
         if response_data.get('error'):
-            logging.error("Request error fetching article content: %s", response_data['error'])
+            logging.error(
+                "Request error fetching Reuters article content article_id=%s link=%s request_link=%s: %s",
+                article_id,
+                article_metadata.link,
+                request_link,
+                response_data['error'],
+            )
             self.__fetch_article_via_html(article_metadata, entry)
             return
 
         if response_data.get('status') != 200:
-            logging.error("Reuters API returned status=%s for article %s", response_data.get('status'), article_id)
+            logging.error(
+                "Reuters API returned status=%s for article_id=%s link=%s request_link=%s response_url=%s cookies=%s",
+                response_data.get('status'),
+                article_id,
+                article_metadata.link,
+                request_link,
+                response_data.get('url'),
+                response_data.get('cookies'),
+            )
             self.__fetch_article_via_html(article_metadata, entry)
             return
 
         data = response_data.get('json')
         if not data:
-            logging.error("Reuters article content response is empty for %s", article_id)
+            logging.error(
+                "Reuters article content response is empty for article_id=%s link=%s request_link=%s response_url=%s snippet=%s",
+                article_id,
+                article_metadata.link,
+                request_link,
+                response_data.get('url'),
+                (response_data.get('text') or '').replace('\n', ' ')[:200],
+            )
             self.__fetch_article_via_html(article_metadata, entry)
             return
 
@@ -266,9 +359,11 @@ class ReutersRouter(BaseRouter):
         content = result.get('content_elements')
         if not isinstance(content, list):
             logging.warning(
-                "Reuters article content payload missing content_elements list for %s link=%s",
+                "Reuters article content payload missing content_elements list for %s link=%s request_link=%s response_url=%s",
                 article_metadata.guid,
                 article_metadata.link,
+                request_link,
+                response_data.get('url'),
             )
             self.__fetch_article_via_html(article_metadata, entry)
             return
@@ -306,6 +401,15 @@ class ReutersRouter(BaseRouter):
             entry.description = soup.body or soup
         else:
             entry.description = body
+        body_text = soup.get_text(" ", strip=True)[:200].lower()
+        if "enable javascript" in body_text or "please enable js" in body_text or "captcha" in body_text:
+            logging.warning(
+                "Reuters HTML fallback likely returned bot-challenge content for %s snippet=%s",
+                article_metadata.link,
+                body_text,
+            )
+        else:
+            logging.info("Reuters HTML fallback used successfully for %s", article_metadata.link)
         entry.persist_to_cache(self.router_path)
 
     def _generate_response(self, last_build_time, feed_entries_list, parameter=None):
