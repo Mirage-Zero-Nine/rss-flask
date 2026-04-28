@@ -130,6 +130,16 @@ class BaseRouter:
             article_metadata_list = []
         finally:
             reset_current_router(token)
+
+        if not article_metadata_list and cached_metadata:
+            logging.warning(
+                "Router %s refresh returned 0 articles for parameter=%s; preserving %d cached metadata entries",
+                self.router_path,
+                parameter,
+                len(cached_metadata),
+            )
+            return False
+
         article_list_key = self._build_article_list_cache_key(cache_key)
         self.__write_article_list_to_cache(article_list_key, article_metadata_list)
 
