@@ -1,6 +1,7 @@
 import requests
 import urllib.request
 
+import urllib3
 from bs4 import BeautifulSoup
 
 from utils.log_context import log_external_fetch
@@ -18,6 +19,7 @@ def get_link_content_with_utf8_decode(link, parser=html_parser):
 
 
 def get_content_with_utf8_decode_and_disable_verification(link, parser=html_parser):
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
     log_external_fetch("requests.get", link, parser=parser, verify=False, decode="utf-8")
     return BeautifulSoup(requests.get(link, verify=False).content.decode('utf-8'), parser)
 

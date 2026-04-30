@@ -53,7 +53,7 @@ class DayOneBlogRouter(BaseRouter):
             {'class': "entry-meta"}
         )
         if metadata:
-            publish_item = metadata[0].find('li', text=True)
+            publish_item = metadata[0].find('li', string=True)
             if publish_item:
                 publish_date = publish_item.get_text(strip=True)
                 entry.created_time = convert_time_with_pattern(publish_date, day_one_blog_time_convert_pattern)

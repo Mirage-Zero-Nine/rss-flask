@@ -1,6 +1,6 @@
 import base64
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from utils.cache_store import write_feed_item_to_cache
 
@@ -58,7 +58,7 @@ class FeedItem:
         :param router_path: name of the router path
         """
         cache_prefix = convert_router_path_to_cache_prefix(router_path)
-        identifier = self.guid or self.link or self.title or datetime.utcnow().isoformat()
+        identifier = self.guid or self.link or self.title or datetime.now(timezone.utc).isoformat()
         self.cache_key = generate_cache_key(cache_prefix, identifier)
         payload = {
             "title": self.title,
@@ -102,7 +102,7 @@ def generate_cache_key(prefix, name):
 
 def convert_router_path_to_cache_prefix(router_path):
     if router_path.startswith('/') is False:
-        logging.error(f"{datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Invalid path, it's not started with a '/': {router_path}")
+        logging.error(f"{datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Invalid path, it's not started with a '/': {router_path}")
         raise Exception("Invalid path, it's not started with a '/'")
 
     sanitized = router_path[1:].replace('/', '-')

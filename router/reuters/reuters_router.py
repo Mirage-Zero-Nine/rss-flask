@@ -371,12 +371,14 @@ class ReutersRouter(BaseRouter):
         body_text = soup.get_text(" ", strip=True)[:200].lower()
         if "enable javascript" in body_text or "please enable js" in body_text or "captcha" in body_text:
             logging.warning(
-                "Reuters HTML fallback likely returned bot-challenge content for %s snippet=%s",
+                "Reuters HTML fallback likely returned bot-challenge content for %s snippet=%s; skipping cache write",
                 article_metadata.link,
                 body_text,
             )
-        else:
-            logging.info("Reuters HTML fallback used successfully for %s", article_metadata.link)
+            entry.description = None
+            return
+
+        logging.info("Reuters HTML fallback used successfully for %s", article_metadata.link)
         entry.persist_to_cache(self.router_path)
 
     def _generate_response(self, last_build_time, feed_entries_list, parameter=None):
