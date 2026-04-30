@@ -98,6 +98,7 @@ class BaseRouter:
         feed_entries_list = self._build_feed_entries_from_metadata(article_metadata_list)
         if not feed_entries_list:
             logging.warning("Router %s built 0 feed entries for parameter=%s; serving empty feed", self.router_path, parameter)
+        logging.info('Router %s metadata_count=%d feed_entries_count=%d parameter=%s', self.router_path, len(article_metadata_list) if article_metadata_list else 0, len(feed_entries_list), parameter)
         feed_last_build_time = last_build_time or dt.datetime.now(pytz.timezone('GMT'))
         feed = self._generate_response(last_build_time=feed_last_build_time,
                                        feed_entries_list=feed_entries_list,
@@ -143,6 +144,7 @@ class BaseRouter:
         article_list_key = self._build_article_list_cache_key(cache_key)
         self.__write_article_list_to_cache(article_list_key, article_metadata_list)
 
+        logging.info('Router %s wrote %d articles to cache (preserved %d from old cache) parameter=%s', self.router_path, len(article_metadata_list), len(cached_metadata) if cached_metadata else 0, parameter)
         for article_metadata in article_metadata_list:
             try:
                 self._get_article(article_metadata)
