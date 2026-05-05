@@ -1,5 +1,16 @@
-import yaml
-import logging
+from router.apnews.apnews_router import ApnewsRouter
+from router.apnews.apnews_router_constants import (
+    apnews_feed_title,
+    apnews_original_link,
+    apnews_articles_link,
+    apnews_description,
+    apnews_period,
+    apnews_business_feed_title,
+    apnews_business_original_link,
+    apnews_business_articles_link,
+    apnews_business_description,
+    apnews_business_period,
+)
 from router.cnbeta.cnbeta_router import CnbetaRouter
 from router.cnbeta.cnbeta_router_constants import cnbeta_news_router_title, cnbeta_news_site_link, \
     cnbeta_news_router_description, cnbeta_period, cnbeta_articles_link
@@ -17,50 +28,22 @@ from router.jandan.jandan_router import JandanRouter
 from router.meta_blog.meta_tech_blog_router import MetaBlog
 from router.meta_blog.meta_tech_blog_router_constants import meta_blog_title, meta_blog_rss_link, meta_blog_link, \
     meta_blog_description, meta_blog_period
-from router.nbc_news.nbc_news_router import NbcNewsRouter
-from router.nbc_news.nbc_news_router_constants import nbc_news_title, nbc_news_original_link, nbc_news_rss_link, \
-    nbc_news_description, nbc_news_period
 from router.reuters.reuters_constants import reuters_fetch_api_base_link, reuters_site_link, reuters_description, \
     reuters_period, reuters_news_name
 from router.reuters.reuters_router import ReutersRouter
 from router.sony_alpha_rumor.sony_alpha_rumor_router import SonyAlphaRumorsRouter
 from router.sony_alpha_rumor.sony_alpha_rumor_router_constants import sar_name, sar_link, sar_rss_link, \
     sar_query_period, sar_description
-from router.the_verge.the_verge_constants import the_verge_title, the_verge_prefix, the_verge_archive, \
-    the_verge_description
-from router.the_verge.the_verge_router import TheVergeRouter
-from router.twitter_engineering_blog.twitter_engineering_blog_router import TwitterEngineeringBlogRouter
-from router.twitter_engineering_blog.twitter_engineering_blog_router_constants import twitter_engineering_blog_title, \
-    twitter_engineering_blog_original_link, twitter_engineering_blog_rss_link, \
-    twitter_engineering_blog_description, twitter_engineering_blog_period
 from router.wsdot.wsdot_news_router import WsdotNewsRouter
 from router.wsdot.wsdot_news_router_constant import wsdot_news_title, wsdot_news_link, wsdot_news_description, \
     wsdot_news_period
 from router.zaobao.zaobao_realtime_router import ZaobaoRealtimeRouter
 from router.zaobao.zaobao_realtime_router_constants import zaobao_realtime_page_prefix, zaobao_query_period, \
     zaobao_region_general_title
-from router.zhihu.zhihu_daily_router import ZhihuDailyRouter
-from router.zhihu.zhihu_daily_router_constants import zhihu_daily_title, zhihu_daily_link, zhihu_daily_description, \
-    zhihu_query_period
 from utils.router_constants import language_english, language_chinese, meta_engineering_blog_router, \
-    twitter_engineering_blog_router_path, cnbeta_router_path, zaobao_router_path_prefix, \
-    day_one_blog_router_path, earthquake_router_path, the_verge_router_path, nbc_news_router_path, \
-    wsdot_news_router_path, zhihu_router_path, embassy_router_path, jandan_router_path, reuters_news_router_path, \
-    sar_router_path
-
-logging.basicConfig(filename='./log/application.log', encoding='utf-8', level=logging.INFO)
-
-config = None
-
-try:
-    with open('config.yml') as f:
-        config = yaml.safe_load(f)
-except FileNotFoundError:
-    logging.warning("Warning: Config file not found.")
-except yaml.YAMLError as e:
-    logging.warning(f"Warning: Failed to parse YAML file. Details: {e}. ")
-except Exception as e:
-    logging.warning(f"Warning: An unexpected error occurred: {e}.")
+    cnbeta_router_path, zaobao_router_path_prefix, day_one_blog_router_path, earthquake_router_path, \
+    wsdot_news_router_path, embassy_router_path, \
+    jandan_router_path, reuters_news_router_path, sar_router_path, apnews_router_path, apnews_business_router_path
 
 meta_tech_blog = MetaBlog(
     router_path=meta_engineering_blog_router,
@@ -82,16 +65,6 @@ cnbeta = CnbetaRouter(
     period=cnbeta_period
 )
 
-the_verge = TheVergeRouter(
-    router_path=the_verge_router_path,
-    feed_title=the_verge_title,
-    original_link=the_verge_prefix,
-    articles_link=the_verge_archive,
-    description=the_verge_description,
-    language=language_english,
-    period=cnbeta_period
-)
-
 usgs_earthquake_report = UsgsEarthquakeRouter(
     router_path=earthquake_router_path,
     feed_title=usgs_earthquake_feed_title,
@@ -100,16 +73,6 @@ usgs_earthquake_report = UsgsEarthquakeRouter(
     description=usgs_earthquake_description,
     language=language_english,
     period=usgs_earthquake_query_period
-)
-
-twitter_engineering_blog = TwitterEngineeringBlogRouter(
-    router_path=twitter_engineering_blog_router_path,
-    feed_title=twitter_engineering_blog_title,
-    original_link=twitter_engineering_blog_original_link,
-    articles_link=twitter_engineering_blog_rss_link,
-    description=twitter_engineering_blog_description,
-    language=language_english,
-    period=twitter_engineering_blog_period
 )
 
 zaobao_realtime = ZaobaoRealtimeRouter(
@@ -130,16 +93,6 @@ day_one_blog = DayOneBlogRouter(
     period=day_one_blog_query_period
 )
 
-nbc_news = NbcNewsRouter(
-    router_path=nbc_news_router_path,
-    feed_title=nbc_news_title,
-    original_link=nbc_news_original_link,
-    articles_link=nbc_news_rss_link,
-    description=nbc_news_description,
-    language=language_english,
-    period=nbc_news_period
-)
-
 wsdot_news = WsdotNewsRouter(
     router_path=wsdot_news_router_path,
     feed_title=wsdot_news_title,
@@ -148,16 +101,6 @@ wsdot_news = WsdotNewsRouter(
     description=wsdot_news_description,
     language=language_english,
     period=wsdot_news_period
-)
-
-zhihu_daily = ZhihuDailyRouter(
-    router_path=zhihu_router_path,
-    feed_title=zhihu_daily_title,
-    original_link=zhihu_daily_link,
-    articles_link=zhihu_daily_link,
-    description=zhihu_daily_description,
-    language=language_chinese,
-    period=zhihu_query_period
 )
 
 chinese_embassy_news = ChinaEmbassyNewsRouter(
@@ -198,4 +141,26 @@ sony_alpha_rumors = SonyAlphaRumorsRouter(
     description=sar_description,
     language=language_english,
     period=sar_query_period
+)
+
+apnews_top_news = ApnewsRouter(
+    router_path=apnews_router_path,
+    feed_title=apnews_feed_title,
+    original_link=apnews_original_link,
+    articles_link=apnews_articles_link,
+    description=apnews_description,
+    language=language_english,
+    period=apnews_period,
+    default_topic="top",
+)
+
+apnews_business = ApnewsRouter(
+    router_path=apnews_business_router_path,
+    feed_title=apnews_business_feed_title,
+    original_link=apnews_business_original_link,
+    articles_link=apnews_business_articles_link,
+    description=apnews_business_description,
+    language=language_english,
+    period=apnews_business_period,
+    default_topic="business",
 )

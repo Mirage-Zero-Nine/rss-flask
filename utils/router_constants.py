@@ -4,41 +4,23 @@ earthquake_router_path = '/earthquake'
 embassy_router_path = '/embassy'
 jandan_router_path = '/jandan'
 meta_engineering_blog_router = '/meta/blog'
-nbc_news_router_path = '/nbc/top'
 reuters_news_router_path = '/reuters'
 sar_router_path = "/sar"
-telegram_wechat_router_path = '/telegram/wechat'
-the_verge_router_path = '/theverge'
-twitter_engineering_blog_router_path = '/twitter/blog'
 wsdot_news_router_path = '/wsdot/news'
 zaobao_router_path_prefix = "/zaobao/realtime"
-zhihu_router_path = '/zhihu/daily'
+apnews_router_path = "/apnews/top"
+apnews_business_router_path = "/apnews/business"
 
-# List of routers to refresh periodically
-routers_to_call = [
-    cnbeta_router_path,
-    day_one_blog_router_path,
-    earthquake_router_path,
-    embassy_router_path,
-    jandan_router_path,
-    meta_engineering_blog_router,
-    nbc_news_router_path,
-    sar_router_path,
-    telegram_wechat_router_path,
-    the_verge_router_path,
-    twitter_engineering_blog_router_path,
-    wsdot_news_router_path,
-    zaobao_router_path_prefix + '/china',
-    zaobao_router_path_prefix + '/world',
-    reuters_news_router_path + '/world',
-    zhihu_router_path
-]
-
-refresh_period_in_minutes = 10
+refresh_period_in_minutes = 15
+metadata_list_max_items = 500
 
 html_parser = 'html.parser'
 
 language_chinese = "zh-cn"
 language_english = "en-us"
 
-data_path_prefix = "./data/"
+# Cache TTL defaults (in seconds)
+last_build_time_ttl_seconds = 3600      # 1 hour
+
+# Distributed lock TTL for warm_cache (in seconds)
+warm_lock_ttl_seconds = 300             # 5 minutes

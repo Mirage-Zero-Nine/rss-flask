@@ -1,20 +1,4 @@
-import datetime as dt
-
-import pytz
 from rfeed import Feed, Item, Guid
-
-
-def generate_feed_object(title, link, description, language, feed_item_list):
-    feed = Feed(
-        title=title,
-        link=link,
-        description=description,
-        language=language,
-        lastBuildDate=dt.datetime.now(pytz.timezone('GMT')),
-        items=create_item_list(feed_item_list)
-    )
-
-    return feed
 
 
 def generate_feed_object_for_new_router(title, link, description, language, last_build_time, feed_item_list):
