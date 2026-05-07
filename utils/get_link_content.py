@@ -1,7 +1,6 @@
 import requests
 import urllib.request
 
-import urllib3
 from bs4 import BeautifulSoup
 
 from utils.log_context import log_external_fetch
@@ -18,15 +17,6 @@ def get_link_content_with_bs_no_params(link, parser=html_parser):
 def get_link_content_with_utf8_decode(link, parser=html_parser):
     log_external_fetch("requests.get", link, parser=parser, decode="utf-8")
     return BeautifulSoup(requests.get(link, timeout=DEFAULT_REQUEST_TIMEOUT_SECONDS).content.decode('utf-8'), parser)
-
-
-def get_content_with_utf8_decode_and_disable_verification(link, parser=html_parser):
-    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-    log_external_fetch("requests.get", link, parser=parser, verify=False, decode="utf-8")
-    return BeautifulSoup(
-        requests.get(link, verify=False, timeout=DEFAULT_REQUEST_TIMEOUT_SECONDS).content.decode('utf-8'),
-        parser,
-    )
 
 
 def get_link_content_with_header_and_empty_cookie(link, header, parser=html_parser):
