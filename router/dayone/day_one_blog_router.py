@@ -1,6 +1,6 @@
 import logging
 
-from utils.feed_item_object import Metadata, generate_json_name, convert_router_path_to_save_path_prefix
+from utils.feed_item_object import Metadata, generate_cache_key, convert_router_path_to_cache_prefix
 from router.base_router import BaseRouter
 from router.dayone.day_one_blog_constants import day_one_blog_time_convert_pattern
 from utils.get_link_content import get_link_content_with_bs_no_params
@@ -16,20 +16,25 @@ class DayOneBlogRouter(BaseRouter):
         """
         metadata_list = []
         soup = get_link_content_with_bs_no_params(self.articles_link, html_parser)
+        if soup is None:
+            logging.warning("Router %s failed to fetch Day One Blog page %s", self.router_path, self.articles_link)
+            return []
         entry_list = soup.find_all(
             "h3",
             {"class": "entry-title"}
         )
+        if not entry_list:
+            logging.warning("Router %s found 0 entry-title h3 elements on %s", self.router_path, self.articles_link)
 
         for entry in entry_list:
             title = entry.find("a").text
             link = entry.find('a')['href']
             if link and title:
-                save_json_path_prefix = convert_router_path_to_save_path_prefix(self.router_path)
+                cache_prefix = convert_router_path_to_cache_prefix(self.router_path)
                 metadata = Metadata(
                     title=title,
                     link=link,
-                    json_name=generate_json_name(prefix=save_json_path_prefix, name=link)
+                    cache_key=generate_cache_key(prefix=cache_prefix, name=link)
                 )
                 metadata_list.append(metadata)
 
@@ -37,17 +42,29 @@ class DayOneBlogRouter(BaseRouter):
 
     def _get_article_content(self, article_metadata, entry):
         soup = get_link_content_with_bs_no_params(article_metadata.link, html_parser)
-        entry.author = soup.find('meta', attrs={'name': 'author'})['content']
+        author_meta = soup.find('meta', attrs={'name': 'author'})
+        if author_meta and author_meta.get('content'):
+            entry.author = author_meta['content']
+        else:
+            logging.warning("No author metadata found for: " + article_metadata.link)
+
         metadata = soup.find_all(
             "ul",
             {'class': "entry-meta"}
         )
-        if metadata[0]:
-            publish_date = metadata[0].find('li', text=True).get_text(strip=True)
-            entry.created_time = convert_time_with_pattern(publish_date, day_one_blog_time_convert_pattern)
+        if metadata:
+            publish_item = metadata[0].find('li', string=True)
+            if publish_item:
+                publish_date = publish_item.get_text(strip=True)
+                entry.created_time = convert_time_with_pattern(publish_date, day_one_blog_time_convert_pattern)
+            else:
+                logging.warning("No publish date item found for: " + article_metadata.link)
         else:
             logging.warning("No publish date found for: " + article_metadata.link)
         entry_content = soup.find('div', class_='entry-content')
+        if entry_content is None:
+            logging.warning("No entry content found for: " + article_metadata.link)
+            return entry
 
         for element in entry_content.find_all(style=True):
             del element['style']
@@ -73,4 +90,6 @@ class DayOneBlogRouter(BaseRouter):
             div.extract()
 
         entry.description = entry_content
-        entry.save_to_json(self.router_path)
+        if not entry.description:
+            logging.warning("Router %s extracted empty description for %s", self.router_path, article_metadata.link)
+        entry.persist_to_cache(self.router_path)

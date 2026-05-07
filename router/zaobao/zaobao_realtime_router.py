@@ -1,11 +1,13 @@
 import logging
 from datetime import datetime
+from bs4 import NavigableString
 
 from router.base_router import BaseRouter
 from router.zaobao.zaobao_realtime_router_constants import zaobao_realtime_page_suffix, zaobao_headers, \
     feed_title_mapping, feed_description_mapping, feed_prefix_mapping, zaobao_time_general_author, \
-    zaobao_link
-from utils.feed_item_object import Metadata, generate_json_name, convert_router_path_to_save_path_prefix, FeedItem
+    zaobao_link, zaobao_region_general_title, zaobao_news_china_page_prefix, zaobao_realtime_frontpage_prefix, \
+    zaobao_news_world_page_prefix
+from utils.feed_item_object import Metadata, generate_cache_key, convert_router_path_to_cache_prefix, FeedItem
 from utils.get_link_content import get_link_content_with_header_and_empty_cookie, load_json_response
 from utils.router_constants import language_chinese
 from utils.tools import check_need_to_filter
@@ -13,35 +15,91 @@ from utils.xml_utilities import generate_feed_object_for_new_router
 
 
 class ZaobaoRealtimeRouter(BaseRouter):
+    PAGE_CONTENT_REGION_KEYS = {
+        "china": {"news_china"},
+        "world": {"news_world"},
+    }
 
     def _get_articles_list(self, link_filter=None, title_filter=None, parameter=None):
         # list of metadata of the articles
         metadata_list = []
-        region = parameter["region"]
+        region = parameter["region"] if parameter else None
 
         for x in range(3):
-            link = self.articles_link + region + zaobao_realtime_page_suffix + str(x)
+            link = self.__build_articles_list_link(region, x)
+            logging.info("Fetching Zaobao article list from %s", link)
             response = load_json_response(link, headers=zaobao_headers, cookies={})
-            articles = response['response']['articles']
+            articles = self.__extract_articles_from_response(response, region)
 
             for article in articles:
                 title = article['title']
-                article_link = zaobao_link + article['href']
+                article_link = article["href"] if article["href"].startswith("http") else zaobao_link + article["href"]
                 timestamp = article['timestamp']
 
                 if check_need_to_filter(link, title, link_filter, title_filter) is False:
                     # example: https://www.zaobao.com.sg/realtime/china/story20240612-3918781
-                    save_json_path_prefix = convert_router_path_to_save_path_prefix(self.router_path)
+                    cache_prefix = convert_router_path_to_cache_prefix(self.router_path)
                     metadata = Metadata(title=title,
                                         link=article_link,
-                                        json_name=generate_json_name(prefix=save_json_path_prefix, name=article_link),
+                                        cache_key=generate_cache_key(prefix=cache_prefix, name=article_link),
                                         created_time=timestamp)
                     metadata_list.append(metadata)
 
+        if not metadata_list:
+            logging.warning(
+                "Router %s extracted 0 articles from Zaobao for region=%s after 3 pages",
+                self.router_path, region,
+            )
         return metadata_list
 
+    def __build_articles_list_link(self, region, page_index):
+        if region == "china":
+            return zaobao_news_china_page_prefix + zaobao_realtime_page_suffix + str(page_index)
+
+        if region == "world":
+            return zaobao_news_world_page_prefix + zaobao_realtime_page_suffix + str(page_index)
+
+        return self.articles_link + zaobao_realtime_page_suffix + str(page_index)
+
+    def __extract_articles_from_response(self, response, region):
+        response_body = response.get('response', {})
+        direct_articles = response_body.get('articles')
+        if isinstance(direct_articles, list):
+            logging.info("Zaobao response for %s contains direct articles: %s", region, len(direct_articles))
+            return direct_articles
+
+        page_content_list = response_body.get('pageContentList')
+        if not isinstance(page_content_list, list):
+            logging.warning("Zaobao response for %s does not contain direct articles or pageContentList", region)
+            return []
+
+        matching_keys = self.PAGE_CONTENT_REGION_KEYS.get(region, set())
+        selected_articles = []
+        for section in page_content_list:
+            section_key = section.get('key')
+            section_articles = section.get('articles')
+            if not isinstance(section_articles, list):
+                continue
+            if matching_keys and section_key not in matching_keys:
+                continue
+            selected_articles.extend(section_articles)
+
+        logging.info(
+            "Zaobao response for %s contains pageContentList; selected %s article(s) from keys %s",
+            region or "all",
+            len(selected_articles),
+            ",".join(sorted(matching_keys)) if matching_keys else "all"
+        )
+        return selected_articles
+
     def _get_article_content(self, article_metadata: Metadata, entry: FeedItem):
+        logging.info("Fetching Zaobao article content for %s", article_metadata.link)
         soup = get_link_content_with_header_and_empty_cookie(article_metadata.link, zaobao_headers)
+        if soup is None:
+            logging.warning("Router %s failed to fetch Zaobao article page for %s", self.router_path, article_metadata.link)
+            entry.description = "<p>Article content unavailable from upstream source.</p>"
+            entry.persist_to_cache(self.router_path)
+            return entry
         meta_image = soup.find('meta', property='og:image')
 
         if entry.description is None:
@@ -53,11 +111,19 @@ class ZaobaoRealtimeRouter(BaseRouter):
                 img_tag = soup.new_tag('img', src=image_url)
                 entry.description += str(img_tag)
 
-        soup = soup.find('article', class_='max-w-full').find('div', class_='articleBody')
+        article_root = soup.find('article', class_='max-w-full')
+        soup = article_root.find('div', class_='articleBody') if article_root else None
 
         if soup is None:
             logging.error(
                 f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Getting empty page: {article_metadata.link}")
+            entry.created_time = datetime.fromtimestamp(article_metadata.created_time)
+            entry.author = zaobao_time_general_author
+            if not entry.description:
+                entry.description = "<p>Article content unavailable from upstream source.</p>"
+            else:
+                entry.description += "<p>Article content unavailable from upstream source.</p>"
+            entry.persist_to_cache(self.router_path)
             return entry
 
         entry.created_time = datetime.fromtimestamp(article_metadata.created_time)
@@ -69,21 +135,82 @@ class ZaobaoRealtimeRouter(BaseRouter):
         for div in irrelevant:
             div.extract()
 
+        related_sections = soup.find_all(['section', 'div'], class_=['related-topics-wrapper', 'related-articles', 'article-tags'])
+        for section in related_sections:
+            section.extract()
+
+        # Only remove elements where these phrases are the primary content (UI labels, nav items).
+        # '热门' and '最新' are too broad to match as substrings — they appear in normal article
+        # text (e.g., "最新报告显示"). We only remove them when they appear as standalone short text.
+        unwanted_phrases = ('延伸阅读', '购买此文章', '上一篇', '下一篇', '更多消息')
+        for element in soup.find_all(['section', 'div', 'aside', 'nav', 'h2', 'h3', 'p', 'a']):
+            text = element.get_text(" ", strip=True)
+            if not text:
+                continue
+            # Skip long text — likely article content, not a UI element
+            if len(text) > 50:
+                continue
+            if any(phrase in text for phrase in unwanted_phrases):
+                element.extract()
+
+        # Handle '热门' / '最新' only as standalone short labels (navigation buttons, etc.)
+        for element in soup.find_all(['section', 'div', 'aside', 'nav', 'h2', 'h3', 'p', 'a']):
+            text = element.get_text(" ", strip=True)
+            if not text:
+                continue
+            # Only remove if the entire text is exactly the phrase (very short standalone label)
+            if text in ('热门', '最新'):
+                element.extract()
+
         img_tags = soup.find_all('img', {'data-src': True})
         for img_tag in img_tags:
             img_tag.attrs = {'src': img_tag['data-src']}
 
-        entry.description += str(soup)
+        main_content_parts = []
+        allowed_tags = {'p', 'figure', 'img', 'blockquote', 'ul', 'ol'}
+        for child in soup.children:
+            if isinstance(child, NavigableString):
+                continue
+
+            if child.name in allowed_tags:
+                text = child.get_text(" ", strip=True)
+                if text and any(phrase in text for phrase in unwanted_phrases):
+                    continue
+                main_content_parts.append(str(child))
+                continue
+
+            # For non-allowed tags (e.g., anonymous div wrappers):
+            # First try to find allowed descendants
+            nested_allowed = child.find_all(allowed_tags, recursive=True)
+            if nested_allowed:
+                for nested in nested_allowed:
+                    text = nested.get_text(" ", strip=True)
+                    if text and any(phrase in text for phrase in unwanted_phrases):
+                        continue
+                    main_content_parts.append(str(nested))
+            elif child.get_text(" ", strip=True):
+                # No allowed descendants but has meaningful text — wrap in <p> tags
+                # This handles anonymous div wrappers that contain the article text directly
+                text = child.get_text(" ", strip=True)
+                if text and len(text) > 5:
+                    main_content_parts.append(f"<p>{text}</p>")
+
+        entry.description += "".join(main_content_parts)
+        logging.info("Built Zaobao article content for %s", article_metadata.link)
+        logging.debug("Zaobao article content ready for %s (length=%d)", article_metadata.link, len(entry.description))
         entry.author = zaobao_time_general_author
-        entry.save_to_json(self.router_path)
+        entry.persist_to_cache(self.router_path)
 
         return entry
 
     def _generate_response(self, last_build_time, feed_entries_list, parameter=None):
-        region = parameter['region']
-        feed_title = feed_title_mapping.get(region)
-        feed_description = feed_description_mapping.get(region)
-        feed_original_link = feed_prefix_mapping.get(region)
+        region = parameter['region'] if parameter else None
+        feed_title = feed_title_mapping.get(region, zaobao_region_general_title)
+        feed_description = feed_description_mapping.get(
+            region,
+            "即时、评论、商业、体育、生活、科技与多媒体新闻，尽在联合早报。"
+        )
+        feed_original_link = feed_prefix_mapping.get(region, zaobao_realtime_frontpage_prefix)
         feed = generate_feed_object_for_new_router(
             title=feed_title,
             link=feed_original_link,
