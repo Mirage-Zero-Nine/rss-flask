@@ -10,7 +10,7 @@ class SonyAlphaRumorsRouter(RouterForRssFeed):
 
     def _get_article_content(self, article_metadata, entry):
         logging.info("Router %s fetching Sony Alpha article content link=%s", self.router_path, article_metadata.link)
-        soup = get_link_content_with_bs_no_params(entry.link)
+        soup = get_link_content_with_bs_no_params(article_metadata.link)
         if soup is None:
             logging.warning("Router %s failed to fetch page for %s", self.router_path, article_metadata.link)
             return entry
