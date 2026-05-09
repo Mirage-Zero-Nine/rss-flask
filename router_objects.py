@@ -188,6 +188,8 @@ apnews_top_news = ApnewsRouter(
     language=language_english,
     period=get_router_period("apnews_top", 15),
     default_topic="top",
+    exclude_links_from_router=apnews_business_router_path,
+    exclude_feed_title=apnews_business_feed_title,
 )
 
 apnews_business = ApnewsRouter(
