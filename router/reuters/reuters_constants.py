@@ -6,7 +6,7 @@ reuters_description = "'Reuters.com is your online source for the latest world n
 reuters_articles_list_api_link = 'articles-by-section-alias-or-id-v1?query='
 reuters_article_content_api_link = 'article-by-id-or-url-v1?query='
 
-reuters_period = 15 * 60 * 1000  # 15 minutes
+reuters_period = 30 * 60 * 1000  # 30 minutes
 
 reuters_category = {
     "world",

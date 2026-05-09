@@ -4,46 +4,82 @@ from router.apnews.apnews_router_constants import (
     apnews_original_link,
     apnews_articles_link,
     apnews_description,
-    apnews_period,
     apnews_business_feed_title,
     apnews_business_original_link,
     apnews_business_articles_link,
     apnews_business_description,
-    apnews_business_period,
 )
 from router.cnbeta.cnbeta_router import CnbetaRouter
-from router.cnbeta.cnbeta_router_constants import cnbeta_news_router_title, cnbeta_news_site_link, \
-    cnbeta_news_router_description, cnbeta_period, cnbeta_articles_link
-from router.dayone.day_one_blog_constants import day_one_blog_router_title, day_one_blog_articles_link, \
-    day_one_blog_site_link, day_one_blog_query_period, day_one_blog_router_description
+from router.cnbeta.cnbeta_router_constants import (
+    cnbeta_news_router_title,
+    cnbeta_news_site_link,
+    cnbeta_news_router_description,
+    cnbeta_articles_link,
+)
+from router.dayone.day_one_blog_constants import (
+    day_one_blog_router_title,
+    day_one_blog_articles_link,
+    day_one_blog_site_link,
+    day_one_blog_router_description,
+)
 from router.dayone.day_one_blog_router import DayOneBlogRouter
 from router.earthquake.usgs_earthquake_router import UsgsEarthquakeRouter
-from router.earthquake.usgs_earthquake_router_constants import usgs_earthquake_feed_title, \
-    usgs_earthquake_original_link, usgs_earthquake_link, usgs_earthquake_description, usgs_earthquake_query_period
+from router.earthquake.usgs_earthquake_router_constants import (
+    usgs_earthquake_feed_title,
+    usgs_earthquake_original_link,
+    usgs_earthquake_link,
+    usgs_earthquake_description,
+)
 from router.embassy.china_embassy_news import ChinaEmbassyNewsRouter
-from router.embassy.china_embassy_news_constants import china_embassy_news_title, china_embassy_news_prefix, \
-    china_embassy_news_description, china_embassy_news_period
-from router.jandan.jandan_constant import jandan_query_period, jandan_page_prefix, jandan_title, jandan_description
+from router.embassy.china_embassy_news_constants import (
+    china_embassy_news_title,
+    china_embassy_news_prefix,
+    china_embassy_news_description,
+)
+from router.jandan.jandan_constant import jandan_page_prefix, jandan_title, jandan_description
 from router.jandan.jandan_router import JandanRouter
 from router.meta_blog.meta_tech_blog_router import MetaBlog
-from router.meta_blog.meta_tech_blog_router_constants import meta_blog_title, meta_blog_rss_link, meta_blog_link, \
-    meta_blog_description, meta_blog_period
-from router.reuters.reuters_constants import reuters_fetch_api_base_link, reuters_site_link, reuters_description, \
-    reuters_period, reuters_news_name
+from router.meta_blog.meta_tech_blog_router_constants import (
+    meta_blog_title,
+    meta_blog_rss_link,
+    meta_blog_link,
+    meta_blog_description,
+)
+from router.reuters.reuters_constants import (
+    reuters_fetch_api_base_link,
+    reuters_site_link,
+    reuters_description,
+    reuters_news_name,
+)
 from router.reuters.reuters_router import ReutersRouter
 from router.sony_alpha_rumor.sony_alpha_rumor_router import SonyAlphaRumorsRouter
-from router.sony_alpha_rumor.sony_alpha_rumor_router_constants import sar_name, sar_link, sar_rss_link, \
-    sar_query_period, sar_description
+from router.sony_alpha_rumor.sony_alpha_rumor_router_constants import (
+    sar_name,
+    sar_link,
+    sar_rss_link,
+    sar_description,
+)
 from router.wsdot.wsdot_news_router import WsdotNewsRouter
-from router.wsdot.wsdot_news_router_constant import wsdot_news_title, wsdot_news_link, wsdot_news_description, \
-    wsdot_news_period
+from router.wsdot.wsdot_news_router_constant import wsdot_news_title, wsdot_news_link, wsdot_news_description
 from router.zaobao.zaobao_realtime_router import ZaobaoRealtimeRouter
-from router.zaobao.zaobao_realtime_router_constants import zaobao_realtime_page_prefix, zaobao_query_period, \
-    zaobao_region_general_title
-from utils.router_constants import language_english, language_chinese, meta_engineering_blog_router, \
-    cnbeta_router_path, zaobao_router_path_prefix, day_one_blog_router_path, earthquake_router_path, \
-    wsdot_news_router_path, embassy_router_path, \
-    jandan_router_path, reuters_news_router_path, sar_router_path, apnews_router_path, apnews_business_router_path
+from router.zaobao.zaobao_realtime_router_constants import zaobao_realtime_page_prefix, zaobao_region_general_title
+from utils.config import get_router_period
+from utils.router_constants import (
+    language_english,
+    language_chinese,
+    meta_engineering_blog_router,
+    cnbeta_router_path,
+    zaobao_router_path_prefix,
+    day_one_blog_router_path,
+    earthquake_router_path,
+    wsdot_news_router_path,
+    embassy_router_path,
+    jandan_router_path,
+    reuters_news_router_path,
+    sar_router_path,
+    apnews_router_path,
+    apnews_business_router_path,
+)
 
 meta_tech_blog = MetaBlog(
     router_path=meta_engineering_blog_router,
@@ -52,7 +88,7 @@ meta_tech_blog = MetaBlog(
     articles_link=meta_blog_rss_link,
     description=meta_blog_description,
     language=language_english,
-    period=meta_blog_period
+    period=get_router_period("meta_blog", 30)
 )
 
 cnbeta = CnbetaRouter(
@@ -62,7 +98,7 @@ cnbeta = CnbetaRouter(
     articles_link=cnbeta_articles_link,
     description=cnbeta_news_router_description,
     language=language_chinese,
-    period=cnbeta_period
+    period=get_router_period("cnbeta", 10)
 )
 
 usgs_earthquake_report = UsgsEarthquakeRouter(
@@ -72,7 +108,7 @@ usgs_earthquake_report = UsgsEarthquakeRouter(
     articles_link=usgs_earthquake_link,
     description=usgs_earthquake_description,
     language=language_english,
-    period=usgs_earthquake_query_period
+    period=get_router_period("earthquake", 15)
 )
 
 zaobao_realtime = ZaobaoRealtimeRouter(
@@ -80,7 +116,7 @@ zaobao_realtime = ZaobaoRealtimeRouter(
     feed_title=zaobao_region_general_title,
     articles_link=zaobao_realtime_page_prefix,
     language=language_chinese,
-    period=zaobao_query_period
+    period=get_router_period("zaobao", 10)
 )
 
 day_one_blog = DayOneBlogRouter(
@@ -90,7 +126,7 @@ day_one_blog = DayOneBlogRouter(
     articles_link=day_one_blog_articles_link,
     description=day_one_blog_router_description,
     language=language_english,
-    period=day_one_blog_query_period
+    period=get_router_period("dayone", 60)
 )
 
 wsdot_news = WsdotNewsRouter(
@@ -100,7 +136,7 @@ wsdot_news = WsdotNewsRouter(
     articles_link=wsdot_news_link,
     description=wsdot_news_description,
     language=language_english,
-    period=wsdot_news_period
+    period=get_router_period("wsdot", 30)
 )
 
 chinese_embassy_news = ChinaEmbassyNewsRouter(
@@ -110,7 +146,7 @@ chinese_embassy_news = ChinaEmbassyNewsRouter(
     articles_link=china_embassy_news_prefix,
     description=china_embassy_news_description,
     language=language_chinese,
-    period=china_embassy_news_period
+    period=get_router_period("embassy", 10)
 )
 
 jandan_news = JandanRouter(
@@ -120,7 +156,7 @@ jandan_news = JandanRouter(
     articles_link=jandan_page_prefix,
     description=jandan_description,
     language=language_chinese,
-    period=jandan_query_period
+    period=get_router_period("jandan", 60)
 )
 
 reuters_news = ReutersRouter(
@@ -130,7 +166,7 @@ reuters_news = ReutersRouter(
     articles_link=reuters_fetch_api_base_link,
     description=reuters_description,
     language=language_english,
-    period=reuters_period
+    period=get_router_period("reuters", 30)
 )
 
 sony_alpha_rumors = SonyAlphaRumorsRouter(
@@ -140,7 +176,7 @@ sony_alpha_rumors = SonyAlphaRumorsRouter(
     articles_link=sar_rss_link,
     description=sar_description,
     language=language_english,
-    period=sar_query_period
+    period=get_router_period("sar", 30)
 )
 
 apnews_top_news = ApnewsRouter(
@@ -150,7 +186,7 @@ apnews_top_news = ApnewsRouter(
     articles_link=apnews_articles_link,
     description=apnews_description,
     language=language_english,
-    period=apnews_period,
+    period=get_router_period("apnews_top", 15),
     default_topic="top",
 )
 
@@ -161,6 +197,6 @@ apnews_business = ApnewsRouter(
     articles_link=apnews_business_articles_link,
     description=apnews_business_description,
     language=language_english,
-    period=apnews_business_period,
+    period=get_router_period("apnews_business", 15),
     default_topic="business",
 )
