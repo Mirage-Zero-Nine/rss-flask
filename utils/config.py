@@ -37,3 +37,16 @@ def load_config() -> dict:
         )
 
     return config_data
+
+
+def get_router_period(router_key, default_minutes):
+    """Get router refresh period in milliseconds from config.yml.
+
+    :param router_key: key under router_refresh_periods in config.yml
+    :param default_minutes: fallback value in minutes if not configured
+    :return: period in milliseconds
+    """
+    config_data = load_config()
+    periods = config_data.get("router_refresh_periods", {})
+    minutes = periods.get(router_key, default_minutes)
+    return int(minutes) * 60 * 1000

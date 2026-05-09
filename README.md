@@ -61,5 +61,35 @@ Supported configuration values:
 - `RSS_SCHEDULER_REFRESH_PERIOD_MINUTES`
 - `rss_redis_url` in `config.yml`
 - `scheduler_refresh_period_in_minutes` in `config.yml`
+- `router_refresh_periods` in `config.yml` — per-router refresh period in minutes
 
 Environment variables take precedence over `config.yml`.
+
+### Full `config.yml` Example
+
+```yaml
+# rss-flask configuration
+# Env vars take precedence over values in this file.
+# All keys are optional — defaults are used when missing.
+
+rss_redis_url: "redis://localhost:6379/0"
+scheduler_refresh_period_in_minutes: 15
+
+# Per-router refresh period in minutes.
+# Each router checks this cooldown before fetching upstream content.
+router_refresh_periods:
+  cnbeta: 10
+  dayone: 60
+  earthquake: 15
+  embassy: 10
+  jandan: 60
+  meta_blog: 30
+  reuters: 30
+  sar: 30
+  wsdot: 30
+  zaobao: 10
+  apnews_top: 15
+  apnews_business: 15
+```
+
+If a key is missing, the router falls back to its hardcoded default.
