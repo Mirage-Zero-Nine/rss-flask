@@ -1,6 +1,7 @@
 import logging
 
 from router.base_router import BaseRouter
+from utils.cache_store import read_metadata_list
 from utils.feed_item_object import FeedItem, Metadata, generate_cache_key, convert_router_path_to_cache_prefix
 from utils.get_link_content import get_link_content_with_bs_no_params
 from utils.router_constants import html_parser
@@ -15,9 +16,18 @@ class ApnewsRouter(BaseRouter):
         "business": "https://apnews.com/business",
     }
 
-    def __init__(self, *args, default_topic="top", **kwargs):
+    # Links from these router paths will be excluded from this router's feed.
+    # Set per-instance to enable cross-feed dedup.
+    exclude_links_from_router = None
+
+    # Feed title of the router to exclude links from (needed for cache key lookup).
+    exclude_feed_title = None
+
+    def __init__(self, *args, default_topic="top", exclude_links_from_router=None, exclude_feed_title=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.default_topic = default_topic
+        self.exclude_links_from_router = exclude_links_from_router
+        self.exclude_feed_title = exclude_feed_title
 
     def _get_articles_list(self, parameter=None, link_filter=None, title_filter=None):
         """Fetch the AP News page and extract article metadata.
@@ -104,6 +114,44 @@ class ApnewsRouter(BaseRouter):
                 "Router %s built %d article metadata entries from AP News topic '%s' (out of %d promo cards)",
                 self.router_path, len(metadata_list), topic, len(promo_contents),
             )
+
+        # Exclude articles that already exist in another AP News feed (e.g., business articles from top)
+        if self.exclude_links_from_router and self.exclude_feed_title and metadata_list:
+            exclude_prefix = convert_router_path_to_cache_prefix(self.exclude_links_from_router)
+            exclude_key = generate_cache_key(exclude_prefix, self.exclude_feed_title)
+            exclude_metadata = read_metadata_list(exclude_key)
+            if exclude_metadata:
+                exclude_links = {m.get("link") for m in exclude_metadata if m.get("link")}
+                logging.info(
+                    "Router %s loaded %d links from %s for dedup filtering",
+                    self.router_path, len(exclude_links), self.exclude_links_from_router,
+                )
+                before_count = len(metadata_list)
+                excluded_items = [m for m in metadata_list if m.link in exclude_links]
+                metadata_list = [m for m in metadata_list if m.link not in exclude_links]
+                excluded_count = before_count - len(metadata_list)
+                if excluded_count > 0:
+                    for item in excluded_items:
+                        logging.debug(
+                            "Router %s dedup excluded: %s (%s)",
+                            self.router_path, item.title, item.link,
+                        )
+                    logging.info(
+                        "Router %s excluded %d/%d articles already in %s, %d remaining",
+                        self.router_path, excluded_count, before_count,
+                        self.exclude_links_from_router, len(metadata_list),
+                    )
+                else:
+                    logging.info(
+                        "Router %s dedup found 0 overlapping articles with %s",
+                        self.router_path, self.exclude_links_from_router,
+                    )
+            else:
+                logging.info(
+                    "Router %s no cached metadata from %s available for dedup (key=%s)",
+                    self.router_path, self.exclude_links_from_router, exclude_key,
+                )
+
         return metadata_list
 
     def _get_article_content(self, article_metadata: Metadata, entry: FeedItem):
