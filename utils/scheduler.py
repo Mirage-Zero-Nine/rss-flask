@@ -27,7 +27,7 @@ def _load_scheduler_interval_minutes():
 
 def run_refresh_job(job):
     try:
-        logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Scheduler refresh job: {job['name']}")
+        logging.info("Scheduler refresh job: %s", job['name'])
         job["refresh"]()
     except Exception as exc:
         logging.exception("Scheduler refresh job failed for %s: %s", job["name"], exc)
@@ -89,8 +89,7 @@ def router_refresh_job_scheduler(jobs):
                     _release_warm_lock(job["name"])
             else:
                 logging.info(
-                    "%s Router %s: warm-up skipped; another process is refreshing.",
-                    datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
+                    "Router %s: warm-up skipped; another process is refreshing.",
                     job['name'],
                 )
                 lock_held_by_other = True
@@ -100,22 +99,19 @@ def router_refresh_job_scheduler(jobs):
 
         if cache_was_empty is True:
             logging.info(
-                "%s Router %s: cache was empty, warm-up refreshed content. Next scheduled run in %s minutes.",
-                datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
+                "Router %s: cache was empty, warm-up refreshed content. Next scheduled run in %s minutes.",
                 job['name'],
                 interval_minutes,
             )
         elif lock_held_by_other:
             logging.info(
-                "%s Router %s: warm-up deferred to another process. Next scheduled run in %s minutes.",
-                datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
+                "Router %s: warm-up deferred to another process. Next scheduled run in %s minutes.",
                 job['name'],
                 interval_minutes,
             )
         else:
             logging.info(
-                "%s Router %s: cache was populated, skipping warm-up. Next scheduled run in %s minutes.",
-                datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
+                "Router %s: cache was populated, skipping warm-up. Next scheduled run in %s minutes.",
                 job['name'],
                 interval_minutes,
             )

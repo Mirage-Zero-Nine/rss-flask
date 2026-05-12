@@ -47,11 +47,13 @@ Current route families include:
 - `/zaobao/realtime/<region>`
 - `/apnews/top`
 - `/apnews/business`
+- `/yahoo/reuters/<topic>`
 
 ### Parameterized Routes
 
 - Reuters supports categories such as `world` and `business`, with optional topic and limit parameters.
 - Zaobao supports a general realtime feed plus region-specific feeds such as `china` and `world`.
+- Yahoo News (Reuters) supports topics such as `world`, `business`, `celebrity`, `politics`, `health`, `news`, and `u.s.`.
 
 ## Configuration
 
@@ -90,6 +92,7 @@ router_refresh_periods:
   zaobao: 10
   apnews_top: 15
   apnews_business: 15
+  yahoo_news: 5
 ```
 
 If a key is missing, the router falls back to its hardcoded default.

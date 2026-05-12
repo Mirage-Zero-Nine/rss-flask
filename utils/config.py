@@ -26,7 +26,7 @@ def load_config() -> dict:
         try:
             with open(config_path) as config_file:
                 config_data = yaml.safe_load(config_file) or {}
-                logging.info(f"Loaded config.yml from {config_path}")
+                logging.debug(f"Loaded config.yml from {config_path}")
         except yaml.YAMLError as exc:
             logging.warning("Failed to parse config.yml at %s: %s", config_path, exc)
     else:

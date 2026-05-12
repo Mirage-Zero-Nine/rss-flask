@@ -54,18 +54,26 @@ class ChinaEmbassyNewsRouter(BaseRouter):
         if time_div and time_div.get_text():
             entry.created_time = convert_time_with_pattern(time_div.get_text(), "%Y-%m-%d %H:%M")
         else:
-            match = re.search(r"/(20\d{2})(\d{2})(\d{2})_", article_metadata.link)
-            if match:
-                fallback = match.group(1) + match.group(2) + match.group(3)
-                entry.created_time = convert_time_with_pattern(fallback, "%Y%m%d", 0)
-                logging.info("Fallback to URL date %s for %s", fallback, article_metadata.link)
+            # Try YYYY/MM/DD HH:MM pattern (used on china-embassy.org pages)
+            page_text = soup.get_text()
+            slash_match = re.search(r"(\d{4}/\d{2}/\d{2}\s+\d{2}:\d{2})", page_text)
+            if slash_match:
+                entry.created_time = convert_time_with_pattern(slash_match.group(1), "%Y/%m/%d %H:%M")
             else:
-                logging.warning("Failed to find publish time for %s", article_metadata.link)
+                match = re.search(r"/(20\d{2})(\d{2})(\d{2})_", article_metadata.link)
+                if match:
+                    fallback = match.group(1) + match.group(2) + match.group(3)
+                    entry.created_time = convert_time_with_pattern(fallback, "%Y%m%d", 0)
+                    logging.info("Fallback to URL date %s for %s", fallback, article_metadata.link)
+                else:
+                    logging.warning("Failed to find publish time for %s", article_metadata.link)
         for tag in soup.find_all(True):
             tag.attrs = {key: val for key, val in tag.attrs.items() if key != 'style'}
         desc_div = soup.find('div', id='News_Body_Txt_A')
         if desc_div is None:
-            logging.warning("Router %s could not find News_Body_Txt_A div for %s", self.router_path, article_metadata.link)
+            desc_div = soup.find('div', class_='view_default')
+        if desc_div is None:
+            logging.warning("Router %s could not find content div for %s", self.router_path, article_metadata.link)
         entry.description = desc_div
         if not entry.description:
             logging.warning("Router %s description is None for %s", self.router_path, article_metadata.link)
