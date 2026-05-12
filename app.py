@@ -29,12 +29,14 @@ from router.reuters.reuters_constants import is_valid_reuters_parameter
 from router.zaobao.zaobao_realtime_router_constants import zaobao_region_parameter, title_filter
 from router_objects import meta_tech_blog, cnbeta, usgs_earthquake_report, \
     zaobao_realtime, day_one_blog, wsdot_news, chinese_embassy_news, \
-    jandan_news, reuters_news, sony_alpha_rumors, apnews_top_news, apnews_business
+    jandan_news, reuters_news, sony_alpha_rumors, apnews_top_news, apnews_business, yahoo_news, \
+    apple_developer_news, apple_newsroom
 from utils.router_constants import wsdot_news_router_path, \
     meta_engineering_blog_router, \
     jandan_router_path, earthquake_router_path, embassy_router_path, \
     day_one_blog_router_path, cnbeta_router_path, zaobao_router_path_prefix, \
-    reuters_news_router_path, sar_router_path, apnews_router_path, apnews_business_router_path
+    reuters_news_router_path, sar_router_path, apnews_router_path, apnews_business_router_path, \
+    yahoo_news_router_path_prefix, apple_news_router_path, apple_newsroom_router_path
 from utils.scheduler import router_refresh_job_scheduler
 from werkzeug.exceptions import abort
 
@@ -129,6 +131,21 @@ def build_scheduler_jobs():
             "name": apnews_business_router_path,
             "warmup": lambda: apnews_business.warm_cache(),
             "refresh": lambda: apnews_business.refresh_cache(),
+        },
+        {
+            "name": yahoo_news_router_path_prefix,
+            "warmup": lambda: yahoo_news.refresh_all_topics(),
+            "refresh": lambda: yahoo_news.refresh_all_topics(),
+        },
+        {
+            "name": apple_news_router_path,
+            "warmup": lambda: apple_developer_news.warm_cache(),
+            "refresh": lambda: apple_developer_news.refresh_cache(),
+        },
+        {
+            "name": apple_newsroom_router_path,
+            "warmup": lambda: apple_newsroom.warm_cache(),
+            "refresh": lambda: apple_newsroom.refresh_cache(),
         },
     ]
 
@@ -233,6 +250,23 @@ def apnews_router():
 @app.route(apnews_business_router_path)
 def apnews_business_router():
     return apnews_business.get_rss_xml_response()
+
+
+@app.route(yahoo_news_router_path_prefix + '/<topic>')
+def yahoo_news_router(topic):
+    if topic.lower() not in yahoo_news.VALID_TOPICS:
+        abort(404)
+    return yahoo_news.get_rss_xml_response(parameter={"topic": topic.lower()})
+
+
+@app.route(apple_news_router_path)
+def apple_developer_news_router():
+    return apple_developer_news.get_rss_xml_response()
+
+
+@app.route(apple_newsroom_router_path)
+def apple_newsroom_router():
+    return apple_newsroom.get_rss_xml_response()
 
 
 if should_start_scheduler():

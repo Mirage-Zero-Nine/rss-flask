@@ -10,6 +10,9 @@ wsdot_news_router_path = '/wsdot/news'
 zaobao_router_path_prefix = "/zaobao/realtime"
 apnews_router_path = "/apnews/top"
 apnews_business_router_path = "/apnews/business"
+yahoo_news_router_path_prefix = "/yahoo/reuters"
+apple_news_router_path = "/apple/developer"
+apple_newsroom_router_path = "/apple/newsroom"
 
 refresh_period_in_minutes = 15
 metadata_list_max_items = 500
@@ -21,6 +24,7 @@ language_english = "en-us"
 
 # Cache TTL defaults (in seconds)
 last_build_time_ttl_seconds = 3600      # 1 hour
+feed_item_ttl_seconds = 604800          # 7 days
 
 # Distributed lock TTL for warm_cache (in seconds)
 warm_lock_ttl_seconds = 300             # 5 minutes

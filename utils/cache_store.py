@@ -9,6 +9,7 @@ from datetime import datetime
 from utils.config import load_config
 from utils.router_constants import (
     last_build_time_ttl_seconds,
+    feed_item_ttl_seconds,
 )
 config_data = load_config()
 
@@ -145,13 +146,13 @@ def write_last_build_time(cache_key, last_build_time, ttl_seconds=None):
         _log_error("write last build time", exc)
 
 
-def write_feed_item_to_cache(key, payload, ttl_seconds=None):
+def write_feed_item_to_cache(key, payload, ttl_seconds=feed_item_ttl_seconds):
     if not _has_client():
         logging.error("Redis client unavailable; feed item write skipped for key=%s", key)
         return
 
     try:
-        _redis_client.set(key, json.dumps(payload))
+        _redis_client.set(key, json.dumps(payload), ex=ttl_seconds)
     except (redis.RedisError, TypeError) as exc:
         _log_error("write feed item", exc)
 

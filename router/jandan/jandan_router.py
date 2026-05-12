@@ -35,7 +35,12 @@ class JandanRouter(BaseRouter):
             if h2 is None:
                 link_tag = post.find('a')
                 link = link_tag['href'] if link_tag else '<no link>'
-                logging.warning('JandanRouter post item %d has no h2 tag, skipping link=%s', i, link)
+                post_text = post.get_text(strip=True)[:80]
+                post_class = post.get('class', [])
+                logging.info(
+                    'JandanRouter post item %d has no h2 tag, skipping. link=%s class=%s text=%s',
+                    i, link, post_class, post_text,
+                )
                 continue
             title = h2.text.strip()
             link_tag = h2.find('a')

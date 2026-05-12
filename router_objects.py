@@ -60,7 +60,8 @@ from router.sony_alpha_rumor.sony_alpha_rumor_router_constants import (
     sar_description,
 )
 from router.wsdot.wsdot_news_router import WsdotNewsRouter
-from router.wsdot.wsdot_news_router_constant import wsdot_news_title, wsdot_news_link, wsdot_news_description
+from router.wsdot.wsdot_news_router_constant import wsdot_news_title, wsdot_news_link, wsdot_news_rss_link, \
+    wsdot_news_description
 from router.zaobao.zaobao_realtime_router import ZaobaoRealtimeRouter
 from router.zaobao.zaobao_realtime_router_constants import zaobao_realtime_page_prefix, zaobao_region_general_title
 from utils.config import get_router_period
@@ -80,6 +81,18 @@ from utils.router_constants import (
     apnews_router_path,
     apnews_business_router_path,
 )
+from router.apple_news.apple_news_router import AppleNewsRouter, AppleNewsroomRouter
+from router.apple_news.apple_news_router_constants import (
+    apple_developer_news_title,
+    apple_developer_news_link,
+    apple_developer_news_rss_link,
+    apple_developer_news_description,
+    apple_newsroom_title,
+    apple_newsroom_link,
+    apple_newsroom_rss_link,
+    apple_newsroom_description,
+)
+from utils.router_constants import apple_news_router_path, apple_newsroom_router_path
 
 meta_tech_blog = MetaBlog(
     router_path=meta_engineering_blog_router,
@@ -133,7 +146,7 @@ wsdot_news = WsdotNewsRouter(
     router_path=wsdot_news_router_path,
     feed_title=wsdot_news_title,
     original_link=wsdot_news_link,
-    articles_link=wsdot_news_link,
+    articles_link=wsdot_news_rss_link,
     description=wsdot_news_description,
     language=language_english,
     period=get_router_period("wsdot", 30)
@@ -201,4 +214,43 @@ apnews_business = ApnewsRouter(
     language=language_english,
     period=get_router_period("apnews_business", 15),
     default_topic="business",
+)
+
+from router.yahoo_news.yahoo_news_router import YahooNewsRouter
+from router.yahoo_news.yahoo_news_router_constants import (
+    yahoo_news_feed_title,
+    yahoo_news_original_link,
+    yahoo_news_articles_link,
+    yahoo_news_description,
+)
+from utils.router_constants import yahoo_news_router_path_prefix
+
+yahoo_news = YahooNewsRouter(
+    router_path=yahoo_news_router_path_prefix,
+    feed_title=yahoo_news_feed_title,
+    original_link=yahoo_news_original_link,
+    articles_link=yahoo_news_articles_link,
+    description=yahoo_news_description,
+    language=language_english,
+    period=get_router_period("yahoo_news", 2),
+)
+
+apple_developer_news = AppleNewsRouter(
+    router_path=apple_news_router_path,
+    feed_title=apple_developer_news_title,
+    original_link=apple_developer_news_link,
+    articles_link=apple_developer_news_rss_link,
+    description=apple_developer_news_description,
+    language=language_english,
+    period=get_router_period("apple_developer_news", 60),
+)
+
+apple_newsroom = AppleNewsroomRouter(
+    router_path=apple_newsroom_router_path,
+    feed_title=apple_newsroom_title,
+    original_link=apple_newsroom_link,
+    articles_link=apple_newsroom_rss_link,
+    description=apple_newsroom_description,
+    language=language_english,
+    period=get_router_period("apple_newsroom", 60),
 )

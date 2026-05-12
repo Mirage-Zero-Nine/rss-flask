@@ -5,7 +5,7 @@ import pytz
 from flask import make_response
 from datetime import datetime
 
-from utils.cache_store import read_feed_item_from_cache, read_last_build_time, read_metadata_list, write_current_metadata_snapshot, write_last_build_time
+from utils.cache_store import read_feed_item_from_cache, read_last_build_time, read_metadata_list, write_last_build_time, write_metadata_list
 from utils.feed_item_object import Metadata, FeedItem, generate_cache_key, convert_router_path_to_cache_prefix
 from utils.log_context import reset_current_router, set_current_router
 from utils.xml_utilities import generate_feed_object_for_new_router
@@ -53,10 +53,7 @@ class BaseRouter:
         """
         cached_entry = self.__load_article_from_cache(article_metadata.cache_key)
         if cached_entry:
-            logging.info("Router %s using cached article link=%s cache_key=%s", self.router_path, article_metadata.link, article_metadata.cache_key)
-            if self.router_path == '/zaobao/realtime':
-                description = cached_entry.description or ""
-                logging.info("Zaobao cached article loaded for %s (content length=%s)", article_metadata.link, len(description))
+            logging.debug("Router %s cache hit for article link=%s", self.router_path, article_metadata.link)
             return cached_entry
 
         logging.debug("Router %s retrieving article content link=%s", self.router_path, article_metadata.link)
@@ -101,10 +98,10 @@ class BaseRouter:
         feed = self._generate_response(last_build_time=feed_last_build_time,
                                        feed_entries_list=feed_entries_list,
                                        parameter=parameter)
-        logging.info(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Cache last-build: {feed.lastBuildDate}")
+        logging.debug("Router %s serving feed lastBuildDate=%s", self.router_path, feed.lastBuildDate)
 
         response = make_response(feed.rss())
-        response.headers.set('Content-Type', 'application/rss+xml')
+        response.headers.set('Content-Type', 'application/rss+xml; charset=utf-8')
         return response
 
     def refresh_cache(self, parameter=None, link_filter=None, title_filter=None, force=False):
@@ -137,7 +134,7 @@ class BaseRouter:
                 parameter,
             )
             article_list_key = self._build_article_list_cache_key(cache_key)
-            self.__write_article_list_to_cache(article_list_key, [])
+            self._write_article_list_to_cache(article_list_key, [])
             last_build_time = dt.datetime.now(pytz.timezone('GMT'))
             write_last_build_time(cache_key, last_build_time)
             logging.info(
@@ -168,7 +165,7 @@ class BaseRouter:
 
         article_list_key = self._build_article_list_cache_key(cache_key)
         # Publish the current upstream article list even if some article bodies failed to cache.
-        self.__write_article_list_to_cache(article_list_key, article_metadata_list)
+        self._write_article_list_to_cache(article_list_key, article_metadata_list)
 
         logging.info(
             'Router %s published %d metadata items; article content cached for %d items (previous metadata count=%d) parameter=%s',
@@ -234,10 +231,10 @@ class BaseRouter:
         for article_metadata in article_metadata_list:
             entry = self.__load_article_from_cache(article_metadata.cache_key)
             if entry is None:
-                logging.debug("Router %s cache miss for article key=%s (link=%s)", self.router_path, article_metadata.cache_key, article_metadata.link)
+                logging.warning("Router %s article missing from cache key=%s link=%s", self.router_path, article_metadata.cache_key, article_metadata.link)
                 continue
             elif entry.description is None:
-                logging.debug("Router %s article key=%s (link=%s) dropped: description is None", self.router_path, article_metadata.cache_key, article_metadata.link)
+                logging.warning("Router %s article has None description key=%s link=%s", self.router_path, article_metadata.cache_key, article_metadata.link)
                 continue
             feed_entries_list.append(entry)
         logging.info("Router %s built %d feed entries from cache", self.router_path, len(feed_entries_list))
@@ -246,7 +243,6 @@ class BaseRouter:
         return feed_entries_list
 
     def __generate_cache_key_for_router(self, parameter=None):
-        logging.debug("Router %s generating cache key parameter=%s", self.router_path, parameter)
         if parameter is None:
             cache_key = self.router_path
         else:
@@ -290,11 +286,10 @@ class BaseRouter:
         try:
             return datetime.fromisoformat(value)
         except ValueError:
-            logging.warning(f"Unable to parse created_time from cache: {value}")
+            logging.warning("Unable to parse created_time from cache: %s", value)
             return None
 
-    @staticmethod
-    def __build_metadata_list(metadata_dicts):
+    def __build_metadata_list(self, metadata_dicts):
         if not metadata_dicts:
             return []
 
@@ -303,7 +298,7 @@ class BaseRouter:
             required = ["title", "link", "guid"]
             missing = [f for f in required if f not in metadata_dict]
             if missing:
-                logging.error("Router metadata dict missing required fields %s: %s", missing, metadata_dict)
+                logging.error("Router %s metadata dict missing required fields %s: %s", self.router_path, missing, metadata_dict)
                 continue
             if "json_name" in metadata_dict and "cache_key" not in metadata_dict:
                 metadata_dict["cache_key"] = metadata_dict.pop("json_name")
@@ -311,5 +306,5 @@ class BaseRouter:
         return metadata_objects
 
     @staticmethod
-    def __write_article_list_to_cache(cache_key, article_metadata_list):
-        write_current_metadata_snapshot(cache_key, article_metadata_list)
+    def _write_article_list_to_cache(cache_key, article_metadata_list):
+        write_metadata_list(cache_key, article_metadata_list)
