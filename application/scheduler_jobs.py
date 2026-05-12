@@ -1,0 +1,130 @@
+from application.router_dependencies import (
+    apnews_business,
+    apnews_top_news,
+    apple_developer_news,
+    apple_newsroom,
+    apple_news_router_path,
+    apple_newsroom_router_path,
+    apnews_business_router_path,
+    apnews_router_path,
+    china_embassy_news_filter,
+    chinese_embassy_news,
+    cnbeta,
+    cnbeta_router_path,
+    day_one_blog,
+    day_one_blog_router_path,
+    earthquake_router_path,
+    embassy_router_path,
+    jandan_news,
+    jandan_router_path,
+    meta_blog_prefix,
+    meta_engineering_blog_router_path,
+    meta_tech_blog,
+    reuters_news,
+    reuters_news_router_path,
+    sar_router_path,
+    sony_alpha_rumors,
+    usgs_earthquake_report,
+    wsdot_news,
+    wsdot_news_router_path,
+    yahoo_news,
+    yahoo_news_router_path_prefix,
+    zaobao_router_path_prefix,
+    zaobao_realtime,
+    title_filter,
+)
+
+
+def build_scheduler_jobs():
+    return [
+        {
+            "name": cnbeta_router_path,
+            "warmup": lambda: cnbeta.warm_cache(),
+            "refresh": lambda: cnbeta.refresh_cache(),
+        },
+        {
+            "name": day_one_blog_router_path,
+            "warmup": lambda: day_one_blog.warm_cache(),
+            "refresh": lambda: day_one_blog.refresh_cache(),
+        },
+        {
+            "name": earthquake_router_path,
+            "warmup": lambda: usgs_earthquake_report.warm_cache(),
+            "refresh": lambda: usgs_earthquake_report.refresh_cache(),
+        },
+        {
+            "name": embassy_router_path,
+            "warmup": lambda: chinese_embassy_news.warm_cache(link_filter=china_embassy_news_filter),
+            "refresh": lambda: chinese_embassy_news.refresh_cache(link_filter=china_embassy_news_filter),
+        },
+        {
+            "name": jandan_router_path,
+            "warmup": lambda: jandan_news.warm_cache(),
+            "refresh": lambda: jandan_news.refresh_cache(),
+        },
+        {
+            "name": meta_engineering_blog_router_path,
+            "warmup": lambda: meta_tech_blog.warm_cache(link_filter=meta_blog_prefix),
+            "refresh": lambda: meta_tech_blog.refresh_cache(link_filter=meta_blog_prefix),
+        },
+        {
+            "name": sar_router_path,
+            "warmup": lambda: sony_alpha_rumors.warm_cache(),
+            "refresh": lambda: sony_alpha_rumors.refresh_cache(),
+        },
+        {
+            "name": wsdot_news_router_path,
+            "warmup": lambda: wsdot_news.warm_cache(),
+            "refresh": lambda: wsdot_news.refresh_cache(),
+        },
+        {
+            "name": zaobao_router_path_prefix,
+            "warmup": lambda: zaobao_realtime.warm_cache(parameter=None, title_filter=title_filter),
+            "refresh": lambda: zaobao_realtime.refresh_cache(parameter=None, title_filter=title_filter),
+        },
+        {
+            "name": zaobao_router_path_prefix + "/china",
+            "warmup": lambda: zaobao_realtime.warm_cache(parameter={"region": "china"}, title_filter=title_filter),
+            "refresh": lambda: zaobao_realtime.refresh_cache(parameter={"region": "china"}, title_filter=title_filter),
+        },
+        {
+            "name": zaobao_router_path_prefix + "/world",
+            "warmup": lambda: zaobao_realtime.warm_cache(parameter={"region": "world"}, title_filter=title_filter),
+            "refresh": lambda: zaobao_realtime.refresh_cache(parameter={"region": "world"}, title_filter=title_filter),
+        },
+        {
+            "name": reuters_news_router_path + "/world",
+            "warmup": lambda: reuters_news.warm_cache(parameter={"category": "world", "topic": None, "limit": 20}),
+            "refresh": lambda: reuters_news.refresh_cache(parameter={"category": "world", "topic": None, "limit": 20}),
+        },
+        {
+            "name": reuters_news_router_path + "/business",
+            "warmup": lambda: reuters_news.warm_cache(parameter={"category": "business", "topic": None, "limit": 20}),
+            "refresh": lambda: reuters_news.refresh_cache(parameter={"category": "business", "topic": None, "limit": 20}),
+        },
+        {
+            "name": apnews_router_path,
+            "warmup": lambda: apnews_top_news.warm_cache(),
+            "refresh": lambda: apnews_top_news.refresh_cache(),
+        },
+        {
+            "name": apnews_business_router_path,
+            "warmup": lambda: apnews_business.warm_cache(),
+            "refresh": lambda: apnews_business.refresh_cache(),
+        },
+        {
+            "name": yahoo_news_router_path_prefix,
+            "warmup": lambda: yahoo_news.refresh_all_topics(),
+            "refresh": lambda: yahoo_news.refresh_all_topics(),
+        },
+        {
+            "name": apple_news_router_path,
+            "warmup": lambda: apple_developer_news.warm_cache(),
+            "refresh": lambda: apple_developer_news.refresh_cache(),
+        },
+        {
+            "name": apple_newsroom_router_path,
+            "warmup": lambda: apple_newsroom.warm_cache(),
+            "refresh": lambda: apple_newsroom.refresh_cache(),
+        },
+    ]

@@ -5,8 +5,8 @@ from apscheduler.executors.pool import ThreadPoolExecutor as APSchedulerExecutor
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime, timedelta
 
-from utils.router_constants import refresh_period_in_minutes, warm_lock_ttl_seconds
-from utils.cache_store import _redis_client, _has_client
+from utils.router_constants import refresh_period_in_minutes
+from utils.cache_store import acquire_warm_lock, release_warm_lock
 from utils.config import load_config
 
 _scheduler_started = False
@@ -33,36 +33,6 @@ def run_refresh_job(job):
         logging.exception("Scheduler refresh job failed for %s: %s", job["name"], exc)
 
 
-def _try_acquire_warm_lock(job_name):
-    """Attempt to acquire a distributed lock for warm_cache.
-
-    Returns True if the lock was acquired, False if another process already holds it.
-    """
-    if not _has_client():
-        return True  # no Redis; allow warm to proceed (single-instance fallback)
-
-    lock_key = f"warm_lock:{job_name}"
-    try:
-        # SET NX EX: only set if key does not exist, with TTL
-        result = _redis_client.set(lock_key, "1", nx=True, ex=warm_lock_ttl_seconds)
-        return result is True or result == 1
-    except Exception as exc:
-        logging.warning("Failed to acquire warm lock for %s: %s. Allowing warm to proceed.", job_name, exc)
-        return True
-
-
-def _release_warm_lock(job_name):
-    """Release the distributed warm lock (fire-and-forget)."""
-    if not _has_client():
-        return
-
-    lock_key = f"warm_lock:{job_name}"
-    try:
-        _redis_client.delete(lock_key)
-    except Exception:
-        pass  # ignore cleanup failures
-
-
 def router_refresh_job_scheduler(jobs):
     global _scheduler_started
     if _scheduler_started:
@@ -82,11 +52,11 @@ def router_refresh_job_scheduler(jobs):
         cache_was_empty = None  # None = skipped for an external reason (lock held or error)
         lock_held_by_other = False
         try:
-            if _try_acquire_warm_lock(job["name"]):
+            if acquire_warm_lock(job["name"]):
                 try:
                     cache_was_empty = job["warmup"]()
                 finally:
-                    _release_warm_lock(job["name"])
+                    release_warm_lock(job["name"])
             else:
                 logging.info(
                     "Router %s: warm-up skipped; another process is refreshing.",

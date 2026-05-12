@@ -16,15 +16,6 @@ def check_need_to_filter(link, title, link_filter, title_filter):
     return False
 
 
-def remove_empty_tag(div, tag_name):
-    empty_p_tags = div.find_all(tag_name)
-    for tag in empty_p_tags:
-        if tag.text.strip() == "":
-            if tag.find('img'):
-                continue
-            tag.extract()
-
-
 def decompose_div(soup, class_name):
     decompose_tag_by_class_name(soup, 'div', class_name)
 

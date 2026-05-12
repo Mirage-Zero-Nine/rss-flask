@@ -1,4 +1,6 @@
 import logging
+import re
+from html import escape
 
 from router.base_router import BaseRouter
 from utils.cache_store import read_metadata_list
@@ -6,6 +8,12 @@ from utils.feed_item_object import FeedItem, Metadata, generate_cache_key, conve
 from utils.get_link_content import get_link_content_with_bs_no_params
 from utils.router_constants import html_parser
 from utils.time_converter import convert_millisecond_to_datetime
+
+
+def normalize_paragraph_text(tag):
+    text = re.sub(r"\s+", " ", tag.get_text(" ", strip=True))
+    text = re.sub(r"\s+([,.;:!?%)\]}])", r"\1", text)
+    return re.sub(r"([(\[{])\s+", r"\1", text)
 
 
 class ApnewsRouter(BaseRouter):
@@ -194,9 +202,9 @@ class ApnewsRouter(BaseRouter):
             # Remove nested divs (e.g., ads) but keep their text
             for div in p.find_all("div"):
                 div.decompose()
-            text = p.get_text(strip=True)
+            text = normalize_paragraph_text(p)
             if text:
-                body_parts.append(f"<p>{text}</p>")
+                body_parts.append(f"<p>{escape(text)}</p>")
 
         # Extract images from the page.
         # Priority: first, try the main carousel in <main class="Page-main">

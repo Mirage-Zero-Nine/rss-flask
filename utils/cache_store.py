@@ -9,7 +9,7 @@ from datetime import datetime
 from utils.config import load_config
 from utils.router_constants import (
     last_build_time_ttl_seconds,
-    feed_item_ttl_seconds,
+    warm_lock_ttl_seconds,
 )
 config_data = load_config()
 
@@ -84,7 +84,7 @@ def _merge_metadata_dicts(existing_metadata, incoming_metadata):
     return list(merged.values())
 
 
-def write_metadata_list(cache_key, metadata_list, ttl_seconds=None):
+def write_metadata_list(cache_key, metadata_list):
     if not _has_client():
         return
 
@@ -98,15 +98,28 @@ def write_metadata_list(cache_key, metadata_list, ttl_seconds=None):
         _log_error("write metadata list", exc)
 
 
-def write_current_metadata_snapshot(cache_key, metadata_list, ttl_seconds=None):
+def acquire_warm_lock(job_name):
+    if not _has_client():
+        return True
+
+    lock_key = f"warm_lock:{job_name}"
+    try:
+        result = _redis_client.set(lock_key, "1", nx=True, ex=warm_lock_ttl_seconds)
+        return result is True or result == 1
+    except redis.RedisError as exc:
+        logging.warning("Failed to acquire warm lock for %s: %s. Allowing warm to proceed.", job_name, exc)
+        return True
+
+
+def release_warm_lock(job_name):
     if not _has_client():
         return
 
+    lock_key = f"warm_lock:{job_name}"
     try:
-        payload = json.dumps([_metadata_to_dict(metadata) for metadata in metadata_list])
-        _redis_client.set(metadata_list_key(cache_key), payload)
-    except (redis.RedisError, TypeError) as exc:
-        _log_error("write current metadata snapshot", exc)
+        _redis_client.delete(lock_key)
+    except redis.RedisError:
+        pass
 
 
 def _metadata_to_dict(metadata):
@@ -146,13 +159,13 @@ def write_last_build_time(cache_key, last_build_time, ttl_seconds=None):
         _log_error("write last build time", exc)
 
 
-def write_feed_item_to_cache(key, payload, ttl_seconds=feed_item_ttl_seconds):
+def write_feed_item_to_cache(key, payload):
     if not _has_client():
         logging.error("Redis client unavailable; feed item write skipped for key=%s", key)
         return
 
     try:
-        _redis_client.set(key, json.dumps(payload), ex=ttl_seconds)
+        _redis_client.set(key, json.dumps(payload))
     except (redis.RedisError, TypeError) as exc:
         _log_error("write feed item", exc)
 
