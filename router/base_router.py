@@ -40,7 +40,7 @@ class BaseRouter:
         Override this method for each router.
         :return: list of articles
         """
-        return []
+        raise NotImplementedError
 
     def _get_article(self, article_metadata):
         """
@@ -79,7 +79,7 @@ class BaseRouter:
         :param article_metadata: metadata of article
         :param entry: object stores all the metadata and the content
         """
-        pass
+        raise NotImplementedError
 
     def get_rss_xml_response(self, parameter=None, link_filter=None, title_filter=None):
         """

@@ -5,6 +5,7 @@ Both cache_store and scheduler import from here to stay in sync.
 """
 
 import logging
+from functools import lru_cache
 from pathlib import Path
 
 import yaml
@@ -12,6 +13,7 @@ import yaml
 _root_dir = Path(__file__).resolve().parents[1]
 
 
+@lru_cache(maxsize=1)
 def load_config() -> dict:
     """Load and parse config.yml, returning a dict of key-value pairs."""
     config_data: dict = {}
