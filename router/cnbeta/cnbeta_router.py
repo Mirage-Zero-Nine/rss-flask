@@ -1,22 +1,30 @@
+import logging
+
+import requests
+from bs4 import BeautifulSoup
+
 from router.base_router import BaseRouter
 from router.cnbeta.cnbeta_router_constants import cnbeta_query_page_count, cnbeta_articles_link, \
     cnbeta_news_router_author
 from utils.feed_item_object import Metadata, generate_cache_key, convert_router_path_to_cache_prefix
-from utils.get_link_content import get_link_content_with_utf8_decode
+from utils.get_link_content import DEFAULT_REQUEST_TIMEOUT_SECONDS, get_link_content_with_utf8_decode
+from utils.log_context import log_external_fetch
+from utils.router_constants import html_parser
 from utils.time_converter import convert_time_with_pattern
-import logging
 
 
 class CnbetaRouter(BaseRouter):
     def _get_articles_list(self, link_filter=None, title_filter=None, parameter=None):
         articles_list = []
+        listing_fetch_failures = 0
 
         for i in range(0, cnbeta_query_page_count):
             page_url = f"{self.articles_link}/list/latest_{i + 1}.htm"
             logging.debug("Fetching page: %s", page_url)
-            soup = get_link_content_with_utf8_decode(page_url)
+            soup = self.__get_listing_page(page_url)
 
             if not soup:
+                listing_fetch_failures += 1
                 logging.error("Failed to get soup for page: %s", page_url)
                 continue
 
@@ -44,6 +52,9 @@ class CnbetaRouter(BaseRouter):
                                         cache_key=generate_cache_key(prefix=cache_prefix, name=link))
                     articles_list.append(metadata)
 
+        if not articles_list and listing_fetch_failures == cnbeta_query_page_count:
+            raise RuntimeError(f"all {cnbeta_query_page_count} cnbeta listing pages failed to fetch")
+
         if not articles_list:
             logging.warning(
                 "Router %s found 0 articles from cnbeta after fetching %d pages",
@@ -52,6 +63,26 @@ class CnbetaRouter(BaseRouter):
         else:
             logging.info("Total articles found in cnbeta: %d", len(articles_list))
         return articles_list
+
+    @staticmethod
+    def __get_listing_page(page_url):
+        log_external_fetch("requests.get", page_url, parser=html_parser, decode="utf-8")
+        try:
+            response = requests.get(page_url, timeout=DEFAULT_REQUEST_TIMEOUT_SECONDS)
+        except requests.RequestException as exc:
+            logging.warning("cnbeta listing fetch failed for page=%s: %s", page_url, exc)
+            return None
+
+        if response.status_code != 200:
+            logging.warning(
+                "cnbeta listing fetch returned status=%s length=%s page=%s",
+                response.status_code,
+                len(response.content) if response.content is not None else 0,
+                page_url,
+            )
+            return None
+
+        return BeautifulSoup(response.content.decode('utf-8'), html_parser)
 
     def _get_article_content(self, article_metadata, entry):
         logging.info("Fetching content for: %s", article_metadata.link)

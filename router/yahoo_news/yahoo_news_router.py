@@ -1,6 +1,7 @@
 import json
 import logging
 import re
+from html import unescape
 
 import requests
 from bs4 import BeautifulSoup
@@ -34,6 +35,62 @@ class YahooNewsRouter(BaseRouter):
         except Exception:
             logging.exception("Router %s failed to fetch %s", self.router_path, url)
             return None
+
+    def _remove_trading_disclosure_tags(self, article_tag):
+        removed_count = 0
+        while True:
+            disclosure_text = article_tag.find(string=lambda text: text and text.strip() == "Trading disclosure")
+            if not disclosure_text:
+                return removed_count
+
+            disclosure_tag = disclosure_text.find_parent("section", class_=lambda c: c and "ticker-list" in c)
+            if not disclosure_tag:
+                disclosure_tag = disclosure_text.find_parent("footer")
+            if not disclosure_tag:
+                disclosure_tag = disclosure_text.parent
+
+            disclosure_tag.decompose()
+            removed_count += 1
+
+    def _iter_json_ld_objects(self, soup):
+        for script in soup.find_all("script", type="application/ld+json"):
+            try:
+                data = json.loads(script.string)
+            except (json.JSONDecodeError, TypeError):
+                continue
+
+            if isinstance(data, dict):
+                if isinstance(data.get("@graph"), list):
+                    for item in data["@graph"]:
+                        if isinstance(item, dict):
+                            yield item
+                else:
+                    yield data
+            elif isinstance(data, list):
+                for item in data:
+                    if isinstance(item, dict):
+                        yield item
+
+    def _extract_json_ld_image_url(self, ld):
+        thumbnail = ld.get("thumbnailUrl")
+        if isinstance(thumbnail, list):
+            thumbnail = next((url for url in thumbnail if isinstance(url, str)), "")
+        if isinstance(thumbnail, str) and thumbnail:
+            return thumbnail
+
+        image = ld.get("image")
+        if isinstance(image, str):
+            return image
+        if isinstance(image, dict):
+            url = image.get("url")
+            return url if isinstance(url, str) else ""
+        if isinstance(image, list):
+            for item in image:
+                if isinstance(item, str):
+                    return item
+                if isinstance(item, dict) and isinstance(item.get("url"), str):
+                    return item["url"]
+        return ""
 
     def _get_articles_list(self, parameter=None, link_filter=None, title_filter=None):
         topic = (parameter or {}).get("topic")
@@ -190,11 +247,19 @@ class YahooNewsRouter(BaseRouter):
             entry.author = author_span.get_text(strip=True)
 
         parts = []
+        content_found = False
         if time_text:
             parts.append(f"<p>{time_text}</p>")
 
         article_tag = soup.find("article")
         if article_tag:
+            removed_disclosure_count = self._remove_trading_disclosure_tags(article_tag)
+            if removed_disclosure_count:
+                logging.debug(
+                    "Router %s removed %d trading disclosure tags from article link=%s",
+                    self.router_path, removed_disclosure_count, article_metadata.link,
+                )
+
             # Extract figures (images) from article
             figures = article_tag.find_all("figure")
             for fig in figures:
@@ -202,6 +267,7 @@ class YahooNewsRouter(BaseRouter):
                 caption = fig.find("figcaption")
                 if img and img.get("src"):
                     parts.append(f'<img src="{img["src"]}" />')
+                    content_found = True
                     if caption:
                         parts.append(f"<p><em>{caption.get_text(strip=True)}</em></p>")
 
@@ -209,6 +275,7 @@ class YahooNewsRouter(BaseRouter):
             paragraphs = [p for p in article_tag.find_all("p") if len(p.get_text(strip=True)) > 20]
             for p in paragraphs:
                 parts.append(f"<p>{p.get_text(strip=True)}</p>")
+                content_found = True
 
             logging.debug(
                 "Router %s article extracted %d figures, %d paragraphs from <article> tag link=%s",
@@ -220,23 +287,31 @@ class YahooNewsRouter(BaseRouter):
             logging.debug("Router %s no article body found, trying JSON-LD fallback link=%s", self.router_path, article_metadata.link)
             best_desc = ""
             best_thumb = ""
-            for script in soup.find_all("script", type="application/ld+json"):
-                try:
-                    ld = json.loads(script.string)
-                    desc = ld.get("description", "")
-                    if len(desc) > len(best_desc):
-                        best_desc = desc
-                        if ld.get("thumbnailUrl"):
-                            best_thumb = ld["thumbnailUrl"]
-                except (json.JSONDecodeError, TypeError):
-                    pass
+            for ld in self._iter_json_ld_objects(soup):
+                image_url = self._extract_json_ld_image_url(ld)
+                if image_url and not best_thumb:
+                    best_thumb = image_url
+
+                desc = ld.get("description", "")
+                if isinstance(desc, str) and len(desc) > len(best_desc):
+                    best_desc = desc
+                    if image_url:
+                        best_thumb = image_url
+
             if best_desc and len(best_desc) > 50:
                 if best_thumb:
                     parts.insert(1, f'<img src="{best_thumb}" />')
                 desc_soup = BeautifulSoup(best_desc, html_parser)
                 desc_paragraphs = [p for p in desc_soup.find_all("p") if len(p.get_text(strip=True)) > 20]
-                for p in desc_paragraphs:
-                    parts.append(f"<p>{p.get_text(strip=True)}</p>")
+                if desc_paragraphs:
+                    for p in desc_paragraphs:
+                        parts.append(f"<p>{p.get_text(strip=True)}</p>")
+                    content_found = True
+                else:
+                    desc_text = unescape(desc_soup.get_text(" ", strip=True))
+                    if len(desc_text) > 20:
+                        parts.append(f"<p>{desc_text}</p>")
+                        content_found = True
                 logging.info(
                     "Router %s used JSON-LD fallback: %d paragraphs, thumbnail=%s link=%s",
                     self.router_path, len(desc_paragraphs), bool(best_thumb), article_metadata.link,
@@ -244,7 +319,7 @@ class YahooNewsRouter(BaseRouter):
             else:
                 logging.warning("Router %s no content found for article link=%s", self.router_path, article_metadata.link)
 
-        entry.description = "\n".join(parts) if len(parts) > 1 else ""
+        entry.description = "\n".join(parts) if content_found else ""
         logging.info(
             "Router %s article content cached: %d chars, title='%s'",
             self.router_path, len(entry.description), article_metadata.title[:50],

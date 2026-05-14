@@ -112,6 +112,11 @@ class JandanRouter(BaseRouter):
         content = soup.find('div', class_='post-content')
         if content is None:
             logging.warning("JandanRouter could not find post-content div for %s", article_metadata.link)
+            logging.warning("Router %s extracted empty content for %s", self.router_path, article_metadata.link)
+            entry.description = ""
+            entry.persist_to_cache(self.router_path)
+            return
+
         remove_certain_tag(content, 'script')
         remove_certain_tag(content, 'h1')
 
@@ -127,9 +132,5 @@ class JandanRouter(BaseRouter):
                     a.extract()
                     logging.debug("JandanRouter removed money.php promo link: %s", href)
 
-        if content is None:
-            logging.warning("Router %s extracted empty content for %s", self.router_path, article_metadata.link)
-            entry.description = ""
-        else:
-            entry.description = content
+        entry.description = content
         entry.persist_to_cache(self.router_path)

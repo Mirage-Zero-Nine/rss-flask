@@ -123,7 +123,11 @@ class BaseRouter:
             logging.info("Router %s fetched %d articles from source", self.router_path, len(article_metadata_list))
         except Exception as exc:
             logging.error("Router %s error during _get_articles_list: %s", self.router_path, exc)
-            article_metadata_list = []
+            logging.warning(
+                "Router %s refresh aborted after article list fetch error; keeping existing metadata and last-build-time",
+                self.router_path,
+            )
+            return False
         finally:
             reset_current_router(token)
 
