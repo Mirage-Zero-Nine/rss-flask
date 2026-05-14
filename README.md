@@ -1,5 +1,75 @@
 # rss-flask
 
+## How to Run
+
+Create a Python 3.12 virtual environment and install dependencies:
+
+```bash
+python3.12 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+Run the Flask app:
+
+```bash
+flask run
+```
+
+Or run the entry point directly:
+
+```bash
+python app.py
+```
+
+Redis is required for normal application use. Running without Redis is only useful for local debugging; routes serve empty feeds and cache writes are skipped.
+
+## Configuration
+
+Supported configuration values:
+
+- `RSS_REDIS_URL`
+- `RSS_SCHEDULER_REFRESH_PERIOD_MINUTES`
+- `rss_redis_url` in `config.yml`
+- `scheduler_refresh_period_in_minutes` in `config.yml`
+- `router_refresh_periods` in `config.yml` - per-router refresh period in minutes
+
+Environment variables take precedence over `config.yml`.
+
+### Full `config.yml` Example
+
+```yaml
+# rss-flask configuration
+# Env vars take precedence over values in this file.
+# All keys are optional - defaults are used when missing.
+
+rss_redis_url: "redis://localhost:6379/0"
+scheduler_refresh_period_in_minutes: 15
+
+# Per-router refresh period in minutes.
+# Each router checks this cooldown before fetching upstream content.
+router_refresh_periods:
+  cnbeta: 10
+  dayone: 60
+  earthquake: 15
+  embassy: 10
+  jandan: 60
+  meta_blog: 30
+  reuters: 30
+  sar: 30
+  wsdot: 30
+  zaobao: 10
+  apnews_top: 15
+  apnews_business: 15
+  yahoo_news: 2
+  apple_developer_news: 60
+  apple_newsroom: 60
+```
+
+If a key is missing, the router falls back to its hardcoded default.
+
+## Description
+
 `rss-flask` is a Flask service that converts upstream websites and feeds into stable RSS XML endpoints. Each router targets one source, normalizes article metadata and content, stores the result in Redis, and serves RSS from cache.
 
 ## Cache Model
@@ -41,58 +111,18 @@ Current route families include:
 - `/embassy`
 - `/jandan`
 - `/meta/blog`
-- `/reuters/<category>[/<topic>[/<limit>]]`
+- `/reuters/<category>` where `<category>` is `world` or `business`
 - `/sar`
 - `/wsdot/news`
-- `/zaobao/realtime/<region>`
+- `/zaobao/realtime/<region>` where `<region>` is `china` or `world`
 - `/apnews/top`
 - `/apnews/business`
 - `/yahoo/reuters/<topic>`
+- `/apple/developer`
+- `/apple/newsroom`
 
 ### Parameterized Routes
 
-- Reuters supports categories such as `world` and `business`, with optional topic and limit parameters.
-- Zaobao supports a general realtime feed plus region-specific feeds such as `china` and `world`.
-- Yahoo News (Reuters) supports topics such as `world`, `business`, `celebrity`, `politics`, `health`, `news`, and `u.s.`.
-
-## Configuration
-
-Supported configuration values:
-
-- `RSS_REDIS_URL`
-- `RSS_SCHEDULER_REFRESH_PERIOD_MINUTES`
-- `rss_redis_url` in `config.yml`
-- `scheduler_refresh_period_in_minutes` in `config.yml`
-- `router_refresh_periods` in `config.yml` — per-router refresh period in minutes
-
-Environment variables take precedence over `config.yml`.
-
-### Full `config.yml` Example
-
-```yaml
-# rss-flask configuration
-# Env vars take precedence over values in this file.
-# All keys are optional — defaults are used when missing.
-
-rss_redis_url: "redis://localhost:6379/0"
-scheduler_refresh_period_in_minutes: 15
-
-# Per-router refresh period in minutes.
-# Each router checks this cooldown before fetching upstream content.
-router_refresh_periods:
-  cnbeta: 10
-  dayone: 60
-  earthquake: 15
-  embassy: 10
-  jandan: 60
-  meta_blog: 30
-  reuters: 30
-  sar: 30
-  wsdot: 30
-  zaobao: 10
-  apnews_top: 15
-  apnews_business: 15
-  yahoo_news: 5
-```
-
-If a key is missing, the router falls back to its hardcoded default.
+- Reuters supports `world` and `business` category feeds.
+- Zaobao supports region-specific feeds for `china` and `world`.
+- Yahoo News (Reuters) supports topics such as `world`, `business`.
