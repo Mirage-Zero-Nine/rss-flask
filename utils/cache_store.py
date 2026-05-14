@@ -16,12 +16,12 @@ config_data = load_config()
 DEFAULT_REDIS_URL = os.environ.get("RSS_REDIS_URL") or config_data.get("rss_redis_url") or "redis://localhost:6379/0"
 
 try:
-    logging.info(f"Connecting to Redis at {DEFAULT_REDIS_URL}")
+    logging.info("Connecting to Redis cache")
     _redis_client = redis.from_url(DEFAULT_REDIS_URL, decode_responses=True)
     _redis_client.ping()  # verify connectivity at import time
     logging.info("Redis connected successfully")
 except redis.RedisError as exc:
-    logging.warning(f"Unable to connect to redis at {DEFAULT_REDIS_URL}: {exc}")
+    logging.warning("Unable to connect to redis: %s", exc)
     logging.warning("Redis is unavailable; cache functions will be no-ops.")
     _redis_client = None
 
