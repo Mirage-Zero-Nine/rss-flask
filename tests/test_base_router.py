@@ -93,6 +93,32 @@ def test_get_article_uses_cached_entry_without_refetching(monkeypatch):
     assert router.article_content_calls == 0
 
 
+def test_get_article_refetches_cached_entry_with_empty_description(monkeypatch):
+    router = FakeRouter()
+    cache_key = "router_cache:fake:empty"
+    feed_items = {}
+
+    monkeypatch.setattr(
+        "router.base_router.read_feed_item_from_cache",
+        lambda key: {
+            "title": "Cached empty",
+            "link": "https://example.com/empty",
+            "description": "",
+            "author": "Cache",
+            "guid": "https://example.com/empty",
+            "created_time": "2026-05-13T10:30:00+00:00",
+            "with_content": True,
+        } if key == cache_key else None,
+    )
+    monkeypatch.setattr("utils.feed_item_object.write_feed_item_to_cache", lambda key, payload: feed_items.setdefault(key, payload))
+
+    entry = router._get_article(Metadata(title="Cached empty", link="https://example.com/empty", guid="guid", cache_key=cache_key))
+
+    assert entry.description == "<p>Body</p>"
+    assert router.article_content_calls == 1
+    assert len(feed_items) == 1
+
+
 def test_refresh_cache_fetches_articles_persists_metadata_and_last_build_time(monkeypatch):
     router = FakeRouter()
     feed_items, metadata_lists, last_build_times = install_memory_cache(monkeypatch)
@@ -137,3 +163,20 @@ def test_build_feed_entries_from_metadata_drops_missing_and_none_descriptions(mo
     entries = router._build_feed_entries_from_metadata(metadata)
 
     assert [entry.title for entry in entries] == ["OK"]
+
+
+def test_build_feed_entries_from_metadata_keeps_empty_description(monkeypatch):
+    router = FakeRouter()
+    payloads = {
+        "ok": {"title": "OK", "link": "https://example.com/ok", "description": "<p>OK</p>", "guid": "ok"},
+        "empty": {"title": "Empty", "link": "https://example.com/empty", "description": "", "guid": "empty"},
+    }
+    monkeypatch.setattr("router.base_router.read_feed_item_from_cache", lambda key: payloads.get(key))
+    metadata = [
+        Metadata(title="OK", link="https://example.com/ok", guid="ok", cache_key="ok"),
+        Metadata(title="Empty", link="https://example.com/empty", guid="empty", cache_key="empty"),
+    ]
+
+    entries = router._build_feed_entries_from_metadata(metadata)
+
+    assert [entry.title for entry in entries] == ["OK", "Empty"]

@@ -2,6 +2,7 @@ import json
 import logging
 import os
 from collections import OrderedDict
+from typing import Any, cast
 
 import redis
 from datetime import datetime
@@ -14,6 +15,8 @@ from utils.router_constants import (
 config_data = load_config()
 
 DEFAULT_REDIS_URL = os.environ.get("RSS_REDIS_URL") or config_data.get("rss_redis_url") or "redis://localhost:6379/0"
+MetadataDict = dict[str, Any]
+FeedItemPayload = dict[str, Any]
 
 try:
     logging.info("Connecting to Redis cache")
@@ -25,23 +28,23 @@ except redis.RedisError as exc:
     logging.warning("Redis is unavailable; cache functions will be no-ops.")
     _redis_client = None
 
-def _has_client():
+def _has_client() -> bool:
     return _redis_client is not None
 
 
-def _log_error(action, exc):
+def _log_error(action: str, exc: Exception) -> None:
     logging.error(f"Redis {action} failed: {exc}")
 
 
-def metadata_list_key(cache_key):
+def metadata_list_key(cache_key: str) -> str:
     return f"{cache_key}:metadata-list"
 
 
-def router_last_build_time_key(cache_key):
+def router_last_build_time_key(cache_key: str) -> str:
     return f"{cache_key}:last-build-time"
 
 
-def read_metadata_list(cache_key):
+def read_metadata_list(cache_key: str) -> list[MetadataDict] | None:
     if not _has_client():
         return None
 
@@ -50,13 +53,20 @@ def read_metadata_list(cache_key):
         if raw is None:
             return None
 
-        return json.loads(raw)
+        metadata = json.loads(raw)
+        if not isinstance(metadata, list):
+            logging.error("Redis metadata list for key=%s is not a list", cache_key)
+            return None
+        if not all(isinstance(item, dict) for item in metadata):
+            logging.error("Redis metadata list for key=%s contains non-object items", cache_key)
+            return None
+        return cast(list[MetadataDict], metadata)
     except (redis.RedisError, json.JSONDecodeError) as exc:
         _log_error("read metadata list", exc)
         return None
 
 
-def _metadata_identity(metadata_dict):
+def _metadata_identity(metadata_dict: MetadataDict) -> Any:
     return (
         metadata_dict.get("cache_key")
         or metadata_dict.get("guid")
@@ -65,8 +75,8 @@ def _metadata_identity(metadata_dict):
     )
 
 
-def _merge_metadata_dicts(existing_metadata, incoming_metadata):
-    merged = OrderedDict()
+def _merge_metadata_dicts(existing_metadata: list[MetadataDict], incoming_metadata: list[MetadataDict]) -> list[MetadataDict]:
+    merged: OrderedDict[Any, MetadataDict] = OrderedDict()
 
     for metadata_dict in incoming_metadata:
         identity = _metadata_identity(metadata_dict)
@@ -84,7 +94,7 @@ def _merge_metadata_dicts(existing_metadata, incoming_metadata):
     return list(merged.values())
 
 
-def write_metadata_list(cache_key, metadata_list):
+def write_metadata_list(cache_key: str, metadata_list: list[Any]) -> None:
     if not _has_client():
         return
 
@@ -98,7 +108,7 @@ def write_metadata_list(cache_key, metadata_list):
         _log_error("write metadata list", exc)
 
 
-def acquire_warm_lock(job_name):
+def acquire_warm_lock(job_name: str) -> bool:
     if not _has_client():
         return True
 
@@ -111,7 +121,7 @@ def acquire_warm_lock(job_name):
         return True
 
 
-def release_warm_lock(job_name):
+def release_warm_lock(job_name: str) -> None:
     if not _has_client():
         return
 
@@ -122,7 +132,7 @@ def release_warm_lock(job_name):
         pass
 
 
-def _metadata_to_dict(metadata):
+def _metadata_to_dict(metadata: Any) -> MetadataDict:
     metadata_dict = dict(metadata.__dict__)
     created_time = metadata_dict.get("created_time")
     if isinstance(created_time, datetime):
@@ -130,7 +140,7 @@ def _metadata_to_dict(metadata):
     return metadata_dict
 
 
-def read_last_build_time(cache_key):
+def read_last_build_time(cache_key: str) -> datetime | None:
     if not _has_client():
         return None
 
@@ -145,7 +155,7 @@ def read_last_build_time(cache_key):
         return None
 
 
-def write_last_build_time(cache_key, last_build_time, ttl_seconds=None):
+def write_last_build_time(cache_key: str, last_build_time: datetime, ttl_seconds: int | None = None) -> None:
     if ttl_seconds is None:
         ttl_seconds = last_build_time_ttl_seconds
 
@@ -159,7 +169,7 @@ def write_last_build_time(cache_key, last_build_time, ttl_seconds=None):
         _log_error("write last build time", exc)
 
 
-def write_feed_item_to_cache(key, payload):
+def write_feed_item_to_cache(key: str, payload: FeedItemPayload) -> None:
     if not _has_client():
         logging.error("Redis client unavailable; feed item write skipped for key=%s", key)
         return
@@ -170,7 +180,10 @@ def write_feed_item_to_cache(key, payload):
         _log_error("write feed item", exc)
 
 
-def read_feed_item_from_cache(key):
+def read_feed_item_from_cache(key: str | None) -> FeedItemPayload | None:
+    if key is None:
+        return None
+
     if not _has_client():
         return None
 
@@ -179,7 +192,11 @@ def read_feed_item_from_cache(key):
         if raw is None:
             return None
 
-        return json.loads(raw)
+        payload = json.loads(raw)
+        if not isinstance(payload, dict):
+            logging.error("Redis feed item for key=%s is not an object", key)
+            return None
+        return cast(FeedItemPayload, payload)
     except (redis.RedisError, json.JSONDecodeError) as exc:
         _log_error("read feed item", exc)
         return None
