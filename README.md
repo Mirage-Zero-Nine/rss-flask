@@ -68,6 +68,26 @@ router_refresh_periods:
 
 If a key is missing, the router falls back to its hardcoded default.
 
+## Development Checks
+
+Install development dependencies:
+
+```bash
+pip install -r requirements-dev.txt
+```
+
+Run the test suite:
+
+```bash
+python -m pytest
+```
+
+Run static type checking:
+
+```bash
+python -m pyright
+```
+
 ## Description
 
 `rss-flask` is a Flask service that converts upstream websites and feeds into stable RSS XML endpoints. Each router targets one source, normalizes article metadata and content, stores the result in Redis, and serves RSS from cache.

@@ -3,6 +3,7 @@ from application.factory import create_app
 
 class StubRouter:
     VALID_TOPICS = {"world"}
+    VALID_CATEGORIES = {"all": None, "research": "Research"}
 
     def __init__(self):
         self.calls = []
@@ -66,3 +67,32 @@ def test_yahoo_passes_lowercase_topic(monkeypatch):
 
     assert response.status_code == 200
     assert stub.calls == [{"parameter": {"topic": "world"}}]
+
+
+def test_openai_news_rejects_missing_category(monkeypatch):
+    app = create_app()
+    monkeypatch.setattr("application.routes.openai_news", StubRouter())
+
+    response = app.test_client().get("/openai-news")
+
+    assert response.status_code == 404
+
+
+def test_openai_news_rejects_invalid_category(monkeypatch):
+    app = create_app()
+    monkeypatch.setattr("application.routes.openai_news", StubRouter())
+
+    response = app.test_client().get("/openai-news/invalid")
+
+    assert response.status_code == 404
+
+
+def test_openai_news_passes_lowercase_category(monkeypatch):
+    app = create_app()
+    stub = StubRouter()
+    monkeypatch.setattr("application.routes.openai_news", stub)
+
+    response = app.test_client().get("/openai-news/Research")
+
+    assert response.status_code == 200
+    assert stub.calls == [{"parameter": {"category": "research"}}]

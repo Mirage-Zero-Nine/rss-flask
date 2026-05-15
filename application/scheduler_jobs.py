@@ -20,6 +20,8 @@ from application.router_dependencies import (
     meta_blog_prefix,
     meta_engineering_blog_router_path,
     meta_tech_blog,
+    openai_news,
+    openai_news_router_path_prefix,
     reuters_news,
     reuters_news_router_path,
     sar_router_path,
@@ -116,6 +118,11 @@ def build_scheduler_jobs():
             "name": yahoo_news_router_path_prefix,
             "warmup": lambda: yahoo_news.refresh_all_topics(),
             "refresh": lambda: yahoo_news.refresh_all_topics(),
+        },
+        {
+            "name": openai_news_router_path_prefix,
+            "warmup": lambda: openai_news.warm_all_categories(),
+            "refresh": lambda: openai_news.refresh_all_categories(),
         },
         {
             "name": apple_news_router_path,

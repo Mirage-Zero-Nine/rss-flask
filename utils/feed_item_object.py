@@ -1,38 +1,29 @@
 import base64
 import logging
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from typing import Any
 
 from utils.cache_store import write_feed_item_to_cache
 
 
+@dataclass
 class FeedItem:
+    """
+    RSS feed item payload stored in Redis.
 
-    def __init__(self,
-                 title=None,
-                 link=None,
-                 description=None,
-                 author=None,
-                 guid=None,
-                 created_time=None,
-                 with_content=False):
-        """
-        Remember to update attribute in persist_to_cache
-        :param title: title of the entry
-        :param link: link to the entry (also works as guid)
-        :param description: content of the entry
-        :param author: author of the entry
-        :param guid: guid of the entry (most likely should be the same as the link)
-        :param created_time: create time for the entry
-        :param with_content: if current entry has the content (whether description is "" or not)
-        """
-        self.title = title
-        self.link = link
-        self.description = description  # main content in each feed
-        self.author = author
-        self.created_time = created_time  # required to be a datatime object
-        self.guid = guid
-        self.with_content = with_content  # if current item has query the source url and fill with content
-        self.cache_key = ""
+    description can be a BeautifulSoup/Tag object while routers are building content;
+    persist_to_cache normalizes it to a string for Redis.
+    """
+
+    title: str | None = None
+    link: str | None = None
+    description: Any | None = None
+    author: str | None = None
+    guid: str | None = None
+    created_time: datetime | str | int | float | None = None
+    with_content: bool = False
+    cache_key: str = field(default="")
 
     def __repr__(self):
         # Handle None values by providing default values or converting to empty string
@@ -40,7 +31,7 @@ class FeedItem:
         link = self.link or ""
         author = self.author or ""
         created_time = str(self.created_time) if self.created_time else ""
-        description = self.description or ""
+        description = str(self.description) if self.description else ""
         guid = self.guid or ""
         with_content = str(self.with_content)
 
@@ -63,7 +54,7 @@ class FeedItem:
         payload = {
             "title": self.title,
             "link": self.link,
-            "description": str(self.description),
+            "description": str(self.description) if self.description is not None else None,
             "author": self.author,
             "created_time": str(self.created_time) if self.created_time else None,
             "guid": self.guid,
@@ -72,35 +63,29 @@ class FeedItem:
         write_feed_item_to_cache(self.cache_key, payload)
 
 
+@dataclass
 class Metadata:
-    def __init__(self, title=None, link=None, author=None, guid=None, created_time=None, cache_key=None, flag=None):
-        """
-        Remember to update attribute in persist_to_cache
-        :param title: title of the entry
-        :param link: link to the entry (also works as guid)
-        :param author: author of the entry
-        :param guid: guid of the entry (most likely should be the same as the link)
-        :param created_time: create time for the entry
-        :param cache_key: Redis key of the entry
-        :param flag: any mark required for later processing
-        """
-        self.title = title
-        self.link = link
-        self.author = author
-        self.guid = guid
-        self.created_time = created_time  # required to be a datatime object
-        self.cache_key = cache_key
-        self.flag = flag
+    """
+    Lightweight article metadata snapshot stored separately from article content.
+    """
+
+    title: str = ""
+    link: str = ""
+    author: str | None = None
+    guid: str = ""
+    created_time: datetime | str | int | float | None = None
+    cache_key: str = ""
+    flag: Any | None = None
 
 
-def generate_cache_key(prefix, name):
+def generate_cache_key(prefix: str, name: str) -> str:
     encoded_name = base64.urlsafe_b64encode(name.encode('utf-8')).decode('utf-8').rstrip('=')
     if len(encoded_name) > 100:
         encoded_name = encoded_name[-100:]
     return f"{prefix}:{encoded_name}"
 
 
-def convert_router_path_to_cache_prefix(router_path):
+def convert_router_path_to_cache_prefix(router_path: str) -> str:
     if router_path.startswith('/') is False:
         logging.error(f"{datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} Invalid path, it's not started with a '/': {router_path}")
         raise Exception("Invalid path, it's not started with a '/'")

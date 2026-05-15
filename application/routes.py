@@ -25,6 +25,8 @@ from application.router_dependencies import (
     meta_blog_prefix,
     meta_engineering_blog_router_path,
     meta_tech_blog,
+    openai_news,
+    openai_news_router_path_prefix,
     reuters_news,
     reuters_news_router_path,
     sar_router_path,
@@ -135,6 +137,13 @@ def register_routes(app):
         if topic.lower() not in yahoo_news.VALID_TOPICS:
             abort(404)
         return yahoo_news.get_rss_xml_response(parameter={"topic": topic.lower()})
+
+    @app.route(openai_news_router_path_prefix + '/<category>')
+    def openai_news_router(category):
+        category = category.lower()
+        if category not in openai_news.VALID_CATEGORIES:
+            abort(404)
+        return openai_news.get_rss_xml_response(parameter={"category": category})
 
     @app.route(apple_news_router_path)
     def apple_developer_news_router():

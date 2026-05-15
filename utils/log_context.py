@@ -2,14 +2,14 @@ import contextvars
 import logging
 
 
-_current_router = contextvars.ContextVar("current_router", default=None)
+_current_router: contextvars.ContextVar[str | None] = contextvars.ContextVar("current_router", default=None)
 
 
-def set_current_router(router_path):
+def set_current_router(router_path: str | None) -> contextvars.Token[str | None]:
     return _current_router.set(router_path or "unknown")
 
 
-def reset_current_router(token):
+def reset_current_router(token: contextvars.Token[str | None]) -> None:
     _current_router.reset(token)
 
 
@@ -17,7 +17,7 @@ def get_current_router() -> str | None:
     return _current_router.get()
 
 
-def log_external_fetch(method, link, **details):
+def log_external_fetch(method: str, link: str, **details: object) -> None:
     detail_string = " ".join(f"{key}={value}" for key, value in details.items() if value is not None)
     current_router = get_current_router()
     if current_router:

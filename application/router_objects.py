@@ -45,6 +45,14 @@ from router.meta_blog.meta_tech_blog_router_constants import (
     meta_blog_link,
     meta_blog_description,
 )
+from router.openai_news.openai_news_router import OpenAINewsRouter
+from router.openai_news.openai_news_router_constants import (
+    openai_news_feed_title,
+    openai_news_original_link,
+    openai_news_articles_link,
+    openai_news_description,
+    openai_news_period,
+)
 from router.reuters.reuters_constants import (
     reuters_fetch_api_base_link,
     reuters_site_link,
@@ -80,6 +88,7 @@ from utils.router_constants import (
     sar_router_path,
     apnews_router_path,
     apnews_business_router_path,
+    openai_news_router_path_prefix,
 )
 from router.apple_news.apple_news_router import AppleNewsRouter, AppleNewsroomRouter
 from router.apple_news.apple_news_router_constants import (
@@ -233,6 +242,16 @@ yahoo_news = YahooNewsRouter(
     description=yahoo_news_description,
     language=language_english,
     period=get_router_period("yahoo_news", 2),
+)
+
+openai_news = OpenAINewsRouter(
+    router_path=openai_news_router_path_prefix,
+    feed_title=openai_news_feed_title,
+    original_link=openai_news_original_link,
+    articles_link=openai_news_articles_link,
+    description=openai_news_description,
+    language=language_english,
+    period=get_router_period("openai_news", openai_news_period // 60000),
 )
 
 apple_developer_news = AppleNewsRouter(
