@@ -2,7 +2,6 @@ from application.factory import create_app
 
 
 class StubRouter:
-    VALID_TOPICS = {"world"}
     VALID_CATEGORIES = {"all": None, "research": "Research"}
 
     def __init__(self):
@@ -30,15 +29,42 @@ def test_reuters_rejects_invalid_category():
     assert response.status_code == 404
 
 
-def test_reuters_passes_valid_parameters(monkeypatch):
+def test_reuters_rejects_topic_route():
+    app = create_app()
+
+    response = app.test_client().get("/reuters/world/asia-pacific")
+
+    assert response.status_code == 404
+
+
+def test_reuters_rejects_limit_route():
+    app = create_app()
+
+    response = app.test_client().get("/reuters/world/asia-pacific/5")
+
+    assert response.status_code == 404
+
+
+def test_reuters_world_route_returns_rss(monkeypatch):
     app = create_app()
     stub = StubRouter()
     monkeypatch.setattr("application.routes.reuters_news", stub)
 
-    response = app.test_client().get("/reuters/world/asia-pacific/5")
+    response = app.test_client().get("/reuters/world")
 
     assert response.status_code == 200
-    assert stub.calls == [{"parameter": {"category": "world", "topic": "asia-pacific", "limit": 5}}]
+    assert stub.calls == [{"parameter": {"category": "world"}}]
+
+
+def test_reuters_business_route_returns_rss(monkeypatch):
+    app = create_app()
+    stub = StubRouter()
+    monkeypatch.setattr("application.routes.reuters_news", stub)
+
+    response = app.test_client().get("/reuters/business")
+
+    assert response.status_code == 200
+    assert stub.calls == [{"parameter": {"category": "business"}}]
 
 
 def test_zaobao_rejects_invalid_region():
@@ -49,24 +75,12 @@ def test_zaobao_rejects_invalid_region():
     assert response.status_code == 404
 
 
-def test_yahoo_rejects_invalid_topic(monkeypatch):
+def test_yahoo_route_removed():
     app = create_app()
-    monkeypatch.setattr("application.routes.yahoo_news", StubRouter())
 
-    response = app.test_client().get("/yahoo/reuters/invalid")
+    response = app.test_client().get("/yahoo/reuters/world")
 
     assert response.status_code == 404
-
-
-def test_yahoo_passes_lowercase_topic(monkeypatch):
-    app = create_app()
-    stub = StubRouter()
-    monkeypatch.setattr("application.routes.yahoo_news", stub)
-
-    response = app.test_client().get("/yahoo/reuters/World")
-
-    assert response.status_code == 200
-    assert stub.calls == [{"parameter": {"topic": "world"}}]
 
 
 def test_openai_news_rejects_missing_category(monkeypatch):

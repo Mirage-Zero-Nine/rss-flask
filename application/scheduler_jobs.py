@@ -29,8 +29,6 @@ from application.router_dependencies import (
     usgs_earthquake_report,
     wsdot_news,
     wsdot_news_router_path,
-    yahoo_news,
-    yahoo_news_router_path_prefix,
     zaobao_router_path_prefix,
     zaobao_realtime,
     title_filter,
@@ -95,14 +93,20 @@ def build_scheduler_jobs():
             "refresh": lambda: zaobao_realtime.refresh_cache(parameter={"region": "world"}, title_filter=title_filter),
         },
         {
+            "name": reuters_news_router_path + "/yahoo-source",
+            "warmup": lambda: reuters_news.refresh_from_yahoo(),
+            "refresh": lambda: reuters_news.refresh_from_yahoo(),
+            "interval_minutes": 2,
+        },
+        {
             "name": reuters_news_router_path + "/world",
-            "warmup": lambda: reuters_news.warm_cache(parameter={"category": "world", "topic": None, "limit": 20}),
-            "refresh": lambda: reuters_news.refresh_cache(parameter={"category": "world", "topic": None, "limit": 20}),
+            "warmup": lambda: reuters_news.warm_cache(parameter={"category": "world"}),
+            "refresh": lambda: reuters_news.refresh_cache(parameter={"category": "world"}),
         },
         {
             "name": reuters_news_router_path + "/business",
-            "warmup": lambda: reuters_news.warm_cache(parameter={"category": "business", "topic": None, "limit": 20}),
-            "refresh": lambda: reuters_news.refresh_cache(parameter={"category": "business", "topic": None, "limit": 20}),
+            "warmup": lambda: reuters_news.warm_cache(parameter={"category": "business"}),
+            "refresh": lambda: reuters_news.refresh_cache(parameter={"category": "business"}),
         },
         {
             "name": apnews_router_path,
@@ -113,11 +117,6 @@ def build_scheduler_jobs():
             "name": apnews_business_router_path,
             "warmup": lambda: apnews_business.warm_cache(),
             "refresh": lambda: apnews_business.refresh_cache(),
-        },
-        {
-            "name": yahoo_news_router_path_prefix,
-            "warmup": lambda: yahoo_news.refresh_all_topics(),
-            "refresh": lambda: yahoo_news.refresh_all_topics(),
         },
         {
             "name": openai_news_router_path_prefix,

@@ -47,6 +47,7 @@ def router_refresh_job_scheduler(jobs):
     _scheduler_started = True
 
     for job in jobs:
+        job_interval = job.get("interval_minutes", interval_minutes)
         # warm_cache() returns True if it refreshed (cache was empty or lock acquired),
         # False if it skipped (cache was populated or lock held by another process)
         cache_was_empty = None  # None = skipped for an external reason (lock held or error)
@@ -71,25 +72,25 @@ def router_refresh_job_scheduler(jobs):
             logging.info(
                 "Router %s: cache was empty, warm-up refreshed content. Next scheduled run in %s minutes.",
                 job['name'],
-                interval_minutes,
+                job_interval,
             )
         elif lock_held_by_other:
             logging.info(
                 "Router %s: warm-up deferred to another process. Next scheduled run in %s minutes.",
                 job['name'],
-                interval_minutes,
+                job_interval,
             )
         else:
             logging.info(
                 "Router %s: cache was populated, skipping warm-up. Next scheduled run in %s minutes.",
                 job['name'],
-                interval_minutes,
+                job_interval,
             )
 
         scheduler.add_job(
             run_refresh_job,
             trigger='interval',
-            minutes=interval_minutes,
-            next_run_time=datetime.now() + timedelta(minutes=interval_minutes),
+            minutes=job_interval,
+            next_run_time=datetime.now() + timedelta(minutes=job_interval),
             args=[job]
         )

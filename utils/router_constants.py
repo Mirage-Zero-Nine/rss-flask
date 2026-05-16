@@ -10,7 +10,6 @@ wsdot_news_router_path = '/wsdot/news'
 zaobao_router_path_prefix = "/zaobao/realtime"
 apnews_router_path = "/apnews/top"
 apnews_business_router_path = "/apnews/business"
-yahoo_news_router_path_prefix = "/yahoo/reuters"
 apple_news_router_path = "/apple/developer"
 apple_newsroom_router_path = "/apple/newsroom"
 openai_news_router_path_prefix = "/openai-news"

@@ -16,7 +16,6 @@ from application.router_objects import (
     sony_alpha_rumors,
     usgs_earthquake_report,
     wsdot_news,
-    yahoo_news,
     zaobao_realtime,
 )
 from utils.router_constants import (
@@ -34,6 +33,5 @@ from utils.router_constants import (
     reuters_news_router_path,
     sar_router_path,
     wsdot_news_router_path,
-    yahoo_news_router_path_prefix,
     zaobao_router_path_prefix,
 )
