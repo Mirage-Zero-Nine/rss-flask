@@ -31,13 +31,43 @@ class OpenAINewsRouter(BaseRouter):
         "ai-adoption": "AI Adoption",
     }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Holds a parsed feedparser result while warm_all_categories /
+        # refresh_all_categories iterate categories, so the RSS feed is
+        # fetched once per bulk cycle instead of once per category.
+        self._cached_feed = None
+
     def warm_all_categories(self):
-        for category in self.VALID_CATEGORIES:
-            self.warm_cache(parameter={"category": category})
+        self._with_shared_feed(lambda category: self.warm_cache(parameter={"category": category}))
 
     def refresh_all_categories(self):
-        for category in self.VALID_CATEGORIES:
-            self.refresh_cache(parameter={"category": category})
+        self._with_shared_feed(lambda category: self.refresh_cache(parameter={"category": category}))
+
+    def _with_shared_feed(self, per_category_action):
+        """Parse the OpenAI RSS feed once and dispatch all categories.
+
+        Mirrors YahooNewsRouter.refresh_all_topics: stash the parsed feed
+        on the instance so each category's `_get_articles_list` reuses it
+        instead of re-parsing the same URL nine times. Clears the cache in
+        a finally block so a later direct call to `_get_articles_list`
+        still fetches a fresh copy.
+        """
+        log_external_fetch("feedparser.parse", self.articles_link)
+        parsed_feed = feedparser.parse(self.articles_link)
+        entry_count = len(parsed_feed.entries) if parsed_feed.entries else 0
+        logging.info(
+            "Router %s OpenAI news shared RSS parse: %d entries (bozo=%s)",
+            self.router_path,
+            entry_count,
+            parsed_feed.get("bozo", False),
+        )
+        self._cached_feed = parsed_feed
+        try:
+            for category in self.VALID_CATEGORIES:
+                per_category_action(category)
+        finally:
+            self._cached_feed = None
 
     def _get_articles_list(self, parameter=None, link_filter=None, title_filter=None):
         category = (parameter or {}).get("category")
@@ -46,8 +76,16 @@ class OpenAINewsRouter(BaseRouter):
             return []
 
         expected_category = self.VALID_CATEGORIES[category]
-        log_external_fetch("feedparser.parse", self.articles_link)
-        parsed_feed = feedparser.parse(self.articles_link)
+        if self._cached_feed is not None:
+            logging.debug(
+                "Router %s using shared RSS feed for category=%s",
+                self.router_path,
+                category,
+            )
+            parsed_feed = self._cached_feed
+        else:
+            log_external_fetch("feedparser.parse", self.articles_link)
+            parsed_feed = feedparser.parse(self.articles_link)
         if not parsed_feed.entries:
             logging.warning(
                 "Router %s OpenAI news RSS has 0 entries (bozo=%s, bozo_exception=%s)",

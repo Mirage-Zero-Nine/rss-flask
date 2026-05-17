@@ -67,29 +67,31 @@ def router_refresh_job_scheduler(jobs):
             logging.exception("Scheduler warm-up job failed for %s: %s", job['name'], exc)
             cache_was_empty = False
 
+        job_interval = job.get("interval_minutes", interval_minutes)
+
         if cache_was_empty is True:
             logging.info(
                 "Router %s: cache was empty, warm-up refreshed content. Next scheduled run in %s minutes.",
                 job['name'],
-                interval_minutes,
+                job_interval,
             )
         elif lock_held_by_other:
             logging.info(
                 "Router %s: warm-up deferred to another process. Next scheduled run in %s minutes.",
                 job['name'],
-                interval_minutes,
+                job_interval,
             )
         else:
             logging.info(
                 "Router %s: cache was populated, skipping warm-up. Next scheduled run in %s minutes.",
                 job['name'],
-                interval_minutes,
+                job_interval,
             )
 
         scheduler.add_job(
             run_refresh_job,
             trigger='interval',
-            minutes=interval_minutes,
-            next_run_time=datetime.now() + timedelta(minutes=interval_minutes),
+            minutes=job_interval,
+            next_run_time=datetime.now() + timedelta(minutes=job_interval),
             args=[job]
         )
