@@ -1,6 +1,7 @@
 import json
 import logging
 import re
+import time
 from html import unescape
 
 import requests
@@ -25,16 +26,21 @@ class YahooNewsRouter(BaseRouter):
         super().__init__(*args, **kwargs)
         self._cached_soup = None
 
-    def _fetch_page(self, url):
-        """Fetch a page with browser-like headers."""
-        logging.debug("Router %s fetching URL=%s", self.router_path, url)
-        try:
-            resp = requests.get(url, headers=self._REQUEST_HEADERS, timeout=15)
-            logging.debug("Router %s fetch URL=%s status=%d length=%d", self.router_path, url, resp.status_code, len(resp.text))
-            return BeautifulSoup(resp.text, html_parser)
-        except Exception:
-            logging.exception("Router %s failed to fetch %s", self.router_path, url)
-            return None
+    def _fetch_page(self, url, retries=1):
+        """Fetch a page with browser-like headers. Retries once on non-200."""
+        for attempt in range(1 + retries):
+            logging.debug("Router %s fetching URL=%s attempt=%d", self.router_path, url, attempt + 1)
+            try:
+                resp = requests.get(url, headers=self._REQUEST_HEADERS, timeout=15)
+                logging.debug("Router %s fetch URL=%s status=%d length=%d", self.router_path, url, resp.status_code, len(resp.text))
+                if resp.status_code == 200:
+                    return BeautifulSoup(resp.text, html_parser)
+                logging.warning("Router %s fetch URL=%s returned status=%d", self.router_path, url, resp.status_code)
+            except Exception:
+                logging.exception("Router %s failed to fetch %s", self.router_path, url)
+            if attempt < retries:
+                time.sleep(2)
+        return None
 
     def _remove_trading_disclosure_tags(self, article_tag):
         removed_count = 0

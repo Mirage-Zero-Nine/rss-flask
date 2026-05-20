@@ -104,18 +104,23 @@ def build_scheduler_jobs():
             "warmup": lambda: reuters_news.warm_cache(parameter={"category": "business", "topic": None, "limit": 20}),
             "refresh": lambda: reuters_news.refresh_cache(parameter={"category": "business", "topic": None, "limit": 20}),
         },
-        {
-            "name": apnews_router_path,
-            "warmup": lambda: apnews_top_news.warm_cache(),
-            "refresh": lambda: apnews_top_news.refresh_cache(),
-        },
+        # apnews_business must run before apnews_top so /apnews/top can dedup
+        # against /apnews/business cached metadata on cold start. Keeping the
+        # current order of the two refresh jobs preserves the steady-state
+        # ordering inside each scheduler tick.
         {
             "name": apnews_business_router_path,
             "warmup": lambda: apnews_business.warm_cache(),
             "refresh": lambda: apnews_business.refresh_cache(),
         },
         {
+            "name": apnews_router_path,
+            "warmup": lambda: apnews_top_news.warm_cache(),
+            "refresh": lambda: apnews_top_news.refresh_cache(),
+        },
+        {
             "name": yahoo_news_router_path_prefix,
+            "interval_minutes": 2,
             "warmup": lambda: yahoo_news.refresh_all_topics(),
             "refresh": lambda: yahoo_news.refresh_all_topics(),
         },
