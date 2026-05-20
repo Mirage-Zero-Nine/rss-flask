@@ -86,19 +86,37 @@ class AppleNewsroomRouter(RouterForRssFeed):
             logging.warning("Router %s no <article> tag found for %s", self.router_path, article_metadata.link)
             return
 
+        # Sections to exclude from output
+        _exclude_classes = {"sosumi", "legal-info", "docsanddownloads", "presscontacts", "nr-article-share"}
+
         parts = []
         for child in article.children:
             if not hasattr(child, "name") or not child.name:
                 continue
             classes = child.get("class", [])
+            if _exclude_classes & set(classes):
+                continue
             if "pagebody" in classes:
-                paragraphs = child.find_all("p")
-                if not paragraphs:
-                    paragraphs = child.find_all("div", class_="pagebody-copy")
-                for p in paragraphs:
-                    text = p.get_text(strip=True)
-                    if text:
-                        parts.append(f"<p>{text}</p>")
+                for el in child.find_all(["h2", "div"], class_=["pagebody-header", "pagebody-copy"]):
+                    # Remove footnote superscripts
+                    for sup in el.find_all("sup"):
+                        sup.decompose()
+                    # Remove class attributes from all tags
+                    for tag in el.find_all(True):
+                        del tag["class"]
+                    if el.name == "h2":
+                        text = el.get_text(strip=True)
+                        if text:
+                            parts.append(f"<h2>{text}</h2>")
+                    else:
+                        # If content starts with a block element, output directly
+                        block_child = el.find(["ul", "ol", "table", "blockquote"], recursive=False)
+                        if block_child:
+                            parts.append(str(block_child))
+                        else:
+                            inner = el.decode_contents().strip()
+                            if inner:
+                                parts.append(f"<p>{inner}</p>")
             elif child.name == "figure" or "image" in classes or "gallery" in classes:
                 for img in child.find_all("img"):
                     src = img.get("src", "")

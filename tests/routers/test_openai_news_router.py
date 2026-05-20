@@ -154,3 +154,150 @@ def test_get_article_content_extracts_article_page_body(monkeypatch):
     assert "<ul><li><strong>Startinvestigatingabug</strong>whilewaitingforyourcoffee.</li><li>Reachadecisionpointduringyourcommute.</li></ul>" in compact_description
     assert "Short RSS summary" not in entry.description
     assert "Keep reading" not in entry.description
+
+
+def _make_feed_with_one_per_category():
+    """Build a fake feedparser result with one entry per OpenAI category term."""
+
+    class Feed:
+        entries = [
+            {
+                "title": "Company A",
+                "link": "https://openai.com/index/a",
+                "id": "a",
+                "tags": [{"term": "Company"}],
+            },
+            {
+                "title": "Research B",
+                "link": "https://openai.com/index/b",
+                "id": "b",
+                "tags": [{"term": "Research"}],
+            },
+            {
+                "title": "Product C",
+                "link": "https://openai.com/index/c",
+                "id": "c",
+                "tags": [{"term": "Product"}],
+            },
+            {
+                "title": "Safety D",
+                "link": "https://openai.com/index/d",
+                "id": "d",
+                "tags": [{"term": "Safety"}],
+            },
+            {
+                "title": "Engineering E",
+                "link": "https://openai.com/index/e",
+                "id": "e",
+                "tags": [{"term": "Engineering"}],
+            },
+            {
+                "title": "Security F",
+                "link": "https://openai.com/index/f",
+                "id": "f",
+                "tags": [{"term": "Security"}],
+            },
+            {
+                "title": "Global Affairs G",
+                "link": "https://openai.com/index/g",
+                "id": "g",
+                "tags": [{"term": "Global Affairs"}],
+            },
+            {
+                "title": "AI Adoption H",
+                "link": "https://openai.com/index/h",
+                "id": "h",
+                "tags": [{"term": "AI Adoption"}],
+            },
+        ]
+
+        def get(self, key, default=None):
+            return default
+
+    return Feed()
+
+
+def test_refresh_all_categories_parses_rss_feed_once(monkeypatch):
+    router = build_router()
+    parse_calls = {"count": 0, "categories": []}
+
+    def fake_parse(url):
+        parse_calls["count"] += 1
+        return _make_feed_with_one_per_category()
+
+    monkeypatch.setattr("router.openai_news.openai_news_router.feedparser.parse", fake_parse)
+
+    # Stub refresh_cache to record category dispatch and avoid touching cache_store.
+    def fake_refresh_cache(parameter=None, **_kwargs):
+        parse_calls["categories"].append(parameter["category"])
+        # Trigger _get_articles_list to confirm it consumes the cached feed.
+        articles = router._get_articles_list(parameter=parameter)
+        parse_calls.setdefault("article_counts", {})[parameter["category"]] = len(articles)
+        return True
+
+    monkeypatch.setattr(router, "refresh_cache", fake_refresh_cache)
+
+    router.refresh_all_categories()
+
+    assert parse_calls["count"] == 1, "RSS feed should be parsed exactly once per bulk refresh"
+    assert parse_calls["categories"] == list(router.VALID_CATEGORIES.keys())
+    # All 8 entries pass through 'all', plus one per matching category.
+    assert parse_calls["article_counts"]["all"] == 8
+    assert parse_calls["article_counts"]["company"] == 1
+    assert parse_calls["article_counts"]["research"] == 1
+    # Cache should be cleared after the bulk operation completes.
+    assert router._cached_feed is None
+
+
+def test_warm_all_categories_parses_rss_feed_once(monkeypatch):
+    router = build_router()
+    parse_calls = {"count": 0}
+
+    def fake_parse(url):
+        parse_calls["count"] += 1
+        return _make_feed_with_one_per_category()
+
+    monkeypatch.setattr("router.openai_news.openai_news_router.feedparser.parse", fake_parse)
+    monkeypatch.setattr(router, "warm_cache", lambda **_kwargs: False)
+
+    router.warm_all_categories()
+
+    assert parse_calls["count"] == 1
+    assert router._cached_feed is None
+
+
+def test_direct_get_articles_list_call_still_parses_fresh(monkeypatch):
+    """A direct (non-bulk) call must not reuse a stale cached feed."""
+
+    router = build_router()
+    parse_calls = {"count": 0}
+
+    def fake_parse(url):
+        parse_calls["count"] += 1
+        return _make_feed_with_one_per_category()
+
+    monkeypatch.setattr("router.openai_news.openai_news_router.feedparser.parse", fake_parse)
+
+    # Two direct calls should both fetch fresh.
+    router._get_articles_list(parameter={"category": "all"})
+    router._get_articles_list(parameter={"category": "company"})
+
+    assert parse_calls["count"] == 2
+
+
+def test_with_shared_feed_clears_cache_on_exception(monkeypatch):
+    router = build_router()
+    monkeypatch.setattr(
+        "router.openai_news.openai_news_router.feedparser.parse",
+        lambda url: _make_feed_with_one_per_category(),
+    )
+
+    def raising_action(_category):
+        raise RuntimeError("boom")
+
+    try:
+        router._with_shared_feed(raising_action)
+    except RuntimeError:
+        pass
+
+    assert router._cached_feed is None
