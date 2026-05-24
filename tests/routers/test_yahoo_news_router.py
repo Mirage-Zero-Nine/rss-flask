@@ -1,5 +1,6 @@
 import json
 
+import requests
 from bs4 import BeautifulSoup
 
 from router.yahoo_news.yahoo_news_router import YahooNewsRouter
@@ -131,3 +132,37 @@ def test_get_article_content_keeps_single_json_ld_paragraph(monkeypatch):
 
     assert entry.description
     assert "This single transcript paragraph" in entry.description
+
+
+def test_get_article_content_handles_too_many_redirects(monkeypatch, caplog):
+    """A redirect loop on a Yahoo article URL should be logged as a warning, not a traceback,
+    and the entry should be persisted with an empty description so the caller can move on."""
+    article_url = "https://www.yahoo.com/news/world/articles/redirect-loop-story.html"
+
+    def raise_redirects(*args, **kwargs):
+        raise requests.exceptions.TooManyRedirects("Exceeded 30 redirects.")
+
+    monkeypatch.setattr("router.yahoo_news.yahoo_news_router.requests.get", raise_redirects)
+
+    persisted = {"called": False}
+
+    def record_persist(*args, **kwargs):
+        persisted["called"] = True
+
+    monkeypatch.setattr("utils.feed_item_object.write_feed_item_to_cache", record_persist)
+
+    entry = FeedItem()
+    metadata = Metadata(title="Redirect loop story", link=article_url)
+
+    with caplog.at_level("WARNING"):
+        # Must not raise; must not log an exception/traceback.
+        build_router()._get_article_content(metadata, entry)
+
+    assert entry.description == ""
+    assert persisted["called"] is True
+
+    redirect_warnings = [r for r in caplog.records if "redirect loop" in r.getMessage()]
+    assert len(redirect_warnings) == 1
+    assert redirect_warnings[0].levelname == "WARNING"
+    # logging.warning() must not attach exception info; logging.exception() would.
+    assert redirect_warnings[0].exc_info is None
