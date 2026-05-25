@@ -233,6 +233,16 @@ class YahooNewsRouter(BaseRouter):
             resp = requests.get(article_metadata.link, headers=self._REQUEST_HEADERS, timeout=15)
             logging.debug("Router %s article fetch status=%d length=%d link=%s", self.router_path, resp.status_code, len(resp.text), article_metadata.link)
             soup = BeautifulSoup(resp.text, html_parser)
+        except requests.exceptions.TooManyRedirects as exc:
+            # Yahoo occasionally returns a redirect loop for individual articles.
+            # Treat as a known upstream failure and skip with a warning instead of a traceback.
+            logging.warning(
+                "Router %s redirect loop fetching article link=%s: %s",
+                self.router_path, article_metadata.link, exc,
+            )
+            entry.description = ""
+            entry.persist_to_cache(self.router_path)
+            return
         except Exception:
             logging.exception("Router %s failed to fetch article page for %s", self.router_path, article_metadata.link)
             entry.description = ""
