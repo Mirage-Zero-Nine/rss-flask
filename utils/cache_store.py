@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import uuid
 from collections import OrderedDict
 from typing import Any, cast
 
@@ -17,6 +18,7 @@ config_data = load_config()
 DEFAULT_REDIS_URL = os.environ.get("RSS_REDIS_URL") or config_data.get("rss_redis_url") or "redis://localhost:6379/0"
 MetadataDict = dict[str, Any]
 FeedItemPayload = dict[str, Any]
+_NO_REDIS_LOCK_TOKEN = "no-redis-cache-lock"
 
 try:
     logging.info("Connecting to Redis cache")
@@ -106,6 +108,50 @@ def write_metadata_list(cache_key: str, metadata_list: list[Any]) -> None:
         _redis_client.set(metadata_list_key(cache_key), payload)
     except (redis.RedisError, TypeError) as exc:
         _log_error("write metadata list", exc)
+
+
+def replace_metadata_list(cache_key: str, metadata_list: list[Any]) -> None:
+    if not _has_client():
+        return
+
+    try:
+        payload = json.dumps([_metadata_to_dict(metadata) for metadata in metadata_list])
+        _redis_client.set(metadata_list_key(cache_key), payload)
+    except (redis.RedisError, TypeError) as exc:
+        _log_error("replace metadata list", exc)
+
+
+def acquire_cache_lock(lock_name: str, ttl_seconds: int = 120) -> str | None:
+    if not _has_client():
+        return _NO_REDIS_LOCK_TOKEN
+
+    token = uuid.uuid4().hex
+    lock_key = f"cache_lock:{lock_name}"
+    try:
+        result = _redis_client.set(lock_key, token, nx=True, ex=ttl_seconds)
+        if result is True or result == 1:
+            return token
+        return None
+    except redis.RedisError as exc:
+        logging.warning("Failed to acquire cache lock for %s: %s. Allowing local execution.", lock_name, exc)
+        return _NO_REDIS_LOCK_TOKEN
+
+
+def release_cache_lock(lock_name: str, token: str) -> None:
+    if not _has_client() or token == _NO_REDIS_LOCK_TOKEN:
+        return
+
+    lock_key = f"cache_lock:{lock_name}"
+    script = """
+    if redis.call("get", KEYS[1]) == ARGV[1] then
+        return redis.call("del", KEYS[1])
+    end
+    return 0
+    """
+    try:
+        _redis_client.eval(script, 1, lock_key, token)
+    except redis.RedisError as exc:
+        logging.warning("Failed to release cache lock for %s: %s", lock_name, exc)
 
 
 def acquire_warm_lock(job_name: str) -> bool:

@@ -47,11 +47,10 @@ class OpenAINewsRouter(BaseRouter):
     def _with_shared_feed(self, per_category_action):
         """Parse the OpenAI RSS feed once and dispatch all categories.
 
-        Mirrors YahooNewsRouter.refresh_all_topics: stash the parsed feed
-        on the instance so each category's `_get_articles_list` reuses it
-        instead of re-parsing the same URL nine times. Clears the cache in
-        a finally block so a later direct call to `_get_articles_list`
-        still fetches a fresh copy.
+        Stashes the parsed feed on the instance so each category's
+        `_get_articles_list` reuses it instead of re-parsing the same URL
+        nine times. Clears the cache in a finally block so a later direct
+        call to `_get_articles_list` still fetches a fresh copy.
         """
         log_external_fetch("feedparser.parse", self.articles_link)
         parsed_feed = feedparser.parse(self.articles_link)
