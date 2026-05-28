@@ -29,6 +29,17 @@ def test_generate_cache_key_uses_urlsafe_base64_and_truncates_long_names():
     assert "=" not in encoded_name
 
 
+def test_persist_to_cache_uses_override_key(monkeypatch):
+    writes = {}
+    monkeypatch.setattr("utils.feed_item_object.write_feed_item_to_cache", lambda key, payload: writes.setdefault(key, payload))
+
+    entry = FeedItem(title="Title", link="https://example.com", guid="guid", description="<p>Body</p>")
+    entry.persist_to_cache("/reuters", cache_key_override="router_cache:reuters:shared")
+
+    assert entry.cache_key == "router_cache:reuters:shared"
+    assert writes["router_cache:reuters:shared"]["description"] == "<p>Body</p>"
+
+
 def test_metadata_dataclass_has_safe_defaults():
     metadata = Metadata()
 

@@ -225,25 +225,6 @@ apnews_business = ApnewsRouter(
     default_topic="business",
 )
 
-from router.yahoo_news.yahoo_news_router import YahooNewsRouter
-from router.yahoo_news.yahoo_news_router_constants import (
-    yahoo_news_feed_title,
-    yahoo_news_original_link,
-    yahoo_news_articles_link,
-    yahoo_news_description,
-)
-from utils.router_constants import yahoo_news_router_path_prefix
-
-yahoo_news = YahooNewsRouter(
-    router_path=yahoo_news_router_path_prefix,
-    feed_title=yahoo_news_feed_title,
-    original_link=yahoo_news_original_link,
-    articles_link=yahoo_news_articles_link,
-    description=yahoo_news_description,
-    language=language_english,
-    period=get_router_period("yahoo_news", 2),
-)
-
 openai_news = OpenAINewsRouter(
     router_path=openai_news_router_path_prefix,
     feed_title=openai_news_feed_title,

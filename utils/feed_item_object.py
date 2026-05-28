@@ -43,14 +43,15 @@ class FeedItem:
             "guid: " + guid + '\n' + \
             "with content? " + with_content
 
-    def persist_to_cache(self, router_path):
+    def persist_to_cache(self, router_path: str, cache_key_override: str | None = None) -> None:
         """
         Store the feed item in Redis under the router-specific cache prefix.
         :param router_path: name of the router path
+        :param cache_key_override: exact Redis key to use for shared-cache writes
         """
         cache_prefix = convert_router_path_to_cache_prefix(router_path)
         identifier = self.guid or self.link or self.title or datetime.now(timezone.utc).isoformat()
-        self.cache_key = generate_cache_key(cache_prefix, identifier)
+        self.cache_key = cache_key_override or generate_cache_key(cache_prefix, identifier)
         payload = {
             "title": self.title,
             "link": self.link,

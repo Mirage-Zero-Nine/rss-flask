@@ -2,7 +2,6 @@ import logging
 
 from werkzeug.exceptions import abort
 
-from router.reuters.reuters_constants import is_valid_reuters_parameter
 from application.router_dependencies import (
     apnews_business,
     apnews_top_news,
@@ -34,8 +33,6 @@ from application.router_dependencies import (
     usgs_earthquake_report,
     wsdot_news,
     wsdot_news_router_path,
-    yahoo_news,
-    yahoo_news_router_path_prefix,
     zaobao_region_parameter,
     zaobao_router_path_prefix,
     zaobao_realtime,
@@ -72,29 +69,13 @@ def register_routes(app):
     def meta_engineering_blog_router():
         return meta_tech_blog.get_rss_xml_response(link_filter=meta_blog_prefix)
 
-    @app.route(reuters_news_router_path + '/<category>')
-    @app.route(reuters_news_router_path + '/<category>/<string:topic>')
-    @app.route(reuters_news_router_path + '/<category>/<string:topic>/<int:limit>')
-    def reuters_news_router(category, topic=None, limit=20):
-        """
-        Reuters news.
-        :param category: required for the Reuters API
-        :param topic: optional for the Reuters API
-        :param limit: amount of articles retrieved from API, 20 maximum
-        :return: RSS XML
-        """
+    @app.route(reuters_news_router_path + '/world')
+    def reuters_world_news_router():
+        return reuters_news.get_rss_xml_response(parameter={"category": "world"})
 
-        if is_valid_reuters_parameter(category, topic) is False:
-            abort(404)
-
-        parameters = {
-            "category": category,
-            "topic": topic,
-            "limit": limit
-        }
-
-        logging.info(f"category: {category}, topic:{topic}")
-        return reuters_news.get_rss_xml_response(parameter=parameters)
+    @app.route(reuters_news_router_path + '/business')
+    def reuters_business_news_router():
+        return reuters_news.get_rss_xml_response(parameter={"category": "business"})
 
     @app.route(sar_router_path)
     def sony_alpha_rumors_router():
@@ -131,12 +112,6 @@ def register_routes(app):
     @app.route(apnews_business_router_path)
     def apnews_business_router():
         return apnews_business.get_rss_xml_response()
-
-    @app.route(yahoo_news_router_path_prefix + '/<topic>')
-    def yahoo_news_router(topic):
-        if topic.lower() not in yahoo_news.VALID_TOPICS:
-            abort(404)
-        return yahoo_news.get_rss_xml_response(parameter={"topic": topic.lower()})
 
     @app.route(openai_news_router_path_prefix + '/<category>')
     def openai_news_router(category):

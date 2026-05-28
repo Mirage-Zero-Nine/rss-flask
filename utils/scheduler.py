@@ -47,6 +47,7 @@ def router_refresh_job_scheduler(jobs):
     _scheduler_started = True
 
     for job in jobs:
+        job_interval = job.get("interval_minutes", interval_minutes)
         # warm_cache() returns True if it refreshed (cache was empty or lock acquired),
         # False if it skipped (cache was populated or lock held by another process)
         cache_was_empty = None  # None = skipped for an external reason (lock held or error)

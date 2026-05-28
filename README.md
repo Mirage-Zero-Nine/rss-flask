@@ -61,7 +61,6 @@ router_refresh_periods:
   zaobao: 10
   apnews_top: 15
   apnews_business: 15
-  yahoo_news: 2
   apple_developer_news: 60
   apple_newsroom: 60
 ```
@@ -137,12 +136,10 @@ Current route families include:
 - `/zaobao/realtime/<region>` where `<region>` is `china` or `world`
 - `/apnews/top`
 - `/apnews/business`
-- `/yahoo/reuters/<topic>`
 - `/apple/developer`
 - `/apple/newsroom`
 
 ### Parameterized Routes
 
-- Reuters supports `world` and `business` category feeds.
+- Reuters supports the `/reuters/<category>` route with `world` or `business`. Top-level `world` and `business` feeds are gap-filled from Yahoo Reuters by a scheduler-only secondary source. Topic-level routes such as `/reuters/world/asia-pacific` are not supported.
 - Zaobao supports region-specific feeds for `china` and `world`.
-- Yahoo News (Reuters) supports topics such as `world`, `business`.
