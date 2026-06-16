@@ -1,3 +1,9 @@
+# Development/test lock.
 -r requirements.txt
-pytest==8.4.2
-pyright==1.1.409
+iniconfig==2.3.0
+nodeenv==1.10.0
+packaging==26.2
+pluggy==1.6.0
+Pygments==2.20.0
+pyright==1.1.410
+pytest==9.1.0
