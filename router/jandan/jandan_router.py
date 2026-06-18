@@ -1,6 +1,7 @@
 import re
 import logging
 from datetime import datetime
+from urllib.parse import urljoin, urlparse
 
 from router.base_router import BaseRouter
 from router.jandan.jandan_constant import jandan_headers
@@ -12,6 +13,16 @@ from utils.tools import remove_certain_tag
 
 
 class JandanRouter(BaseRouter):
+    def _normalize_article_link(self, link: str) -> str:
+        return urljoin(f"{self.original_link.rstrip('/')}/", link)
+
+    @staticmethod
+    def _cache_identifier_for_link(link: str) -> str:
+        parsed = urlparse(link)
+        if parsed.hostname and parsed.hostname.endswith("jandan.net"):
+            query = f"?{parsed.query}" if parsed.query else ""
+            return f"{parsed.path}{query}"
+        return link
 
     def _get_articles_list(self, parameter=None, link_filter=None, title_filter=None):
         """
@@ -47,16 +58,21 @@ class JandanRouter(BaseRouter):
             if link_tag is None:
                 logging.warning("JandanRouter post item %d h2 has no link, skipping. title=%s", i, title[:60])
                 continue
-            link = link_tag['href']
+            raw_link = str(link_tag.get('href', '')).strip()
+            if not raw_link:
+                logging.warning("JandanRouter post item %d link is empty, skipping. title=%s", i, title[:60])
+                continue
+            link = self._normalize_article_link(raw_link)
 
             if "日好价" not in title:
                 logging.debug("JandanRouter article %d: title=%s link=%s", i, title[:80], link)
                 cache_prefix = convert_router_path_to_cache_prefix(self.router_path)
+                cache_identifier = self._cache_identifier_for_link(link)
                 metadata_list.append(Metadata(
                     title=title,
                     link=link,
                     guid=link,
-                    cache_key=generate_cache_key(prefix=cache_prefix, name=link)
+                    cache_key=generate_cache_key(prefix=cache_prefix, name=cache_identifier)
                 ))
             else:
                 logging.debug("JandanRouter skipping 日好价 item: %s", title[:60])
@@ -114,7 +130,7 @@ class JandanRouter(BaseRouter):
             logging.warning("JandanRouter could not find post-content div for %s", article_metadata.link)
             logging.warning("Router %s extracted empty content for %s", self.router_path, article_metadata.link)
             entry.description = ""
-            entry.persist_to_cache(self.router_path)
+            entry.persist_to_cache(self.router_path, cache_key_override=article_metadata.cache_key)
             return
 
         remove_certain_tag(content, 'script')
@@ -133,4 +149,4 @@ class JandanRouter(BaseRouter):
                     logging.debug("JandanRouter removed money.php promo link: %s", href)
 
         entry.description = content
-        entry.persist_to_cache(self.router_path)
+        entry.persist_to_cache(self.router_path, cache_key_override=article_metadata.cache_key)
