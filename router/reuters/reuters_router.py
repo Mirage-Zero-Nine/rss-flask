@@ -29,6 +29,7 @@ from utils.feed_item_object import Metadata, generate_cache_key, convert_router_
 from utils.log_context import log_external_fetch, reset_current_router, set_current_router
 from utils.router_constants import html_parser, language_english
 from utils.time_converter import convert_time_with_pattern
+from utils.safe_http import safe_get
 from utils.xml_utilities import generate_feed_object_for_new_router
 
 
@@ -222,7 +223,7 @@ class ReutersRouter(BaseRouter):
     def _fetch_with_requests(url: str, timeout: int = 30) -> dict:
         """Fetch URL via plain requests and return structured result."""
         try:
-            response = requests.get(url, headers=headers, timeout=timeout)
+            response = safe_get(url, headers=headers, timeout=timeout)
             status = response.status_code
             try:
                 json_data = response.json()
@@ -727,7 +728,7 @@ class ReutersRouter(BaseRouter):
     def _fetch_yahoo_page(self, url):
         logging.info("Reuters Yahoo-source fetching URL=%s", url)
         try:
-            response = requests.get(url, headers=self._REQUEST_HEADERS, timeout=15)
+            response = safe_get(url, headers=self._REQUEST_HEADERS, timeout=15)
             logging.debug("Reuters Yahoo-source fetch status=%d length=%d", response.status_code, len(response.text))
             return BeautifulSoup(response.text, html_parser)
         except Exception:
@@ -858,7 +859,7 @@ class ReutersRouter(BaseRouter):
     def _get_yahoo_article_content(self, article_metadata: Metadata, entry: FeedItem) -> None:
         logging.info("Reuters Yahoo-source fetching article title='%s' link=%s", article_metadata.title[:50], article_metadata.link)
         try:
-            response = requests.get(article_metadata.link, headers=self._REQUEST_HEADERS, timeout=15)
+            response = safe_get(article_metadata.link, headers=self._REQUEST_HEADERS, timeout=15)
             soup = BeautifulSoup(response.text, html_parser)
         except requests.exceptions.TooManyRedirects as exc:
             # Yahoo occasionally returns a redirect loop for individual articles.

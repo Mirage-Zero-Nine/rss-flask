@@ -1,11 +1,10 @@
 import logging
 from email.utils import parsedate_to_datetime
 
-import feedparser
-
 from router.router_for_rss_feed import RouterForRssFeed
 from utils.feed_item_object import Metadata, generate_cache_key, convert_router_path_to_cache_prefix
 from utils.get_link_content import get_link_content_with_bs_no_params
+from utils.safe_http import safe_parse_feed
 
 
 def _parse_feed_date(date_str):
@@ -23,7 +22,7 @@ class AppleNewsRouter(RouterForRssFeed):
     def _get_articles_list(self, link_filter=None, title_filter=None, parameter=None):
         """Override to store RSS description in Metadata.flag for no per-article fetch."""
         metadata_list = []
-        parse_feed = feedparser.parse(self.articles_link)
+        parse_feed = safe_parse_feed(self.articles_link)
         if not parse_feed.entries:
             logging.warning("Router %s RSS feed has 0 entries from %s", self.router_path, self.articles_link)
             return metadata_list
@@ -55,7 +54,7 @@ class AppleNewsroomRouter(RouterForRssFeed):
     def _get_articles_list(self, link_filter=None, title_filter=None, parameter=None):
         """Parse Atom feed, store created_time from 'updated' field."""
         metadata_list = []
-        parse_feed = feedparser.parse(self.articles_link)
+        parse_feed = safe_parse_feed(self.articles_link)
         if not parse_feed.entries:
             logging.warning("Router %s RSS feed has 0 entries from %s", self.router_path, self.articles_link)
             return metadata_list

@@ -3,7 +3,6 @@ from email.utils import parsedate_to_datetime
 from html import escape
 from urllib.parse import urljoin
 
-import feedparser
 import requests
 from bs4 import BeautifulSoup
 
@@ -11,6 +10,7 @@ from router.base_router import BaseRouter
 from utils.feed_item_object import FeedItem, Metadata, convert_router_path_to_cache_prefix, generate_cache_key
 from utils.log_context import log_external_fetch
 from utils.router_constants import html_parser
+from utils.safe_http import safe_get, safe_parse_feed
 
 
 class OpenAINewsRouter(BaseRouter):
@@ -53,7 +53,7 @@ class OpenAINewsRouter(BaseRouter):
         call to `_get_articles_list` still fetches a fresh copy.
         """
         log_external_fetch("feedparser.parse", self.articles_link)
-        parsed_feed = feedparser.parse(self.articles_link)
+        parsed_feed = safe_parse_feed(self.articles_link)
         entry_count = len(parsed_feed.entries) if parsed_feed.entries else 0
         logging.info(
             "Router %s OpenAI news shared RSS parse: %d entries (bozo=%s)",
@@ -84,7 +84,7 @@ class OpenAINewsRouter(BaseRouter):
             parsed_feed = self._cached_feed
         else:
             log_external_fetch("feedparser.parse", self.articles_link)
-            parsed_feed = feedparser.parse(self.articles_link)
+            parsed_feed = safe_parse_feed(self.articles_link)
         if not parsed_feed.entries:
             logging.warning(
                 "Router %s OpenAI news RSS has 0 entries (bozo=%s, bozo_exception=%s)",
@@ -156,7 +156,7 @@ class OpenAINewsRouter(BaseRouter):
 
         try:
             logging.debug("Router %s fetching OpenAI article page link=%s", self.router_path, link)
-            response = requests.get(link, headers=self._REQUEST_HEADERS, timeout=15)
+            response = safe_get(link, headers=self._REQUEST_HEADERS, timeout=15)
             logging.debug(
                 "Router %s OpenAI article fetch status=%d length=%d link=%s",
                 self.router_path,

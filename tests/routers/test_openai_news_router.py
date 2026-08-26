@@ -39,7 +39,7 @@ def test_get_articles_list_filters_by_category(monkeypatch):
         def get(self, key, default=None):
             return default
 
-    monkeypatch.setattr("router.openai_news.openai_news_router.feedparser.parse", lambda url: Feed())
+    monkeypatch.setattr("router.openai_news.openai_news_router.safe_parse_feed", lambda url: Feed())
 
     articles = build_router()._get_articles_list(parameter={"category": "research"})
 
@@ -60,7 +60,7 @@ def test_get_articles_list_all_keeps_all_categories(monkeypatch):
         def get(self, key, default=None):
             return default
 
-    monkeypatch.setattr("router.openai_news.openai_news_router.feedparser.parse", lambda url: Feed())
+    monkeypatch.setattr("router.openai_news.openai_news_router.safe_parse_feed", lambda url: Feed())
 
     articles = build_router()._get_articles_list(parameter={"category": "all"})
 
@@ -68,7 +68,7 @@ def test_get_articles_list_all_keeps_all_categories(monkeypatch):
 
 
 def test_get_article_content_uses_rss_summary(monkeypatch):
-    monkeypatch.setattr("router.openai_news.openai_news_router.requests.get", lambda *args, **kwargs: (_ for _ in ()).throw(Exception("blocked")))
+    monkeypatch.setattr("router.openai_news.openai_news_router.safe_get", lambda *args, **kwargs: (_ for _ in ()).throw(Exception("blocked")))
     monkeypatch.setattr("utils.feed_item_object.write_feed_item_to_cache", lambda *args, **kwargs: None)
 
     entry = FeedItem()
@@ -125,7 +125,7 @@ def test_get_article_content_extracts_article_page_body(monkeypatch):
         status_code = 200
         text = html
 
-    monkeypatch.setattr("router.openai_news.openai_news_router.requests.get", lambda *args, **kwargs: Response())
+    monkeypatch.setattr("router.openai_news.openai_news_router.safe_get", lambda *args, **kwargs: Response())
     monkeypatch.setattr("utils.feed_item_object.write_feed_item_to_cache", lambda *args, **kwargs: None)
 
     entry = FeedItem()
@@ -225,7 +225,7 @@ def test_refresh_all_categories_parses_rss_feed_once(monkeypatch):
         parse_calls["count"] += 1
         return _make_feed_with_one_per_category()
 
-    monkeypatch.setattr("router.openai_news.openai_news_router.feedparser.parse", fake_parse)
+    monkeypatch.setattr("router.openai_news.openai_news_router.safe_parse_feed", fake_parse)
 
     # Stub refresh_cache to record category dispatch and avoid touching cache_store.
     def fake_refresh_cache(parameter=None, **_kwargs):
@@ -257,7 +257,7 @@ def test_warm_all_categories_parses_rss_feed_once(monkeypatch):
         parse_calls["count"] += 1
         return _make_feed_with_one_per_category()
 
-    monkeypatch.setattr("router.openai_news.openai_news_router.feedparser.parse", fake_parse)
+    monkeypatch.setattr("router.openai_news.openai_news_router.safe_parse_feed", fake_parse)
     monkeypatch.setattr(router, "warm_cache", lambda **_kwargs: False)
 
     router.warm_all_categories()
@@ -276,7 +276,7 @@ def test_direct_get_articles_list_call_still_parses_fresh(monkeypatch):
         parse_calls["count"] += 1
         return _make_feed_with_one_per_category()
 
-    monkeypatch.setattr("router.openai_news.openai_news_router.feedparser.parse", fake_parse)
+    monkeypatch.setattr("router.openai_news.openai_news_router.safe_parse_feed", fake_parse)
 
     # Two direct calls should both fetch fresh.
     router._get_articles_list(parameter={"category": "all"})
@@ -288,7 +288,7 @@ def test_direct_get_articles_list_call_still_parses_fresh(monkeypatch):
 def test_with_shared_feed_clears_cache_on_exception(monkeypatch):
     router = build_router()
     monkeypatch.setattr(
-        "router.openai_news.openai_news_router.feedparser.parse",
+        "router.openai_news.openai_news_router.safe_parse_feed",
         lambda url: _make_feed_with_one_per_category(),
     )
 

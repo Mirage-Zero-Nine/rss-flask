@@ -6,6 +6,7 @@ from router.base_router import BaseRouter
 from router.earthquake.usgs_earthquake_router_constants import usgs_earthquake_name
 from utils.feed_item_object import FeedItem, Metadata, generate_cache_key, convert_router_path_to_cache_prefix
 from utils.time_converter import convert_millisecond_to_datetime_with_format, convert_millisecond_to_datetime
+from utils.safe_http import safe_get
 
 
 class UsgsEarthquakeRouter(BaseRouter):
@@ -73,7 +74,7 @@ class UsgsEarthquakeRouter(BaseRouter):
         """
         logging.info("Router %s fetching USGS GeoJSON feed from %s", self.router_path, self.articles_link)
         try:
-            raw_response = requests.get(self.articles_link, timeout=30)
+            raw_response = safe_get(self.articles_link, timeout=30)
             logging.info(
                 "Router %s USGS API response: status=%d content_length=%d",
                 self.router_path,
