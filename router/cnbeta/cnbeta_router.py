@@ -11,6 +11,7 @@ from utils.get_link_content import DEFAULT_REQUEST_TIMEOUT_SECONDS, get_link_con
 from utils.log_context import log_external_fetch
 from utils.router_constants import html_parser
 from utils.time_converter import convert_time_with_pattern
+from utils.safe_http import safe_get
 
 
 class CnbetaRouter(BaseRouter):
@@ -68,7 +69,7 @@ class CnbetaRouter(BaseRouter):
     def __get_listing_page(page_url):
         log_external_fetch("requests.get", page_url, parser=html_parser, decode="utf-8")
         try:
-            response = requests.get(page_url, timeout=DEFAULT_REQUEST_TIMEOUT_SECONDS)
+            response = safe_get(page_url, timeout=DEFAULT_REQUEST_TIMEOUT_SECONDS)
         except requests.RequestException as exc:
             logging.warning("cnbeta listing fetch failed for page=%s: %s", page_url, exc)
             return None

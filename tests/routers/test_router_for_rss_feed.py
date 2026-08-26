@@ -1,7 +1,7 @@
 """Tests for router.router_for_rss_feed.RouterForRssFeed.
 
 This base class provides _get_articles_list for any router whose source is an
-RSS/Atom feed. We mock feedparser.parse to keep tests offline.
+RSS/Atom feed. We mock safe_parse_feed to keep tests offline.
 """
 
 from types import SimpleNamespace
@@ -39,7 +39,7 @@ def test_get_articles_list_builds_metadata_for_each_entry(monkeypatch):
         ("Story one", "https://example.com/one", "Mon, 13 May 2026 10:00:00 GMT"),
         ("Story two", "https://example.com/two", "Mon, 13 May 2026 11:00:00 GMT"),
     ])
-    monkeypatch.setattr("router.router_for_rss_feed.feedparser.parse", lambda url: feed)
+    monkeypatch.setattr("router.router_for_rss_feed.safe_parse_feed", lambda url: feed)
 
     metadata_list = build_router()._get_articles_list()
 
@@ -56,7 +56,7 @@ def test_get_articles_list_filters_entries_by_link_prefix(monkeypatch):
         ("Drop me", "https://www.meta.com/blog/promo", "Mon, 13 May 2026 10:00:00 GMT"),
         ("Keep me", "https://engineering.example.com/post", "Mon, 13 May 2026 11:00:00 GMT"),
     ])
-    monkeypatch.setattr("router.router_for_rss_feed.feedparser.parse", lambda url: feed)
+    monkeypatch.setattr("router.router_for_rss_feed.safe_parse_feed", lambda url: feed)
 
     metadata_list = build_router()._get_articles_list(link_filter="https://www.meta")
 
@@ -69,7 +69,7 @@ def test_get_articles_list_filters_entries_by_title_prefix(monkeypatch):
         ("雇员招聘启事 - drop", "https://example.com/hiring", "Mon, 13 May 2026 10:00:00 GMT"),
         ("Real headline", "https://example.com/news", "Mon, 13 May 2026 11:00:00 GMT"),
     ])
-    monkeypatch.setattr("router.router_for_rss_feed.feedparser.parse", lambda url: feed)
+    monkeypatch.setattr("router.router_for_rss_feed.safe_parse_feed", lambda url: feed)
 
     metadata_list = build_router()._get_articles_list(title_filter="雇员招聘启事")
 
@@ -82,7 +82,7 @@ def test_get_articles_list_skips_entries_missing_link_or_title(monkeypatch):
         ("", "https://example.com/no-title", "Mon, 13 May 2026 10:00:00 GMT"),
         ("No link", "", "Mon, 13 May 2026 10:00:00 GMT"),
     ])
-    monkeypatch.setattr("router.router_for_rss_feed.feedparser.parse", lambda url: feed)
+    monkeypatch.setattr("router.router_for_rss_feed.safe_parse_feed", lambda url: feed)
 
     metadata_list = build_router()._get_articles_list()
 
@@ -91,6 +91,6 @@ def test_get_articles_list_skips_entries_missing_link_or_title(monkeypatch):
 
 def test_get_articles_list_returns_empty_when_feed_has_no_entries(monkeypatch):
     feed = _make_feed([])
-    monkeypatch.setattr("router.router_for_rss_feed.feedparser.parse", lambda url: feed)
+    monkeypatch.setattr("router.router_for_rss_feed.safe_parse_feed", lambda url: feed)
 
     assert build_router()._get_articles_list() == []

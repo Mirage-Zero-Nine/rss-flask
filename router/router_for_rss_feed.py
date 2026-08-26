@@ -1,8 +1,7 @@
 import logging
-import feedparser
-
 from utils.feed_item_object import Metadata, generate_cache_key, convert_router_path_to_cache_prefix
 from utils.log_context import log_external_fetch
+from utils.safe_http import safe_parse_feed
 from router.base_router import BaseRouter
 from utils.tools import check_need_to_filter
 
@@ -11,7 +10,7 @@ class RouterForRssFeed(BaseRouter):
     def _get_articles_list(self, link_filter=None, title_filter=None, parameter=None):
         metadata_list = []
         log_external_fetch("feedparser.parse", self.articles_link)
-        parse_feed = feedparser.parse(self.articles_link)
+        parse_feed = safe_parse_feed(self.articles_link)
         if not parse_feed.entries:
             bozo = parse_feed.get('bozo', False)
             bozo_exception = parse_feed.get('bozo_exception')

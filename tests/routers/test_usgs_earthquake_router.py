@@ -2,7 +2,7 @@
 
 The USGS router is a Type-3 (JSON API) router that pre-builds article descriptions
 into Metadata.flag during _get_articles_list, so _get_article_content makes no
-network call. These tests mock requests.get to keep everything offline.
+network call. These tests mock safe_get to keep everything offline.
 """
 
 import datetime as dt
@@ -99,7 +99,7 @@ def test_get_articles_list_builds_metadata_with_pre_built_description(monkeypatc
             return fake_response_json
 
     monkeypatch.setattr(
-        "router.earthquake.usgs_earthquake_router.requests.get",
+        "router.earthquake.usgs_earthquake_router.safe_get",
         lambda *args, **kwargs: FakeResponse(),
     )
 
@@ -126,7 +126,7 @@ def test_get_articles_list_returns_empty_on_non_200(monkeypatch):
             raise AssertionError("json() must not be called on non-200 response")
 
     monkeypatch.setattr(
-        "router.earthquake.usgs_earthquake_router.requests.get",
+        "router.earthquake.usgs_earthquake_router.safe_get",
         lambda *args, **kwargs: FakeResponse(),
     )
 
@@ -144,7 +144,7 @@ def test_get_article_content_uses_metadata_flag_and_does_not_call_requests(monke
     def fail_if_called(*args, **kwargs):
         raise AssertionError("USGS _get_article_content must not make HTTP calls")
 
-    monkeypatch.setattr("router.earthquake.usgs_earthquake_router.requests.get", fail_if_called)
+    monkeypatch.setattr("router.earthquake.usgs_earthquake_router.safe_get", fail_if_called)
 
     metadata = Metadata(
         title="M 4.2",
