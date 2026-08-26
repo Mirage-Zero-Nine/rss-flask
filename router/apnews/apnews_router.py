@@ -5,7 +5,7 @@ from html import escape
 from router.base_router import BaseRouter
 from utils.cache_store import read_metadata_list
 from utils.feed_item_object import FeedItem, Metadata, generate_cache_key, convert_router_path_to_cache_prefix
-from utils.get_link_content import get_link_content_with_bs_no_params
+from utils.get_link_content import get_link_content_with_urllib_request
 from utils.router_constants import html_parser
 from utils.time_converter import convert_millisecond_to_datetime
 
@@ -18,6 +18,12 @@ def normalize_paragraph_text(tag):
 
 class ApnewsRouter(BaseRouter):
     """Router for AP News pages, supporting multiple topics via parameter."""
+
+    _REQUEST_HEADERS = {
+        "User-Agent": "rss-flask/1.0 (+https://github.com/Mirage-Zero-Nine/rss-flask)",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+    }
 
     TOPIC_URLS = {
         "top": "https://apnews.com/tag/apf-topnews",
@@ -48,7 +54,11 @@ class ApnewsRouter(BaseRouter):
         url = self.TOPIC_URLS.get(topic, self.TOPIC_URLS["top"])
         logging.info("Router %s fetching AP News page for topic '%s' from %s", self.router_path, topic, url)
 
-        soup = get_link_content_with_bs_no_params(url, html_parser)
+        soup = get_link_content_with_urllib_request(
+            url,
+            headers=self._REQUEST_HEADERS,
+            parser=html_parser,
+        )
 
         if soup is None:
             logging.error("Router %s failed to fetch AP News page for topic '%s' from %s", self.router_path, topic, url)
@@ -169,7 +179,11 @@ class ApnewsRouter(BaseRouter):
         containing <p> tags, possibly with nested <div> elements (ads, embeds).
         """
         logging.info("Router %s fetching article content link=%s", self.router_path, article_metadata.link)
-        soup = get_link_content_with_bs_no_params(article_metadata.link, html_parser)
+        soup = get_link_content_with_urllib_request(
+            article_metadata.link,
+            headers=self._REQUEST_HEADERS,
+            parser=html_parser,
+        )
 
         if soup is None:
             logging.error("Router %s failed to fetch article page for %s", self.router_path, article_metadata.link)

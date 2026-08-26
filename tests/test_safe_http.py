@@ -1,4 +1,7 @@
 import socket
+import urllib.error
+from email.message import Message
+from io import BytesIO
 
 import pytest
 import requests
@@ -136,3 +139,62 @@ def test_safe_get_validates_each_public_redirect(monkeypatch):
 
     assert response.content == b"done"
     assert calls == ["https://public.example/start", "https://public.example/final"]
+
+
+def test_safe_urllib_get_sends_headers(monkeypatch):
+    monkeypatch.setattr(
+        safe_http.socket,
+        "getaddrinfo",
+        lambda *_args, **_kwargs: [_address_record("93.184.216.34")],
+    )
+    calls = []
+
+    class FakeResponse(BytesIO):
+        headers = {}
+
+        def getcode(self):
+            return 200
+
+        def geturl(self):
+            return "https://example.com/article"
+
+    class FakeOpener:
+        def open(self, request, **kwargs):
+            calls.append((request, kwargs))
+            return FakeResponse(b"done")
+
+    monkeypatch.setattr(safe_http.urllib.request, "build_opener", lambda *_handlers: FakeOpener())
+
+    content = safe_http.safe_urllib_get(
+        "https://example.com/article",
+        headers={"User-Agent": "rss-flask-test"},
+        timeout=4,
+    )
+
+    assert content == b"done"
+    assert calls[0][0].full_url == "https://example.com/article"
+    assert calls[0][0].get_header("User-agent") == "rss-flask-test"
+    assert calls[0][1] == {"timeout": 4}
+
+
+def test_safe_urllib_get_blocks_private_redirect(monkeypatch):
+    def fake_resolve(hostname, *_args, **_kwargs):
+        address = "93.184.216.34" if hostname == "public.example" else "10.32.5.206"
+        return [_address_record(address)]
+
+    monkeypatch.setattr(safe_http.socket, "getaddrinfo", fake_resolve)
+    calls = []
+
+    class FakeOpener:
+        def open(self, request, **_kwargs):
+            calls.append(request.full_url)
+            headers = Message()
+            headers["location"] = "http://rss.home/admin"
+            raise urllib.error.HTTPError(request.full_url, 302, "Found", headers, BytesIO())
+
+    monkeypatch.setattr(safe_http.urllib.request, "build_opener", lambda *_handlers: FakeOpener())
+
+    with pytest.raises(safe_http.UnsafeUrlError, match="10.32.5.206"):
+        safe_http.safe_urllib_get("https://public.example/feed")
+
+    assert calls == ["https://public.example/feed"]

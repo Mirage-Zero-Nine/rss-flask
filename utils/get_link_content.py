@@ -2,7 +2,7 @@ from bs4 import BeautifulSoup
 
 from utils.log_context import log_external_fetch
 from utils.router_constants import html_parser
-from utils.safe_http import DEFAULT_REQUEST_TIMEOUT_SECONDS, safe_get
+from utils.safe_http import DEFAULT_REQUEST_TIMEOUT_SECONDS, safe_get, safe_urllib_get
 
 
 def get_link_content_with_bs_no_params(link, parser=html_parser):
@@ -24,9 +24,18 @@ def get_link_content_with_header_and_empty_cookie(link, header, parser=html_pars
     )
 
 
-def get_link_content_with_urllib_request(link):
-    log_external_fetch("requests.get", link, timeout=15, parser="lxml")
-    return BeautifulSoup(safe_get(link, timeout=15).content, 'lxml')
+def get_link_content_with_urllib_request(link, headers=None, parser='lxml'):
+    log_external_fetch(
+        "urllib.request.urlopen",
+        link,
+        timeout=15,
+        parser=parser,
+        headers=bool(headers),
+    )
+    return BeautifulSoup(
+        safe_urllib_get(link, headers=headers, timeout=15),
+        parser,
+    )
 
 
 def load_json_response(link, **kwargs):

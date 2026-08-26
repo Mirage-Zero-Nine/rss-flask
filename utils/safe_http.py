@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import ipaddress
 import socket
+import urllib.error
+import urllib.request
 from urllib.parse import urljoin, urlsplit
 
 import feedparser
@@ -21,6 +23,13 @@ _REDIRECT_STATUSES = {301, 302, 303, 307, 308}
 
 class UnsafeUrlError(requests.RequestException):
     """Raised when an outbound URL could reach a non-public destination."""
+
+
+class _NoRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Expose redirects so each target can be validated before it is opened."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
 
 
 def _resolved_addresses(hostname: str, port: int) -> set[ipaddress.IPv4Address | ipaddress.IPv6Address]:
@@ -98,6 +107,54 @@ def safe_get(url: str, *, max_redirects: int = MAX_REDIRECTS, **kwargs) -> reque
         next_url = urljoin(response.url or current_url, location)
         response.close()
         current_url = next_url
+
+    raise requests.TooManyRedirects(f"exceeded {max_redirects} redirects for {url}")
+
+
+def safe_urllib_get(
+    url: str,
+    *,
+    headers: dict[str, str] | None = None,
+    timeout: int = DEFAULT_REQUEST_TIMEOUT_SECONDS,
+    max_redirects: int = MAX_REDIRECTS,
+) -> bytes:
+    """Fetch bytes with urllib while validating the URL and every redirect.
+
+    This is kept separate from ``safe_get`` because some upstream bot filters
+    treat Requests' TLS client differently from Python's standard-library
+    client even when both send the same HTTP headers.
+    """
+
+    opener = urllib.request.build_opener(_NoRedirectHandler())
+    current_url = url
+    visited: set[str] = set()
+    for redirect_count in range(max_redirects + 1):
+        validate_public_url(current_url)
+        if current_url in visited:
+            raise requests.TooManyRedirects(f"redirect loop detected for {current_url}")
+        visited.add(current_url)
+
+        request = urllib.request.Request(current_url, headers=headers or {})
+        try:
+            response = opener.open(request, timeout=timeout)
+        except urllib.error.HTTPError as exc:
+            location = exc.headers.get("location")
+            if exc.code not in _REDIRECT_STATUSES or not location:
+                raise
+            response = exc
+
+        try:
+            status = response.getcode()
+            location = response.headers.get("location")
+            if status not in _REDIRECT_STATUSES or not location:
+                return response.read()
+
+            if redirect_count >= max_redirects:
+                raise requests.TooManyRedirects(f"exceeded {max_redirects} redirects for {url}")
+
+            current_url = urljoin(response.geturl() or current_url, location)
+        finally:
+            response.close()
 
     raise requests.TooManyRedirects(f"exceeded {max_redirects} redirects for {url}")
 
