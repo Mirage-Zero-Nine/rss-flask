@@ -1,12 +1,8 @@
 from application.router_dependencies import (
-    apnews_business,
-    apnews_top_news,
     apple_developer_news,
     apple_newsroom,
     apple_news_router_path,
     apple_newsroom_router_path,
-    apnews_business_router_path,
-    apnews_router_path,
     china_embassy_news_filter,
     chinese_embassy_news,
     cnbeta,
@@ -107,20 +103,6 @@ def build_scheduler_jobs():
             "name": reuters_news_router_path + "/business",
             "warmup": lambda: reuters_news.warm_cache(parameter={"category": "business"}),
             "refresh": lambda: reuters_news.refresh_cache(parameter={"category": "business"}),
-        },
-        # apnews_business must run before apnews_top so /apnews/top can dedup
-        # against /apnews/business cached metadata on cold start. Keeping the
-        # current order of the two refresh jobs preserves the steady-state
-        # ordering inside each scheduler tick.
-        {
-            "name": apnews_business_router_path,
-            "warmup": lambda: apnews_business.warm_cache(),
-            "refresh": lambda: apnews_business.refresh_cache(),
-        },
-        {
-            "name": apnews_router_path,
-            "warmup": lambda: apnews_top_news.warm_cache(),
-            "refresh": lambda: apnews_top_news.refresh_cache(),
         },
         {
             "name": openai_news_router_path_prefix,

@@ -3,14 +3,10 @@ import logging
 from werkzeug.exceptions import abort
 
 from application.router_dependencies import (
-    apnews_business,
-    apnews_top_news,
     apple_developer_news,
     apple_newsroom,
     apple_news_router_path,
     apple_newsroom_router_path,
-    apnews_business_router_path,
-    apnews_router_path,
     china_embassy_news_filter,
     chinese_embassy_news,
     cnbeta,
@@ -104,14 +100,6 @@ def register_routes(app):
             "region": region
         }
         return zaobao_realtime.get_rss_xml_response(parameter=parameters, title_filter=title_filter)
-
-    @app.route(apnews_router_path)
-    def apnews_router():
-        return apnews_top_news.get_rss_xml_response()
-
-    @app.route(apnews_business_router_path)
-    def apnews_business_router():
-        return apnews_business.get_rss_xml_response()
 
     @app.route(openai_news_router_path_prefix + '/<category>')
     def openai_news_router(category):

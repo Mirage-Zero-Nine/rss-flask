@@ -2,8 +2,6 @@ from router.embassy.china_embassy_news_constants import china_embassy_news_filte
 from router.meta_blog.meta_tech_blog_router_constants import meta_blog_prefix
 from router.zaobao.zaobao_realtime_router_constants import zaobao_region_parameter, title_filter
 from application.router_objects import (
-    apnews_business,
-    apnews_top_news,
     apple_developer_news,
     apple_newsroom,
     chinese_embassy_news,
@@ -19,8 +17,6 @@ from application.router_objects import (
     zaobao_realtime,
 )
 from utils.router_constants import (
-    apnews_business_router_path,
-    apnews_router_path,
     apple_news_router_path,
     apple_newsroom_router_path,
     cnbeta_router_path,

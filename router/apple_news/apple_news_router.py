@@ -1,20 +1,72 @@
+import json
 import logging
+from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 
+from bs4 import BeautifulSoup
+
 from router.router_for_rss_feed import RouterForRssFeed
-from utils.feed_item_object import Metadata, generate_cache_key, convert_router_path_to_cache_prefix
+from utils.cache_store import read_feed_item_from_cache, write_feed_item_to_cache
+from utils.feed_item_object import FeedItem, Metadata, generate_cache_key, convert_router_path_to_cache_prefix
 from utils.get_link_content import get_link_content_with_bs_no_params
 from utils.safe_http import safe_parse_feed
 
 
-def _parse_feed_date(date_str):
-    """Convert RSS/Atom date string to datetime, return None on failure."""
-    if not date_str:
+def _parse_feed_date(value: datetime | str | None) -> datetime | None:
+    """Parse RSS and Atom dates, including Apple's date-only JSON-LD values."""
+    if isinstance(value, datetime):
+        parsed = value
+    elif isinstance(value, str) and value.strip():
+        raw = value.strip()
+        try:
+            parsed = parsedate_to_datetime(raw)
+        except (ValueError, TypeError):
+            # Apple also publishes datePublished as YYYY-MM-DDZ.
+            if raw.endswith("Z"):
+                raw = raw[:-1] + ("+00:00" if "T" in raw else "")
+            try:
+                parsed = datetime.fromisoformat(raw)
+            except ValueError:
+                return None
+    else:
         return None
-    try:
-        return parsedate_to_datetime(date_str)
-    except (ValueError, TypeError):
-        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def _article_publication_date(soup: BeautifulSoup) -> datetime | None:
+    """Read the article's publication date, never its modification date."""
+    for script in soup.find_all("script", type="application/ld+json"):
+        try:
+            pending = [json.loads(script.get_text())]
+        except (ValueError, TypeError):
+            continue
+        while pending:
+            node = pending.pop()
+            if isinstance(node, list):
+                pending.extend(node)
+            elif isinstance(node, dict):
+                types = node.get("@type", [])
+                if isinstance(types, str):
+                    types = [types]
+                if isinstance(types, list) and any(t in {"NewsArticle", "Article"} for t in types if isinstance(t, str)):
+                    published = _parse_feed_date(node.get("datePublished"))
+                    if published:
+                        return published
+                graph = node.get("@graph")
+                if isinstance(graph, (list, dict)):
+                    pending.append(graph)
+    # Some Newsroom updates omit NewsArticle JSON-LD but show a dated byline.
+    byline_date = soup.select_one(".category-eyebrow__date")
+    if byline_date is not None:
+        try:
+            return datetime.strptime(
+                byline_date.get_text(" ", strip=True), "%B %d, %Y"
+            ).replace(tzinfo=timezone.utc)
+        except ValueError:
+            pass
+    return None
 
 
 class AppleNewsRouter(RouterForRssFeed):
@@ -33,7 +85,7 @@ class AppleNewsRouter(RouterForRssFeed):
                 metadata = Metadata(
                     title=entry.title,
                     link=entry.link,
-                    created_time=_parse_feed_date(entry.get("published") or entry.get("updated")),
+                    created_time=_parse_feed_date(entry.get("published")) or _parse_feed_date(entry.get("updated")),
                     cache_key=generate_cache_key(prefix=cache_prefix, name=entry.link),
                     flag=entry.get("description", ""),
                 )
@@ -52,7 +104,7 @@ class AppleNewsRouter(RouterForRssFeed):
 class AppleNewsroomRouter(RouterForRssFeed):
 
     def _get_articles_list(self, link_filter=None, title_filter=None, parameter=None):
-        """Parse Atom feed, store created_time from 'updated' field."""
+        """Parse Atom dates, falling back to updated when published is absent."""
         metadata_list = []
         parse_feed = safe_parse_feed(self.articles_link)
         if not parse_feed.entries:
@@ -65,13 +117,33 @@ class AppleNewsroomRouter(RouterForRssFeed):
                 metadata = Metadata(
                     title=entry.title.strip(),
                     link=entry.link,
-                    created_time=_parse_feed_date(entry.get("published") or entry.get("updated")),
+                    created_time=_parse_feed_date(entry.get("published")) or _parse_feed_date(entry.get("updated")),
                     cache_key=generate_cache_key(prefix=cache_prefix, name=entry.link),
                 )
                 metadata_list.append(metadata)
 
         logging.info("Router %s built %d articles from RSS feed", self.router_path, len(metadata_list))
         return metadata_list
+
+    def _get_article(self, article_metadata: Metadata) -> FeedItem:
+        """Repair legacy cached dates during refresh without replacing content."""
+        cached = read_feed_item_from_cache(article_metadata.cache_key)
+        if cached and cached.get("description") and not _parse_feed_date(cached.get("created_time")):
+            created_time = _parse_feed_date(article_metadata.created_time)
+            try:
+                soup = get_link_content_with_bs_no_params(article_metadata.link)
+                if soup is not None:
+                    created_time = _article_publication_date(soup) or created_time
+            except Exception as exc:
+                logging.warning("Router %s could not recover article date for %s: %s",
+                                self.router_path, article_metadata.link, exc)
+            if created_time:
+                updated = dict(cached, created_time=created_time.isoformat())
+                write_feed_item_to_cache(article_metadata.cache_key, updated)
+                article_metadata.created_time = created_time
+                logging.info("Router %s repaired cached publication date link=%s date=%s",
+                             self.router_path, article_metadata.link, created_time.isoformat())
+        return super()._get_article(article_metadata)
 
     def _get_article_content(self, article_metadata, entry):
         """Fetch full article content from the newsroom page."""
@@ -123,5 +195,6 @@ class AppleNewsroomRouter(RouterForRssFeed):
                         parts.append(f'<img src="{src}" />')
 
         entry.description = "\n".join(parts) if parts else ""
-        entry.created_time = article_metadata.created_time
+        entry.created_time = _article_publication_date(soup) or _parse_feed_date(article_metadata.created_time)
+        article_metadata.created_time = entry.created_time
         entry.persist_to_cache(self.router_path)
