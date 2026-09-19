@@ -1,3 +1,5 @@
+import pytest
+
 from application.factory import create_app
 
 
@@ -19,6 +21,13 @@ def test_health_check():
 
     assert response.status_code == 200
     assert response.text == "Hello there."
+
+
+@pytest.mark.parametrize("path", ["/apnews/top", "/apnews/business"])
+def test_apnews_routes_removed(path):
+    app = create_app()
+
+    assert app.test_client().get(path).status_code == 404
 
 
 def test_reuters_rejects_invalid_category():

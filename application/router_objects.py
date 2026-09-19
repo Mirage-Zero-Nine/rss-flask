@@ -1,14 +1,3 @@
-from router.apnews.apnews_router import ApnewsRouter
-from router.apnews.apnews_router_constants import (
-    apnews_feed_title,
-    apnews_original_link,
-    apnews_articles_link,
-    apnews_description,
-    apnews_business_feed_title,
-    apnews_business_original_link,
-    apnews_business_articles_link,
-    apnews_business_description,
-)
 from router.cnbeta.cnbeta_router import CnbetaRouter
 from router.cnbeta.cnbeta_router_constants import (
     cnbeta_news_router_title,
@@ -86,8 +75,6 @@ from utils.router_constants import (
     jandan_router_path,
     reuters_news_router_path,
     sar_router_path,
-    apnews_router_path,
-    apnews_business_router_path,
     openai_news_router_path_prefix,
 )
 from router.apple_news.apple_news_router import AppleNewsRouter, AppleNewsroomRouter
@@ -199,30 +186,6 @@ sony_alpha_rumors = SonyAlphaRumorsRouter(
     description=sar_description,
     language=language_english,
     period=get_router_period("sar", 30)
-)
-
-apnews_top_news = ApnewsRouter(
-    router_path=apnews_router_path,
-    feed_title=apnews_feed_title,
-    original_link=apnews_original_link,
-    articles_link=apnews_articles_link,
-    description=apnews_description,
-    language=language_english,
-    period=get_router_period("apnews_top", 15),
-    default_topic="top",
-    exclude_links_from_router=apnews_business_router_path,
-    exclude_feed_title=apnews_business_feed_title,
-)
-
-apnews_business = ApnewsRouter(
-    router_path=apnews_business_router_path,
-    feed_title=apnews_business_feed_title,
-    original_link=apnews_business_original_link,
-    articles_link=apnews_business_articles_link,
-    description=apnews_business_description,
-    language=language_english,
-    period=get_router_period("apnews_business", 15),
-    default_topic="business",
 )
 
 openai_news = OpenAINewsRouter(

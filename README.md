@@ -59,8 +59,6 @@ router_refresh_periods:
   sar: 30
   wsdot: 30
   zaobao: 10
-  apnews_top: 15
-  apnews_business: 15
   openai_news: 15
   apple_developer_news: 60
   apple_newsroom: 60
@@ -106,7 +104,7 @@ Examples:
 
 - `router_cache:cnbeta:...`
 - `router_cache:zaobao-realtime-world:...`
-- `router_cache:apnews-top:...`
+- `router_cache:apple-newsroom:...`
 
 ## Scheduler
 
@@ -135,11 +133,18 @@ Current route families include:
 - `/sar`
 - `/wsdot/news`
 - `/zaobao/realtime/<region>` where `<region>` is `china` or `world`
-- `/apnews/top`
-- `/apnews/business`
 - `/openai-news/<category>` where `<category>` is one of `all`, `company`, `research`, `product`, `safety`, `engineering`, `security`, `global-affairs`, `ai-adoption`
 - `/apple/developer`
 - `/apple/newsroom`
+
+AP News was retired after its upstream began returning Cloudflare challenges.
+Both AP endpoints return 404 and no AP refresh jobs run. Existing Redis entries
+are retained.
+
+Apple Newsroom accepts ISO 8601 Atom dates as well as RFC 2822 RSS dates.
+Article publication dates take precedence over Atom update timestamps. During
+refresh, cached articles with missing dates are repaired without replacing their
+content. RSS requests remain read-only.
 
 ### Parameterized Routes
 
