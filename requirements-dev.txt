@@ -2,8 +2,8 @@
 -r requirements.txt
 iniconfig==2.3.0
 nodeenv==1.10.0
-packaging==26.2
+packaging==26.3
 pluggy==1.6.0
-Pygments==2.20.0
-pyright==1.1.410
-pytest==9.1.0
+Pygments==2.21.0
+pyright==1.1.414
+pytest==9.1.1
