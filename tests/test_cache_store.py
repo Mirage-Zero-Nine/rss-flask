@@ -1,6 +1,7 @@
 import datetime as dt
 import json
 
+import utils.cache_store as cache_store
 from utils.cache_store import _merge_metadata_dicts, _metadata_to_dict, metadata_list_key, router_last_build_time_key
 from utils.feed_item_object import Metadata
 
@@ -35,3 +36,21 @@ def test_metadata_to_dict_serializes_datetime():
 
     assert payload["created_time"] == created_time.isoformat()
     json.dumps(payload)
+
+
+def test_redis_client_preserves_resp2_and_decoded_responses(monkeypatch):
+    calls = []
+
+    def fake_from_url(url, **options):
+        calls.append((url, options))
+        return object()
+
+    monkeypatch.setattr(cache_store.redis, "from_url", fake_from_url)
+
+    client = cache_store._create_redis_client("redis://cache.example/0")
+
+    assert client is not None
+    assert calls == [(
+        "redis://cache.example/0",
+        {"decode_responses": True, "protocol": 2},
+    )]
