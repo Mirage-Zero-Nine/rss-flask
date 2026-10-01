@@ -20,9 +20,15 @@ MetadataDict = dict[str, Any]
 FeedItemPayload = dict[str, Any]
 _NO_REDIS_LOCK_TOKEN = "no-redis-cache-lock"
 
+
+def _create_redis_client(redis_url: str) -> redis.Redis:
+    """Create the cache client with the application's legacy RESP2 wire protocol."""
+    return redis.from_url(redis_url, decode_responses=True, protocol=2)
+
+
 try:
     logging.info("Connecting to Redis cache")
-    _redis_client = redis.from_url(DEFAULT_REDIS_URL, decode_responses=True)
+    _redis_client = _create_redis_client(DEFAULT_REDIS_URL)
     _redis_client.ping()  # verify connectivity at import time
     logging.info("Redis connected successfully")
 except redis.RedisError as exc:
