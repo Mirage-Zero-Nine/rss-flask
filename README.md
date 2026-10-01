@@ -2,10 +2,10 @@
 
 ## How to Run
 
-Create a Python 3.12 virtual environment and install dependencies:
+Create a Python 3.14 virtual environment and install dependencies:
 
 ```bash
-python3.12 -m venv venv
+python3.14 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
