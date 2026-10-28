@@ -52,5 +52,5 @@ def test_redis_client_preserves_resp2_and_decoded_responses(monkeypatch):
     assert client is not None
     assert calls == [(
         "redis://cache.example/0",
-        {"decode_responses": True, "protocol": 2},
+        {"decode_responses": True, "protocol": 2, "socket_connect_timeout": 5, "socket_timeout": 5},
     )]

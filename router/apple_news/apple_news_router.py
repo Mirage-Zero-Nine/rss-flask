@@ -71,6 +71,11 @@ def _article_publication_date(soup: BeautifulSoup) -> datetime | None:
 
 class AppleNewsRouter(RouterForRssFeed):
 
+    def _apply_metadata_to_feed_entry(self, article_metadata: Metadata, entry: FeedItem) -> None:
+        super()._apply_metadata_to_feed_entry(article_metadata, entry)
+        if isinstance(article_metadata.flag, str) and article_metadata.flag:
+            entry.description = article_metadata.flag
+
     def _get_articles_list(self, link_filter=None, title_filter=None, parameter=None):
         """Override to store RSS description in Metadata.flag for no per-article fetch."""
         metadata_list = []

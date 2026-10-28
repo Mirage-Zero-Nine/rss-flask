@@ -3,13 +3,23 @@ import logging
 import requests
 
 from router.base_router import BaseRouter
-from router.earthquake.usgs_earthquake_router_constants import usgs_earthquake_name
+from router.earthquake.usgs_earthquake_router_constants import (
+    usgs_earthquake_name,
+    usgs_earthquake_weekly_link,
+)
 from utils.feed_item_object import FeedItem, Metadata, generate_cache_key, convert_router_path_to_cache_prefix
 from utils.time_converter import convert_millisecond_to_datetime_with_format, convert_millisecond_to_datetime
 from utils.safe_http import safe_get
 
 
 class UsgsEarthquakeRouter(BaseRouter):
+
+    max_weekly_response_bytes = 5 * 1024 * 1024
+
+    def _apply_metadata_to_feed_entry(self, article_metadata: Metadata, entry: FeedItem) -> None:
+        super()._apply_metadata_to_feed_entry(article_metadata, entry)
+        if isinstance(article_metadata.flag, str) and article_metadata.flag:
+            entry.description = article_metadata.flag
 
 
     def _build_entry_from_feature(self, feature: dict) -> dict | None:
@@ -63,6 +73,86 @@ class UsgsEarthquakeRouter(BaseRouter):
             "description": loc + occurred_time + depth + url,
         }
 
+    def _get_existing_weekly_metadata_updates(self) -> list[Metadata]:
+        """Refresh current source fields for already-published events only.
+
+        The daily USGS summary drops older events, while this router retains
+        their metadata for historical feed entries. The weekly summary lets
+        us update those existing rows without adding new history or writing
+        article payloads to Redis.
+        """
+        try:
+            response = safe_get(usgs_earthquake_weekly_link, timeout=30)
+            if response.status_code != 200:
+                logging.warning(
+                    "Router %s USGS weekly summary returned status=%d; keeping existing historical metadata",
+                    self.router_path,
+                    response.status_code,
+                )
+                return []
+            if len(response.content) > self.max_weekly_response_bytes:
+                logging.warning(
+                    "Router %s USGS weekly summary exceeded %d bytes; keeping existing historical metadata",
+                    self.router_path,
+                    self.max_weekly_response_bytes,
+                )
+                return []
+            json_response = response.json()
+        except (requests.RequestException, ValueError) as exc:
+            logging.warning(
+                "Router %s USGS weekly summary could not be read; keeping existing historical metadata: %s",
+                self.router_path,
+                exc,
+            )
+            return []
+
+        features = json_response.get("features") if isinstance(json_response, dict) else None
+        if not isinstance(features, list) or not features:
+            logging.warning(
+                "Router %s USGS weekly summary had no valid features; keeping existing historical metadata",
+                self.router_path,
+            )
+            return []
+
+        _, existing_metadata = self._read_cached_article_metadata_list()
+        existing_by_link = {
+            metadata.link: metadata
+            for metadata in existing_metadata
+            if metadata.link
+        }
+        updates: list[Metadata] = []
+        for feature in features:
+            payload = self._build_entry_from_feature(feature)
+            if payload is None:
+                continue
+            existing = existing_by_link.get(payload["link"])
+            if existing is None:
+                continue
+            if (
+                existing.title == payload["title"]
+                and existing.created_time == payload["created_time"]
+                and existing.flag == payload["description"]
+            ):
+                continue
+            updates.append(
+                Metadata(
+                    title=payload["title"],
+                    link=existing.link,
+                    author=existing.author or payload["author"],
+                    created_time=payload["created_time"],
+                    guid=existing.guid,
+                    cache_key=existing.cache_key,
+                    flag=payload["description"],
+                )
+            )
+        if updates:
+            logging.info(
+                "Router %s found %d revised USGS events among existing historical metadata",
+                self.router_path,
+                len(updates),
+            )
+        return updates
+
     def _get_articles_list(
             self, parameter=None, link_filter=None, title_filter=None
     ) -> list:
@@ -114,6 +204,7 @@ class UsgsEarthquakeRouter(BaseRouter):
                 flag=payload["description"],
             )
             metadata_list.append(metadata)
+        metadata_list.extend(self._get_existing_weekly_metadata_updates())
         if not metadata_list:
             logging.warning(
                 "Router %s USGS API returned 0 features, response keys=%s",

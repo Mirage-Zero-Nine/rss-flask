@@ -1,5 +1,5 @@
 sar_link = "https://www.sonyalpharumors.com"
-sar_rss_link = "http://www.sonyalpharumors.com/feed/rss"
+sar_rss_link = "https://www.sonyalpharumors.com/feed/rss"
 sar_description = "Sony Digital Camera News"
 sar_time_convert_pattern = "%a, %d %b %Y %H:%M:%S %z"
 sar_name = "Sony Alpha Rumors"

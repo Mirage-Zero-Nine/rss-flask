@@ -43,9 +43,26 @@ def router_refresh_job_scheduler(jobs):
     scheduler = BackgroundScheduler(
         executors={"default": APSchedulerExecutor(max_workers=16)}
     )
-    scheduler.start()
-    _scheduler_started = True
+    try:
+        scheduler.start()
+        _scheduler_started = True
+        _warm_and_schedule_jobs(scheduler, jobs, interval_minutes)
+    except BaseException:
+        # A SIGTERM during synchronous warm-up raises KeyboardInterrupt before
+        # the caller receives this handle. Clean up the scheduler here so the
+        # outer server finally block does not leave its threads behind.
+        try:
+            if scheduler.running:
+                scheduler.shutdown(wait=True)
+        except Exception:
+            logging.exception("Scheduler cleanup failed after interrupted startup")
+        finally:
+            _scheduler_started = False
+        raise
+    return scheduler
 
+
+def _warm_and_schedule_jobs(scheduler, jobs, interval_minutes):
     for job in jobs:
         job_interval = job.get("interval_minutes", interval_minutes)
         # warm_cache() returns True if it refreshed (cache was empty or lock acquired),

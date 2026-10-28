@@ -8,6 +8,12 @@ in the child process (signaled by WERKZEUG_RUN_MAIN=true). In production
 from application.factory import should_start_scheduler
 
 
+def test_explicit_cache_only_mode_disables_scheduler(monkeypatch):
+    monkeypatch.setenv("RSS_SCHEDULER_ENABLED", "0")
+    monkeypatch.setenv("WERKZEUG_RUN_MAIN", "true")
+    assert should_start_scheduler() is False
+
+
 def test_should_start_scheduler_true_when_werkzeug_run_main_is_true(monkeypatch):
     monkeypatch.setenv("WERKZEUG_RUN_MAIN", "true")
     monkeypatch.setenv("FLASK_DEBUG", "1")  # would skip on its own, but RUN_MAIN wins
