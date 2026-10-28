@@ -1,5 +1,6 @@
 china_embassy_news_filter = "雇员招聘启事"
-china_embassy_news_prefix = 'http://losangeles.china-consulate.org/tzgg'
+# The bare directory redirects to HTTP; use its canonical HTTPS URL.
+china_embassy_news_prefix = 'https://losangeles.china-consulate.gov.cn/tzgg/'
 china_embassy_news_author = '中华人民共和国驻洛杉矶总领事馆'
 china_embassy_news_title = '中国驻洛杉矶总领事馆 - 通知公告'
 china_embassy_news_description = '中国驻洛杉矶总领事馆通知与公告'

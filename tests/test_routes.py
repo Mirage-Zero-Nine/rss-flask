@@ -23,6 +23,16 @@ def test_health_check():
     assert response.text == "Hello there."
 
 
+@pytest.mark.parametrize("ready,status", [(True, 200), (False, 503)])
+def test_readiness_tracks_redis_without_exposing_details(monkeypatch, ready, status):
+    monkeypatch.setattr("application.routes.cache_is_ready", lambda: ready)
+    client = create_app().test_client()
+    assert client.get('/health/live').status_code == 200
+    response = client.get('/health/ready')
+    assert response.status_code == status
+    assert response.json == {"status": "ready" if ready else "unavailable"}
+
+
 @pytest.mark.parametrize("path", ["/apnews/top", "/apnews/business"])
 def test_apnews_routes_removed(path):
     app = create_app()

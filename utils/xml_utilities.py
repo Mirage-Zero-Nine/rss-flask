@@ -1,12 +1,14 @@
 from rfeed import Feed, Item, Guid
 
+from utils.html_sanitizer import sanitize_article_html
+
 
 def generate_feed_object_for_new_router(title, link, description, language, last_build_time, feed_item_list):
     items = [
         Item(
             title=item.title,
             link=item.link,
-            description=item.description,
+            description=sanitize_article_html(item.description, base_url=item.link),
             author=item.author,
             guid=Guid(item.guid),
             pubDate=item.created_time

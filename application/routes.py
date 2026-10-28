@@ -1,6 +1,7 @@
 import logging
 
 from werkzeug.exceptions import abort
+from utils.cache_store import cache_is_ready
 
 from application.router_dependencies import (
     apple_developer_news,
@@ -37,6 +38,16 @@ from application.router_dependencies import (
 
 
 def register_routes(app):
+    @app.route('/health/live')
+    def health_live():
+        return {"status": "live"}
+
+    @app.route('/health/ready')
+    def health_ready():
+        if cache_is_ready():
+            return {"status": "ready"}
+        return {"status": "unavailable"}, 503
+
     @app.route('/')
     def hello_world():
         return "Hello there."

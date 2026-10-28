@@ -14,6 +14,10 @@ def create_app():
 
 
 def should_start_scheduler():
+    # Explicit cache-only validation mode; production enables the scheduler.
+    if os.environ.get("RSS_SCHEDULER_ENABLED", "1") == "0":
+        return False
+
     if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
         return True
 
@@ -29,4 +33,5 @@ def start_scheduler_if_needed():
         from application.scheduler_jobs import build_scheduler_jobs
         from utils.scheduler import router_refresh_job_scheduler
 
-        router_refresh_job_scheduler(build_scheduler_jobs())
+        return router_refresh_job_scheduler(build_scheduler_jobs())
+    return None

@@ -24,6 +24,16 @@ python app.py
 
 Redis is required for normal application use. Running without Redis is only useful for local debugging; routes serve empty feeds and cache writes are skipped.
 
+For production serving, run:
+
+```bash
+python -m application.server
+```
+
+This starts one Waitress process and one refresh scheduler. `/health/live`
+reports HTTP liveness; `/health/ready` checks Redis connectivity. Keep
+environment-specific deployment configuration outside this repository.
+
 ## Configuration
 
 Supported configuration values:

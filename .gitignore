@@ -1,5 +1,9 @@
 /venv/
 /config.yml
+/logs/
+/logs-*/
+/deployment/
+/operations/
 .idea
 *.log
 .DS_Store

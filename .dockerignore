@@ -9,7 +9,16 @@ __pycache__
 
 venv
 logs
+logs-*
 tests
 
 data/**/*.json
 router/**/*.html
+config.yml
+.env
+.env.*
+*.pem
+*.key
+*.bundle
+operations
+deployment

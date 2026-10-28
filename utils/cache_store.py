@@ -23,7 +23,10 @@ _NO_REDIS_LOCK_TOKEN = "no-redis-cache-lock"
 
 def _create_redis_client(redis_url: str) -> redis.Redis:
     """Create the cache client with the application's legacy RESP2 wire protocol."""
-    return redis.from_url(redis_url, decode_responses=True, protocol=2)
+    return redis.from_url(
+        redis_url, decode_responses=True, protocol=2,
+        socket_connect_timeout=5, socket_timeout=5,
+    )
 
 
 try:
@@ -38,6 +41,16 @@ except redis.RedisError as exc:
 
 def _has_client() -> bool:
     return _redis_client is not None
+
+
+def cache_is_ready() -> bool:
+    """Read-only readiness check; never expose connection details to clients."""
+    if _redis_client is None:
+        return False
+    try:
+        return bool(_redis_client.ping())
+    except redis.RedisError:
+        return False
 
 
 def _log_error(action: str, exc: Exception) -> None:

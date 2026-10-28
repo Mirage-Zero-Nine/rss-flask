@@ -1,6 +1,7 @@
 import datetime as dt
 import logging
 import pytz
+from email.utils import parsedate_to_datetime
 from typing import Any
 
 from flask import Response, make_response
@@ -277,6 +278,25 @@ class BaseRouter:
         cache_prefix = convert_router_path_to_cache_prefix(router_cache_key)
         return generate_cache_key(cache_prefix, self.feed_title)
 
+    def _apply_metadata_to_feed_entry(self, article_metadata: Metadata, entry: FeedItem) -> None:
+        """Prefer the current feed snapshot over older cached article metadata."""
+        if article_metadata.title:
+            entry.title = article_metadata.title
+        if article_metadata.link:
+            entry.link = article_metadata.link
+        if article_metadata.author:
+            entry.author = article_metadata.author
+        if article_metadata.guid:
+            entry.guid = article_metadata.guid
+
+        published = article_metadata.created_time
+        if isinstance(published, dt.datetime):
+            entry.created_time = published
+        elif isinstance(published, str):
+            parsed_published = self.__parse_created_time(published)
+            if parsed_published is not None:
+                entry.created_time = parsed_published
+
     def _build_feed_entries_from_metadata(self, article_metadata_list: list[Metadata]) -> list[FeedItem]:
         feed_entries_list: list[FeedItem] = []
         for article_metadata in article_metadata_list:
@@ -284,7 +304,9 @@ class BaseRouter:
             if entry is None:
                 logging.warning("Router %s article missing from cache key=%s link=%s", self.router_path, article_metadata.cache_key, article_metadata.link)
                 continue
-            elif entry.description is None:
+
+            self._apply_metadata_to_feed_entry(article_metadata, entry)
+            if entry.description is None:
                 logging.warning("Router %s article has None description key=%s link=%s", self.router_path, article_metadata.cache_key, article_metadata.link)
                 continue
             feed_entries_list.append(entry)
@@ -336,6 +358,9 @@ class BaseRouter:
         if not value:
             return None
 
+        if isinstance(value, datetime):
+            return value
+
         if not isinstance(value, str):
             logging.warning("Unable to parse non-string created_time from cache: %s", value)
             return None
@@ -343,8 +368,11 @@ class BaseRouter:
         try:
             return datetime.fromisoformat(value)
         except ValueError:
-            logging.warning("Unable to parse created_time from cache: %s", value)
-            return None
+            try:
+                return parsedate_to_datetime(value)
+            except (TypeError, ValueError, OverflowError):
+                logging.warning("Unable to parse created_time from cache: %s", value)
+                return None
 
     def __build_metadata_list(self, metadata_dicts: list[dict[str, Any]] | None) -> list[Metadata]:
         if not metadata_dicts:
