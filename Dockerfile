@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-ARG PYTHON_IMAGE=python:3.14-slim-trixie
+ARG PYTHON_IMAGE=python:3.14.10-slim-trixie@sha256:9aaa474097d094040649f2162a627c0049b408f52138d980916788d80f04802f
 FROM ${PYTHON_IMAGE}
 
 WORKDIR /python-docker
