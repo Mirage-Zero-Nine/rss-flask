@@ -2,6 +2,11 @@
 ARG PYTHON_IMAGE=python:3.14.10-slim-trixie@sha256:9aaa474097d094040649f2162a627c0049b408f52138d980916788d80f04802f
 FROM ${PYTHON_IMAGE}
 
+# The Python base still bundles zlib before the Debian security fixes.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends --only-upgrade zlib1g && \
+    rm -rf /var/lib/apt/lists/*
+
 WORKDIR /python-docker
 
 ENV PYTHONDONTWRITEBYTECODE=1
